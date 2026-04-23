@@ -166,6 +166,14 @@ Deployment-aware policy catalog endpoint:
 - `GET /api/policy/catalog?tenantId=<uuid>&framework=<optional>`
 - returns framework profiles and control entries with Terraform/Ansible deployment metadata
 
+CVE catalog and linkage:
+
+- scanner findings now auto-extract CVE identifiers into:
+  - `cve_catalog` (global CVE metadata)
+  - `finding_cves` (tenant finding-to-CVE links)
+- `GET /api/cves?tenantId=<uuid>&cveId=<optional>&limit=<optional>`
+  - returns tenant CVE links with scanner/package/version context
+
 Notes:
 
 - provider selection uses `DECISION_ENGINE_PROVIDER` (`rules` default, `opa` optional)

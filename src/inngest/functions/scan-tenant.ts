@@ -3,6 +3,7 @@ import { writeAuditLog } from "@/lib/audit";
 import { SCAN_RUN_STATUSES } from "@/lib/statuses";
 import { evaluateDecision } from "@/lib/decisionEngine";
 import { createScanCompletionEvidence } from "@/lib/evidence";
+import { recordCvesForFindings } from "@/lib/cveCatalog";
 import { runComplianceAgentHook } from "@/lib/complianceAgent";
 import { routeRemediationCandidate } from "@/lib/remediationAgent";
 import { buildAwarenessTrainingPlan } from "@/lib/securityAwareness";
@@ -32,6 +33,8 @@ type InsertedFindingRow = {
   severity: FindingSeverity;
   category: string | null;
   title: string;
+  description: string;
+  evidence: Record<string, unknown>;
   status: string;
 };
 type EvaluatedFindingRow = {
@@ -225,13 +228,28 @@ export const scanTenantRequested = inngest.createFunction(
         const { data, error } = await supabase
           .from("findings")
           .insert(normalizedFindings)
-          .select("id, severity, category, title, status");
+          .select("id, severity, category, title, description, evidence, status");
 
         if (error) throw new Error(`Could not insert findings: ${error.message}`);
         return (data ?? []) as InsertedFindingRow[];
       });
 
       const insertedCount = insertedFindings.length;
+
+      currentStep = "catalog-cves";
+      const cveSummary = await step.run("catalog-cves", async () => {
+        const linkedCves = await recordCvesForFindings(
+          insertedFindings.map((finding) => ({
+            id: finding.id,
+            tenantId: payload.tenantId,
+            title: finding.title,
+            description: finding.description,
+            evidence: finding.evidence,
+            scannerSource: scanResult.scanner,
+          }))
+        );
+        return { linkedCves };
+      });
 
       currentStep = "assign-priority";
       const prioritySummary = await step.run("assign-priority", async () => {
@@ -691,6 +709,7 @@ export const scanTenantRequested = inngest.createFunction(
         const resultSummary = {
           findingsDetected: scanResult.findings.length,
           findingsInserted: insertedCount,
+          linkedCves: cveSummary.linkedCves,
           prioritizedFindings: prioritySummary.prioritizedCount,
           highestPriorityScore: prioritySummary.highestPriorityScore,
           evidenceRecordsCreated,
@@ -741,6 +760,7 @@ export const scanTenantRequested = inngest.createFunction(
         scannerName: scanResult.scannerName,
         scannerType: scanResult.scannerType,
         findingsInserted: insertedCount,
+        linkedCves: cveSummary.linkedCves,
         prioritizedFindings: prioritySummary.prioritizedCount,
         remediationActionsCreated: remediationSummary.actionsCreated,
         remediationActionsUpdated: remediationSummary.actionsUpdated,
