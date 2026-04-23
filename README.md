@@ -64,6 +64,13 @@ Primary v4 workflow:
 8. Dynamic awareness training recommendations are derived from finding patterns and tenant/real-world signals.
 9. Evidence records are generated for eligible outcomes.
 
+Incident lifecycle transitions are managed by a strict state machine endpoint:
+
+- `POST /api/incidents/{incidentEvidenceRecordId}/transition`
+- allowed transitions:
+  - `open -> contained -> remediated -> validated -> rejoined`
+- each successful transition writes audit events and updates incident payload state/history
+
 ## Why decisioning is centralized
 
 Decisioning is centralized in `evaluateDecision()` so policy behavior is not duplicated across:

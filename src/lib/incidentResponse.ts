@@ -1,4 +1,9 @@
 import { writeAuditLog } from "@/lib/audit";
+import {
+  completeLifecycleForState,
+  type IncidentState,
+  normalizeIncidentState,
+} from "@/lib/incidentStateMachine";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import type { DecisionOutput } from "@/types/policy";
 
@@ -117,7 +122,17 @@ export async function createIncidentResponseIfNeeded(
   }
 
   const supabase = getSupabaseAdminClient();
-  const lifecycle = buildLifecycle(input);
+  const lifecycle = completeLifecycleForState(buildLifecycle(input), "open");
+  const state: IncidentState = normalizeIncidentState("open");
+  const transitionHistory = [
+    {
+      from: null,
+      to: state,
+      at: new Date().toISOString(),
+      actorUserId: null,
+      reason: "Incident created automatically from finding workflow.",
+    },
+  ];
 
   const { data, error } = await supabase
     .from("evidence_records")
@@ -145,7 +160,9 @@ export async function createIncidentResponseIfNeeded(
           decisionAction: input.decisionOutput.action,
           requiresApproval: input.requiresHumanApproval,
           remediationActionId: input.remediationActionId,
+          state,
           lifecycle,
+          transitionHistory,
         },
       },
     })
@@ -162,7 +179,7 @@ export async function createIncidentResponseIfNeeded(
     await writeAuditLog({
       userId: null,
       tenantId: input.tenantId,
-      entityType: "system",
+      entityType: "incident_response",
       entityId: data.id,
       action: `incident.${stepEvent.event}`,
       summary: `Incident lifecycle event: ${stepEvent.event}`,
