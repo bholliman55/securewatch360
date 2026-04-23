@@ -91,6 +91,7 @@ Remediation execution worker endpoint:
 - `POST /api/remediation-actions/{id}/execute`
 - marks remediation execution `running -> completed`
 - stores `execution_result` with performed/simulated steps
+- supports command-backed adapters via env commands for isolate/VLAN/patch/reimage/default actions
 - enforces allowed start states (`approved`, `queued`, or forced `pending`)
 - emits `securewatch/remediation.execution.completed` for workflow fan-out
 
@@ -252,6 +253,14 @@ OPA_POLICY_EVAL_TIMEOUT_MS=4000
 # true (default): require human approval for high-risk actions (e.g. isolate/config change)
 # false: allow fully automated execution where guardrails/policy permit
 REMEDIATION_HUMAN_IN_THE_LOOP=true
+
+# Optional command adapters for execution worker (supports placeholders:
+# {{target}}, {{tenantId}}, {{findingId}}, {{actionType}})
+REMEDIATION_EXEC_ISOLATE_COMMAND=
+REMEDIATION_EXEC_VLAN_COMMAND=
+REMEDIATION_EXEC_PATCH_COMMAND=
+REMEDIATION_EXEC_REIMAGE_COMMAND=
+REMEDIATION_EXEC_DEFAULT_COMMAND=
 
 # Optional comma-separated threat intel/training signals to shape awareness training output.
 SECURITY_AWARENESS_REAL_WORLD_SIGNALS=
