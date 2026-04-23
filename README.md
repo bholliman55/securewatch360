@@ -9,6 +9,7 @@ v4 focuses on decisioning, explainability, and action routing:
 - approval and risk-exception workflows
 - compliance and remediation agent hooks
 - explainability views for decisions, approvals, and exceptions
+- expanded compliance/policy catalog coverage for 11 frameworks
 
 This README is engineering-focused and reflects the current implementation.
 See `docs/V4-ENGINEERING-GUARDRAILS.md` for scope/complexity constraints used for v4 changes.
@@ -155,6 +156,15 @@ Policy-as-code in v4 has two parts:
    - fallback deterministic rules are always available
    - optional OPA-compatible endpoint can participate in evaluation
    - fallback + OPA outputs are merged by precedence rules
+
+Framework coverage currently includes:
+
+- `soc2`, `cmmc`, `hipaa`, `nist`, `iso27001`, `pci_dss`, `cis`, `gdpr`, `fedramp`, `ccpa`, `cobit`
+
+Deployment-aware policy catalog endpoint:
+
+- `GET /api/policy/catalog?tenantId=<uuid>&framework=<optional>`
+- returns framework profiles and control entries with Terraform/Ansible deployment metadata
 
 Notes:
 
