@@ -85,6 +85,12 @@ Remediation execution worker endpoint:
 - stores `execution_result` with performed/simulated steps
 - enforces allowed start states (`approved`, `queued`, or forced `pending`)
 
+Awareness signal ingestion endpoint:
+
+- `POST /api/awareness/signals/ingest`
+- stores real-world/company security signals as evidence rows (`evidence_type=awareness_signal`)
+- signals are automatically consumed by scan workflow training-plan generation
+
 ## Why decisioning is centralized
 
 Decisioning is centralized in `evaluateDecision()` so policy behavior is not duplicated across:

@@ -100,9 +100,17 @@ function mapPriority(score: number): "standard" | "elevated" | "urgent" {
 export function buildAwarenessTrainingPlan(args: {
   tenantId: string;
   findings: FindingSignal[];
+  realWorldSignals?: string[];
+  companySignals?: string[];
 }): AwarenessTrainingPlan {
-  const realWorldSignals = parseSignalList(process.env.SECURITY_AWARENESS_REAL_WORLD_SIGNALS);
-  const companySignals = parseSignalList(process.env.SECURITY_AWARENESS_COMPANY_SIGNALS);
+  const realWorldSignals =
+    args.realWorldSignals && args.realWorldSignals.length > 0
+      ? args.realWorldSignals
+      : parseSignalList(process.env.SECURITY_AWARENESS_REAL_WORLD_SIGNALS);
+  const companySignals =
+    args.companySignals && args.companySignals.length > 0
+      ? args.companySignals
+      : parseSignalList(process.env.SECURITY_AWARENESS_COMPANY_SIGNALS);
 
   const topics: AwarenessTopic[] = [
     "phishing",

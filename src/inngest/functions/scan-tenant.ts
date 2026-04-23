@@ -6,6 +6,7 @@ import { createScanCompletionEvidence } from "@/lib/evidence";
 import { runComplianceAgentHook } from "@/lib/complianceAgent";
 import { routeRemediationCandidate } from "@/lib/remediationAgent";
 import { buildAwarenessTrainingPlan } from "@/lib/securityAwareness";
+import { getLatestAwarenessSignals } from "@/lib/awarenessSignals";
 import { createIncidentResponseIfNeeded } from "@/lib/incidentResponse";
 import { calculatePriorityScore, inferExposure } from "@/lib/prioritization";
 import { normalizeFindings } from "@/scanner/analyzer";
@@ -638,6 +639,10 @@ export const scanTenantRequested = inngest.createFunction(
 
       currentStep = "derive-awareness-training";
       const awarenessTrainingPlan = await step.run("derive-awareness-training", async () => {
+        const signals = await getLatestAwarenessSignals(payload.tenantId).catch(() => ({
+          realWorldSignals: [] as string[],
+          companySignals: [] as string[],
+        }));
         return buildAwarenessTrainingPlan({
           tenantId: payload.tenantId,
           findings: evaluatedFindings.map((item) => ({
@@ -645,6 +650,8 @@ export const scanTenantRequested = inngest.createFunction(
             category: item.category,
             title: item.title,
           })),
+          realWorldSignals: signals.realWorldSignals,
+          companySignals: signals.companySignals,
         });
       });
 
