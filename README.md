@@ -69,6 +69,13 @@ Incident lifecycle transitions are managed by a strict state machine endpoint:
 - `POST /api/incidents/{incidentEvidenceRecordId}/transition`
 - allowed transitions:
   - `open -> contained -> remediated -> validated -> rejoined`
+- validation gate:
+  - transition to `validated` requires:
+    - `postRemediationScanClean=true`
+    - `policyChecksPassed=true`
+    - finding status `resolved`
+    - latest remediation action completed
+  - transition to `rejoined` requires prior successful validation attestation
 - each successful transition writes audit events and updates incident payload state/history
 
 ## Why decisioning is centralized

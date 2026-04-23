@@ -14,6 +14,9 @@ import { requireTenantAccess } from "@/lib/tenant-guard";
 type TransitionBody = {
   toState?: unknown;
   reason?: unknown;
+  postRemediationScanClean?: unknown;
+  policyChecksPassed?: unknown;
+  validationEvidenceNote?: unknown;
 };
 
 type IncidentPayload = {
@@ -22,6 +25,7 @@ type IncidentPayload = {
     lifecycle?: unknown;
     transitionHistory?: unknown;
     lastTransitionAt?: unknown;
+    validation?: unknown;
   };
 };
 
@@ -31,6 +35,14 @@ type TransitionHistoryItem = {
   at: string;
   actorUserId: string | null;
   reason: string | null;
+};
+
+type ValidationAttestation = {
+  postRemediationScanClean: boolean;
+  policyChecksPassed: boolean;
+  validatedAt: string;
+  validatedByUserId: string | null;
+  note: string | null;
 };
 
 function isUuid(value: string): boolean {
@@ -73,6 +85,18 @@ function sanitizeTransitionHistory(raw: unknown): TransitionHistoryItem[] {
     .filter((item): item is TransitionHistoryItem => item !== null);
 }
 
+function sanitizeValidationAttestation(raw: unknown): ValidationAttestation | null {
+  if (!raw || typeof raw !== "object") return null;
+  const row = raw as Record<string, unknown>;
+  return {
+    postRemediationScanClean: row.postRemediationScanClean === true,
+    policyChecksPassed: row.policyChecksPassed === true,
+    validatedAt: typeof row.validatedAt === "string" ? row.validatedAt : "",
+    validatedByUserId: typeof row.validatedByUserId === "string" ? row.validatedByUserId : null,
+    note: typeof row.note === "string" ? row.note : null,
+  };
+}
+
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
@@ -99,6 +123,14 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const reason = typeof body.reason === "string" ? body.reason.trim() : "";
     if (reason.length > 2000) {
       return NextResponse.json({ ok: false, error: "reason must be 2000 characters or less" }, { status: 400 });
+    }
+    const validationEvidenceNote =
+      typeof body.validationEvidenceNote === "string" ? body.validationEvidenceNote.trim() : "";
+    if (validationEvidenceNote.length > 2000) {
+      return NextResponse.json(
+        { ok: false, error: "validationEvidenceNote must be 2000 characters or less" },
+        { status: 400 }
+      );
     }
 
     const supabase = getSupabaseAdminClient();
@@ -145,6 +177,110 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     );
     const lifecycle = completeLifecycleForState(currentLifecycle, toState);
     const transitionHistory = sanitizeTransitionHistory(incident.transitionHistory);
+    const existingValidation = sanitizeValidationAttestation(incident.validation);
+
+    let validationAttestation = existingValidation;
+    if (toState === "validated") {
+      const postRemediationScanClean = body.postRemediationScanClean === true;
+      const policyChecksPassed = body.policyChecksPassed === true;
+      if (!postRemediationScanClean || !policyChecksPassed) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              "Transition to validated requires postRemediationScanClean=true and policyChecksPassed=true",
+          },
+          { status: 409 }
+        );
+      }
+
+      if (!existing.finding_id) {
+        return NextResponse.json(
+          { ok: false, error: "Incident is missing finding linkage required for validation" },
+          { status: 409 }
+        );
+      }
+
+      const { data: finding, error: findingError } = await supabase
+        .from("findings")
+        .select("id, status")
+        .eq("id", existing.finding_id)
+        .single();
+      if (findingError || !finding) {
+        return NextResponse.json(
+          { ok: false, error: findingError?.message ?? "Finding not found for validation checks" },
+          { status: 409 }
+        );
+      }
+      if (finding.status !== "resolved") {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: `Finding must be resolved before validation (current status=${finding.status})`,
+          },
+          { status: 409 }
+        );
+      }
+
+      const { data: latestRemediation, error: remediationError } = await supabase
+        .from("remediation_actions")
+        .select("id, action_status, execution_status")
+        .eq("tenant_id", existing.tenant_id)
+        .eq("finding_id", existing.finding_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (remediationError) {
+        return NextResponse.json(
+          { ok: false, error: `Could not validate remediation completion: ${remediationError.message}` },
+          { status: 409 }
+        );
+      }
+      if (!latestRemediation) {
+        return NextResponse.json(
+          { ok: false, error: "Cannot validate incident without a remediation action record" },
+          { status: 409 }
+        );
+      }
+      const remediationComplete =
+        latestRemediation.execution_status === "completed" ||
+        latestRemediation.action_status === "completed";
+      if (!remediationComplete) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: `Remediation must be completed before validation (actionStatus=${latestRemediation.action_status}, executionStatus=${latestRemediation.execution_status})`,
+          },
+          { status: 409 }
+        );
+      }
+
+      validationAttestation = {
+        postRemediationScanClean,
+        policyChecksPassed,
+        validatedAt: new Date().toISOString(),
+        validatedByUserId: guard.userId,
+        note: validationEvidenceNote || null,
+      };
+    }
+
+    if (toState === "rejoined") {
+      if (
+        !validationAttestation ||
+        !validationAttestation.postRemediationScanClean ||
+        !validationAttestation.policyChecksPassed
+      ) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              "Transition to rejoined requires a prior validation attestation with clean scan and passing policy checks",
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     transitionHistory.push({
       from: fromState,
       to: toState,
@@ -161,6 +297,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         lastTransitionAt: new Date().toISOString(),
         lifecycle,
         transitionHistory,
+        validation: validationAttestation,
       },
     };
 
@@ -190,6 +327,25 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         reason: reason || null,
       },
     });
+
+    if (toState === "validated" && validationAttestation) {
+      await writeAuditLog({
+        userId: guard.userId,
+        tenantId: existing.tenant_id,
+        entityType: "incident_response",
+        entityId: id,
+        action: "incident.validation.attested",
+        summary: "Incident validation attested with clean scan and policy checks",
+        payload: {
+          incidentId: id,
+          findingId: existing.finding_id,
+          postRemediationScanClean: validationAttestation.postRemediationScanClean,
+          policyChecksPassed: validationAttestation.policyChecksPassed,
+          validatedAt: validationAttestation.validatedAt,
+          note: validationAttestation.note,
+        },
+      });
+    }
 
     const newlyCompletedLifecycle = lifecycle.filter(
       (step) => step.status === "completed" && !completedBefore.has(step.event)
