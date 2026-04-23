@@ -78,6 +78,13 @@ Incident lifecycle transitions are managed by a strict state machine endpoint:
   - transition to `rejoined` requires prior successful validation attestation
 - each successful transition writes audit events and updates incident payload state/history
 
+Remediation execution worker endpoint:
+
+- `POST /api/remediation-actions/{id}/execute`
+- marks remediation execution `running -> completed`
+- stores `execution_result` with performed/simulated steps
+- enforces allowed start states (`approved`, `queued`, or forced `pending`)
+
 ## Why decisioning is centralized
 
 Decisioning is centralized in `evaluateDecision()` so policy behavior is not duplicated across:
