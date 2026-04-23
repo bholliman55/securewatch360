@@ -121,6 +121,7 @@ Awareness signal ingestion endpoint:
 - `POST /api/awareness/signals/ingest`
 - stores real-world/company security signals as evidence rows (`evidence_type=awareness_signal`)
 - signals are automatically consumed by scan workflow training-plan generation
+- scheduled `awareness-signals-refresh` runs every 6 hours to auto-ingest signals for configured tenants
 
 Awareness training dispatch endpoint:
 
@@ -255,6 +256,13 @@ REMEDIATION_HUMAN_IN_THE_LOOP=true
 # Optional comma-separated threat intel/training signals to shape awareness training output.
 SECURITY_AWARENESS_REAL_WORLD_SIGNALS=
 SECURITY_AWARENESS_COMPANY_SIGNALS=
+
+# Comma-separated tenant IDs for scheduled awareness signal hydration.
+AWARENESS_SIGNAL_TENANT_IDS=
+
+# Optional external feeds (JSON array or { "signals": [] }).
+AWARENESS_REAL_WORLD_SIGNALS_URL=
+AWARENESS_COMPANY_SIGNALS_URL=
 ```
 
 1. Apply migrations

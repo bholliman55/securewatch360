@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { writeAuditLog } from "@/lib/audit";
-import { getSupabaseAdminClient } from "@/lib/supabase";
+import { ingestAwarenessSignals } from "@/lib/awarenessSignalIngestion";
 import { requireTenantAccess } from "@/lib/tenant-guard";
 
 type IngestBody = {
@@ -61,51 +60,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: guard.error }, { status: guard.status });
     }
 
-    const now = new Date().toISOString();
-    const supabase = getSupabaseAdminClient();
-    const { data, error } = await supabase
-      .from("evidence_records")
-      .insert(
-        signals.map((signal) => ({
-          tenant_id: tenantId,
-          control_framework: "securewatch_internal",
-          control_id: "SW-AWARENESS-SIGNAL",
-          evidence_type: "awareness_signal",
-          title: `Awareness signal (${signalType})`,
-          description: `Signal ingested from ${source} for adaptive security training.`,
-          payload: {
-            signalType,
-            signal,
-            source,
-            observedAt: now,
-          },
-        }))
-      )
-      .select("id");
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    await writeAuditLog({
-      userId: guard.userId,
+    const result = await ingestAwarenessSignals({
       tenantId,
-      entityType: "system",
-      entityId: `awareness-signals:${now}`,
-      action: "awareness.signals.ingested",
-      summary: `Ingested ${signals.length} awareness signal(s) from ${source}`,
-      payload: {
-        signalType,
-        source,
-        count: signals.length,
-      },
+      signalType: signalType as "real_world" | "company",
+      source,
+      signals,
+      actorUserId: guard.userId,
     });
 
     return NextResponse.json(
       {
         ok: true,
-        ingestedCount: signals.length,
-        evidenceRecordIds: (data ?? []).map((row) => row.id),
+        ingestedCount: result.ingestedCount,
+        evidenceRecordIds: result.evidenceRecordIds,
       },
       { status: 201 }
     );
