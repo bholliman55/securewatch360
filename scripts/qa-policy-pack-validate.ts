@@ -9,7 +9,21 @@ import {
 loadEnvConfig(process.cwd());
 
 const EXPECTED_FRAMEWORKS = 11;
-const MIN_CONTROLS_PER_FRAMEWORK = 2;
+
+/** Minimum rows per framework after `20260425150000_policy_pack_full_catalog.sql` lands. */
+const MIN_CONTROLS_BY_FRAMEWORK: Record<string, number> = {
+  NIST: 100,
+  ISO27001: 90,
+  SOC2: 30,
+  CIS: 150,
+  PCI_DSS: 50,
+  FEDRAMP: 250,
+  CMMC: 100,
+  HIPAA: 45,
+  GDPR: 20,
+  CCPA: 10,
+  COBIT: 35,
+};
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -26,10 +40,9 @@ async function main() {
   assert(byFw.size >= EXPECTED_FRAMEWORKS, `Expected at least ${EXPECTED_FRAMEWORKS} frameworks, got ${byFw.size}`);
 
   for (const [fw, count] of byFw) {
-    assert(
-      count >= MIN_CONTROLS_PER_FRAMEWORK,
-      `Framework ${fw} expected at least ${MIN_CONTROLS_PER_FRAMEWORK} controls, got ${count}`
-    );
+    const min = MIN_CONTROLS_BY_FRAMEWORK[fw];
+    assert(min !== undefined, `Framework ${fw} missing MIN_CONTROLS_BY_FRAMEWORK entry`);
+    assert(count >= min, `Framework ${fw} expected at least ${min} controls, got ${count}`);
   }
 
   const tf = buildTerraformModulePack(all);

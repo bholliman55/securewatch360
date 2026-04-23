@@ -183,6 +183,12 @@ Machine auth for catalog + exports (optional, for `api_mw_connector`):
 - call with `Authorization: Bearer <POLICY_PACK_EXPORT_TOKEN>` and a permitted `tenantId`
 - see `docs/API-MW-CONNECTOR.md`
 
+Regenerate the bundled SQL catalog after changing files under `data/policy-catalog/`:
+
+```bash
+npm run generate:policy-pack-sql
+```
+
 Validate policy pack data locally (DB + migrations, no HTTP server):
 
 ```bash
