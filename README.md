@@ -168,6 +168,15 @@ Deployment-aware policy catalog endpoint:
 - `GET /api/policy/catalog?tenantId=<uuid>&framework=<optional>`
 - returns framework profiles and control entries with Terraform/Ansible deployment metadata
 
+Policy pack IaC export (for pipelines or `api_mw_connector`):
+
+- `GET /api/policy/export/terraform?tenantId=<uuid>&framework=<optional>&download=1`
+  - returns generated `module` blocks pointing at catalog `terraform_module` paths
+- `GET /api/policy/export/ansible?tenantId=<uuid>&framework=<optional>&download=1`
+  - returns a playbook skeleton listing catalog `ansible_role` entries
+- `GET /api/policy/export/manifest?tenantId=<uuid>&framework=<optional>&download=1`
+  - returns JSON manifest (`securewatch360.policy_pack_manifest`) for integration layers
+
 CVE catalog and linkage:
 
 - scanner findings now auto-extract CVE identifiers into:
