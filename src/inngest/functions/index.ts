@@ -1,5 +1,6 @@
 import { monitoringAlertReceived } from "./monitoring-alert-received";
 import { postRemediationRevalidationRequested } from "./post-remediation-revalidation";
+import { remediationExecutionRequested } from "./remediation-execution-requested";
 import { scanTenantRequested } from "./scan-tenant";
 import { scheduledDailyScans, scheduledWeeklyScans } from "./scheduled-scans";
 
@@ -9,6 +10,7 @@ import { scheduledDailyScans, scheduledWeeklyScans } from "./scheduled-scans";
  */
 export const inngestFunctions = [
   scanTenantRequested,
+  remediationExecutionRequested,
   postRemediationRevalidationRequested,
   monitoringAlertReceived,
   scheduledDailyScans,

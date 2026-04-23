@@ -16,6 +16,13 @@ export type InngestEventMap = {
     findingId: string;
     triggerType: "manual" | "semi_automatic" | "automatic";
   };
+  "securewatch/remediation.execution.requested": {
+    tenantId: TenantId;
+    remediationActionId: string;
+    findingId: string | null;
+    requestedByUserId: string | null;
+    source: "approval_workflow" | "system";
+  };
   "securewatch/monitoring.alert.received": {
     tenantId: TenantId;
     source: string;

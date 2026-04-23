@@ -98,6 +98,8 @@ Approval-execution linkage:
   (`approval_status=approved`, `execution_status=approved`, `action_status=approved`)
 - rejecting `remediation_execution` requests now cancels linked remediation execution
   (`approval_status=rejected`, `execution_status=cancelled`, `action_status=rejected`)
+- non-manual approved remediation actions automatically emit execution request events
+  and run through an Inngest remediation executor workflow
 
 Automatic incident progression on clean resolution:
 

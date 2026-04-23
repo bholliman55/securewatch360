@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { requireTenantAccess } from "@/lib/tenant-guard";
 import { writeAuditLog } from "@/lib/audit";
+import { inngest } from "@/inngest/client";
 
 type ApproveBody = {
   reason?: unknown;
@@ -129,6 +130,31 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
           })
           .eq("id", existing.finding_id)
           .eq("tenant_id", existing.tenant_id);
+      }
+
+      const { data: remediationRow, error: remediationRowError } = await supabase
+        .from("remediation_actions")
+        .select("id, execution_mode")
+        .eq("id", existing.remediation_action_id)
+        .eq("tenant_id", existing.tenant_id)
+        .single();
+      if (remediationRowError || !remediationRow) {
+        throw new Error(
+          `Failed to load remediation action for execution request dispatch: ${remediationRowError?.message ?? "not found"}`
+        );
+      }
+
+      if (remediationRow.execution_mode !== "manual") {
+        await inngest.send({
+          name: "securewatch/remediation.execution.requested",
+          data: {
+            tenantId: existing.tenant_id,
+            remediationActionId: existing.remediation_action_id,
+            findingId: existing.finding_id ?? null,
+            requestedByUserId: guard.userId,
+            source: "approval_workflow",
+          },
+        });
       }
     }
 
