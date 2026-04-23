@@ -92,6 +92,13 @@ Post-remediation revalidation workflow:
 - triggers a new `securewatch/scan.requested` event as `post_remediation` revalidation
 - writes audit logs for queued/skipped revalidation outcomes
 
+Approval-execution linkage:
+
+- approving `remediation_execution` requests now updates linked remediation action to executable state
+  (`approval_status=approved`, `execution_status=approved`, `action_status=approved`)
+- rejecting `remediation_execution` requests now cancels linked remediation execution
+  (`approval_status=rejected`, `execution_status=cancelled`, `action_status=rejected`)
+
 Automatic incident progression on clean resolution:
 
 - when a finding transitions to `resolved`, incident state can auto-progress
