@@ -78,6 +78,13 @@ Incident lifecycle transitions are managed by a strict state machine endpoint:
   - transition to `rejoined` requires prior successful validation attestation
 - each successful transition writes audit events and updates incident payload state/history
 
+Incident operations APIs:
+
+- `GET /api/incidents?tenantId=<uuid>&state=<optional>&limit=<optional>`
+  - list incident response records with normalized state
+- `GET /api/incidents/{incidentEvidenceRecordId}`
+  - incident detail with lifecycle, transition history, and computed `rejoinReady` signal
+
 Remediation execution worker endpoint:
 
 - `POST /api/remediation-actions/{id}/execute`
