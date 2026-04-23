@@ -84,6 +84,13 @@ Remediation execution worker endpoint:
 - marks remediation execution `running -> completed`
 - stores `execution_result` with performed/simulated steps
 - enforces allowed start states (`approved`, `queued`, or forced `pending`)
+- emits `securewatch/remediation.execution.completed` for workflow fan-out
+
+Post-remediation revalidation workflow:
+
+- on remediation execution completion, automatically resolves original scan target
+- triggers a new `securewatch/scan.requested` event as `post_remediation` revalidation
+- writes audit logs for queued/skipped revalidation outcomes
 
 Awareness signal ingestion endpoint:
 

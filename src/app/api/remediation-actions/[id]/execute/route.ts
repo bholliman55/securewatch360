@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { requireTenantAccess } from "@/lib/tenant-guard";
 import { writeAuditLog } from "@/lib/audit";
+import { inngest } from "@/inngest/client";
 
 type ExecuteBody = {
   dryRun?: unknown;
@@ -168,6 +169,16 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         executionMode: remediation.execution_mode,
         dryRun,
         force,
+      },
+    });
+
+    await inngest.send({
+      name: "securewatch/remediation.execution.completed",
+      data: {
+        tenantId: remediation.tenant_id,
+        remediationActionId: id,
+        findingId: remediation.finding_id,
+        triggerType: remediation.execution_mode,
       },
     });
 
