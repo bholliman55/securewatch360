@@ -1,0 +1,108 @@
+{
+  "runId": "qa-v4-agents-2026-04-23T16-57-10-684Z",
+  "context": {
+    "tenantId": "8c2b980c-9fc8-4b71-9b5f-2e90a5c3a001",
+    "maxAttempts": 20,
+    "pollIntervalMs": 3000,
+    "scanTargetId": "57fee3b0-e79c-4202-8cd8-cdd5afa91d47",
+    "scanRunId": "88ea575b-2b4b-48eb-911b-3274e3578110",
+    "findingIds": [
+      "3dd98b73-8452-4150-a0b8-56ac9deda792",
+      "58ad1d0f-5f82-4c26-b8dc-3f858d9af7da",
+      "662da48f-43d1-4313-9eec-51b478dec521"
+    ],
+    "alertRunId": "d21c968d-13cf-45e9-b60f-bc014cc7de01"
+  },
+  "results": [
+    {
+      "id": "T00",
+      "title": "Preflight environment validation",
+      "status": "passed",
+      "durationMs": 1,
+      "details": [
+        "Environment values required for E2E execution are present.",
+        "tenantId source=TEST_TENANT_ID",
+        "inngest event key source=default-dev-placeholder",
+        "tenantId=8c2b980c-9fc8-4b71-9b5f-2e90a5c3a001",
+        "maxAttempts=20",
+        "pollIntervalMs=3000"
+      ]
+    },
+    {
+      "id": "T01",
+      "title": "Create QA scan target",
+      "status": "passed",
+      "durationMs": 394,
+      "details": [
+        "scanTargetId=57fee3b0-e79c-4202-8cd8-cdd5afa91d47",
+        "targetName=qa-v4-agents-target-2026-04-23T16-57-10-792Z"
+      ]
+    },
+    {
+      "id": "T02",
+      "title": "Trigger scan workflow and wait for completion",
+      "status": "passed",
+      "durationMs": 6405,
+      "details": [
+        "scanRunId=88ea575b-2b4b-48eb-911b-3274e3578110",
+        "status=completed",
+        "scanner_type=mock"
+      ]
+    },
+    {
+      "id": "T03",
+      "title": "Validate decisioning agent artifacts",
+      "status": "passed",
+      "durationMs": 214,
+      "details": [
+        "findings=2",
+        "policyDecisions=2",
+        "coverage=2/2"
+      ]
+    },
+    {
+      "id": "T04",
+      "title": "Validate compliance agent artifacts",
+      "status": "passed",
+      "durationMs": 318,
+      "details": [
+        "findingsWithComplianceImpact=2",
+        "findingsWithComplianceContext=2",
+        "controlMappings=2",
+        "evidenceRecords=3"
+      ]
+    },
+    {
+      "id": "T05",
+      "title": "Validate remediation agent artifacts",
+      "status": "passed",
+      "durationMs": 101,
+      "details": [
+        "remediationActions=1",
+        "executionFieldsValidated=1",
+        "actionTypes=manual_fix"
+      ]
+    },
+    {
+      "id": "T06",
+      "title": "Validate approval workflow artifacts",
+      "status": "passed",
+      "durationMs": 1381,
+      "details": [
+        "No natural approval rows found; executed forced approval-path branch.",
+        "approvalRequests=1",
+        "statuses=pending"
+      ]
+    },
+    {
+      "id": "T07",
+      "title": "Validate monitoring workflow agent",
+      "status": "passed",
+      "durationMs": 3336,
+      "details": [
+        "monitoringRunId=d21c968d-13cf-45e9-b60f-bc014cc7de01",
+        "monitoringFindings=1"
+      ]
+    }
+  ]
+}

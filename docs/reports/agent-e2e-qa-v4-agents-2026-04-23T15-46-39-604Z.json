@@ -1,0 +1,18 @@
+{
+  "runId": "qa-v4-agents-2026-04-23T15-46-39-604Z",
+  "context": {
+    "tenantId": "unset",
+    "maxAttempts": 20,
+    "pollIntervalMs": 3000
+  },
+  "results": [
+    {
+      "id": "T00",
+      "title": "Preflight environment validation",
+      "status": "failed",
+      "durationMs": 1,
+      "details": [],
+      "error": "Missing TEST_TENANT_ID"
+    }
+  ]
+}

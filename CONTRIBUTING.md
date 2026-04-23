@@ -20,7 +20,7 @@ This project follows a simplified Git Flow (see your team’s branching doc for 
 - **UI / routes:** `src/app/`
 - **REST or JSON APIs:** `src/app/api/.../route.ts`
 - **Background jobs:** `src/inngest/functions/` (orchestration stays in Inngest, not n8n)
-- **Supabase access:** `src/lib/supabase/` (never expose the service role key to the client)
+- **Supabase access:** `src/lib/supabase.ts` (never expose the service role key to the client)
 
 ## Verifying the agent or another contributor
 

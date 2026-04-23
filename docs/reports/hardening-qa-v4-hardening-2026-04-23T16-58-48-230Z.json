@@ -1,0 +1,100 @@
+{
+  "runId": "qa-v4-hardening-2026-04-23T16-58-48-230Z",
+  "tenantId": "8c2b980c-9fc8-4b71-9b5f-2e90a5c3a001",
+  "iterations": 3,
+  "staleThresholdMinutes": 10,
+  "scenarios": [
+    {
+      "id": "rules-baseline",
+      "title": "Rules Provider Baseline",
+      "description": "Verifies stable operation with deterministic rules provider.",
+      "env": {
+        "DECISION_ENGINE_PROVIDER": "rules"
+      },
+      "enabled": true
+    },
+    {
+      "id": "opa-failopen",
+      "title": "OPA Provider Fail-Open",
+      "description": "Forces OPA provider with an unreachable endpoint and validates fail-open fallback to rules.",
+      "env": {
+        "DECISION_ENGINE_PROVIDER": "opa",
+        "OPA_POLICY_EVAL_URL": "http://127.0.0.1:65535/decision",
+        "OPA_POLICY_EVAL_TIMEOUT_MS": "750"
+      },
+      "enabled": true
+    },
+    {
+      "id": "opa-configured-endpoint",
+      "title": "OPA Provider Configured Endpoint",
+      "description": "Uses configured OPA endpoint if provided in environment.",
+      "env": {
+        "DECISION_ENGINE_PROVIDER": "opa"
+      },
+      "enabled": false,
+      "skipReason": "OPA_POLICY_EVAL_URL not configured in environment"
+    }
+  ],
+  "results": [
+    {
+      "scenarioId": "rules-baseline",
+      "iteration": 1,
+      "passed": true,
+      "failedTests": [],
+      "skippedTests": [],
+      "reportRunId": "qa-v4-agents-2026-04-23T16-58-52-215Z",
+      "staleRunningCount": 0,
+      "durationMs": 16521
+    },
+    {
+      "scenarioId": "rules-baseline",
+      "iteration": 2,
+      "passed": true,
+      "failedTests": [],
+      "skippedTests": [],
+      "reportRunId": "qa-v4-agents-2026-04-23T16-59-09-748Z",
+      "staleRunningCount": 0,
+      "durationMs": 17050
+    },
+    {
+      "scenarioId": "rules-baseline",
+      "iteration": 3,
+      "passed": true,
+      "failedTests": [],
+      "skippedTests": [],
+      "reportRunId": "qa-v4-agents-2026-04-23T16-59-25-904Z",
+      "staleRunningCount": 0,
+      "durationMs": 15836
+    },
+    {
+      "scenarioId": "opa-failopen",
+      "iteration": 1,
+      "passed": true,
+      "failedTests": [],
+      "skippedTests": [],
+      "reportRunId": "qa-v4-agents-2026-04-23T16-59-41-766Z",
+      "staleRunningCount": 0,
+      "durationMs": 16072
+    },
+    {
+      "scenarioId": "opa-failopen",
+      "iteration": 2,
+      "passed": true,
+      "failedTests": [],
+      "skippedTests": [],
+      "reportRunId": "qa-v4-agents-2026-04-23T16-59-57-765Z",
+      "staleRunningCount": 0,
+      "durationMs": 16103
+    },
+    {
+      "scenarioId": "opa-failopen",
+      "iteration": 3,
+      "passed": true,
+      "failedTests": [],
+      "skippedTests": [],
+      "reportRunId": "qa-v4-agents-2026-04-23T17-00-13-758Z",
+      "staleRunningCount": 0,
+      "durationMs": 15733
+    }
+  ]
+}

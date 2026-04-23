@@ -1,14 +1,54 @@
 import type { TenantId } from "@/types";
 
 /**
- * Pluggable provider-specific scanners. Implementations live alongside this
- * file; swap or add new adapters without changing Inngest flow shape.
+ * Shared adapter contracts for mock + future real scanners.
  */
-export type ScanContext = { tenantId: TenantId };
+export type ScannerAdapterId = "mock" | "nmap" | "zap" | "trivy" | "osv";
+export type ScannerType = "mock" | "network" | "web" | "vulnerability";
+export type TargetType =
+  | "url"
+  | "domain"
+  | "hostname"
+  | "ip"
+  | "cidr"
+  | "webapp"
+  | "repo"
+  | "cloud_account"
+  | "container_image"
+  | "package_manifest"
+  | "dependency_manifest";
 
-export type ScanResult = { adapterId: string; summary: string };
+export type ScanContext = {
+  tenantId: TenantId;
+  scanTargetId: string;
+  targetType: string;
+  targetValue: string;
+};
+
+export type ScannerFinding = {
+  severity: string;
+  category: string;
+  title: string;
+  description: string;
+  evidence: Record<string, unknown>;
+};
+
+export type ScannerRunResult = {
+  scanner: ScannerAdapterId;
+  scannerName: string;
+  scannerType: ScannerType;
+  findings: ScannerFinding[];
+};
+
+export type ScannerMetadata = {
+  name: string;
+  type: ScannerType;
+  supportedTargetTypes: TargetType[];
+  implemented: boolean;
+};
 
 export interface ScannerAdapter {
-  readonly id: string;
-  run(ctx: ScanContext): Promise<ScanResult>;
+  readonly id: ScannerAdapterId;
+  readonly metadata: ScannerMetadata;
+  run(ctx: ScanContext): Promise<ScannerRunResult>;
 }

@@ -15,3 +15,104 @@ body {
 main {
   padding: 1.5rem;
 }
+
+.sw-form {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 560px;
+}
+
+.sw-field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.sw-input {
+  width: 100%;
+  padding: 0.5rem;
+}
+
+.sw-button {
+  padding: 0.6rem 1rem;
+}
+
+.sw-success {
+  color: green;
+}
+
+.sw-error {
+  color: crimson;
+}
+
+.sw-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.sw-table th,
+.sw-table td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.sw-sev {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+.sw-sev-critical {
+  background: #5a0f0f;
+  color: #fff;
+}
+
+.sw-sev-high {
+  background: #b42318;
+  color: #fff;
+}
+
+.sw-sev-medium {
+  background: #b54708;
+  color: #fff;
+}
+
+.sw-sev-low {
+  background: #1f6f8b;
+  color: #fff;
+}
+
+.sw-sev-info {
+  background: #475467;
+  color: #fff;
+}
+
+.sw-kpi-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.sw-kpi-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: #fff;
+}
+
+.sw-kpi-card h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.sw-kpi-value {
+  margin: 0.35rem 0 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
