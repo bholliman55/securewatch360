@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "inngest:dev": "npx --ignore-scripts=false inngest-cli@latest dev -u http://localhost:3000/api/inngest",
+    "inngest:dev": "node scripts/inngest-dev.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

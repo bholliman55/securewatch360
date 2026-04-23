@@ -277,6 +277,12 @@ Terminal 2:
 npm run inngest:dev
 ```
 
+If Next.js runs on a non-default port, set the Inngest app URL before starting:
+
+```bash
+INNGEST_APP_URL=http://localhost:3001/api/inngest npm run inngest:dev
+```
+
 ## Run OPA locally for development
 
 v4 supports OPA through an OPA-compatible HTTP endpoint. You can still run vanilla OPA locally to author/test Rego policies.
