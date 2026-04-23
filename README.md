@@ -91,6 +91,13 @@ Awareness signal ingestion endpoint:
 - stores real-world/company security signals as evidence rows (`evidence_type=awareness_signal`)
 - signals are automatically consumed by scan workflow training-plan generation
 
+Awareness training dispatch endpoint:
+
+- `POST /api/awareness/training/dispatch`
+- reads latest completed scan run's `awarenessTrainingPlan`
+- creates per-topic dispatch evidence rows (`evidence_type=awareness_training_dispatch`)
+- records auditable dispatch event for delivery channels (`email`, `slack`, `lms`)
+
 ## Why decisioning is centralized
 
 Decisioning is centralized in `evaluateDecision()` so policy behavior is not duplicated across:
