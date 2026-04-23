@@ -92,6 +92,13 @@ Post-remediation revalidation workflow:
 - triggers a new `securewatch/scan.requested` event as `post_remediation` revalidation
 - writes audit logs for queued/skipped revalidation outcomes
 
+Automatic incident progression on clean resolution:
+
+- when a finding transitions to `resolved`, incident state can auto-progress
+  - `remediated -> validated -> rejoined` (or `validated -> rejoined`)
+- requires completed remediation action linkage
+- records incident auto-progression and lifecycle audit events
+
 Awareness signal ingestion endpoint:
 
 - `POST /api/awareness/signals/ingest`
