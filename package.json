@@ -13,7 +13,8 @@
     "qa:v4:e2e": "npx tsx scripts/qa-v4-e2e.ts",
     "qa:v4:agents": "npx tsx scripts/qa-v4-agents-e2e.ts",
     "qa:v4:hardening": "npx tsx scripts/qa-v4-hardening.ts",
-    "qa:v4:chaos": "npx tsx scripts/qa-v4-chaos.ts"
+    "qa:v4:chaos": "npx tsx scripts/qa-v4-chaos.ts",
+    "qa:policy-pack": "npx tsx scripts/qa-policy-pack-validate.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

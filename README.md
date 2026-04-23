@@ -177,6 +177,18 @@ Policy pack IaC export (for pipelines or `api_mw_connector`):
 - `GET /api/policy/export/manifest?tenantId=<uuid>&framework=<optional>&download=1`
   - returns JSON manifest (`securewatch360.policy_pack_manifest`) for integration layers
 
+Machine auth for catalog + exports (optional, for `api_mw_connector`):
+
+- set `POLICY_PACK_EXPORT_TOKEN` and `POLICY_PACK_EXPORT_TENANT_IDS` (comma-separated tenant UUID allowlist)
+- call with `Authorization: Bearer <POLICY_PACK_EXPORT_TOKEN>` and a permitted `tenantId`
+- see `docs/API-MW-CONNECTOR.md`
+
+Validate policy pack data locally (DB + migrations, no HTTP server):
+
+```bash
+npm run qa:policy-pack
+```
+
 CVE catalog and linkage:
 
 - scanner findings now auto-extract CVE identifiers into:

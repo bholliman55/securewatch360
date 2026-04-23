@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { authorizePolicyPackExportRequest } from "@/lib/policyExportAuth";
 import { requireTenantAccess } from "@/lib/tenant-guard";
 import {
   buildAnsibleRolesPlaybook,
@@ -24,7 +25,8 @@ export async function GET(request: Request) {
       tenantId,
       allowedRoles: ["owner", "admin", "analyst", "viewer"],
     });
-    if (!guard.ok) {
+    const serviceOk = authorizePolicyPackExportRequest(request, tenantId);
+    if (!guard.ok && !serviceOk) {
       return NextResponse.json({ ok: false, error: guard.error }, { status: guard.status });
     }
 
