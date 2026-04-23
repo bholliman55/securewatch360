@@ -27,6 +27,9 @@ yarn-error.log*
 .DS_Store
 *.tsbuildinfo
 
+# OWASP ZAP Docker baseline (scripts/zap-baseline.cmd bind mount)
+/.zap-wrk/
+
 # local NIST CSF XLSX extract (see scripts/extract-nist-csf20-from-xlsx.mjs)
 scripts/.csf20-unzipped/
 scripts/.csf20-debug-rows.json
