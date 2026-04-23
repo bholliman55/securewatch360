@@ -341,6 +341,24 @@ Optional tuning:
 - `QA_MAX_ATTEMPTS` (default `20`)
 - `QA_POLL_INTERVAL_MS` (default `3000`)
 
+### Run v4 chaos QA (monkey testing)
+
+Chaos test randomly triggers scans and monitoring alerts across repeated iterations, then fails if any iteration fails or stale running scan runs are detected.
+
+```bash
+npm run qa:v4:chaos
+```
+
+Optional tuning:
+
+- `CHAOS_ITERATIONS` (default `12`)
+- `CHAOS_POLL_ATTEMPTS` (default `40`)
+- `CHAOS_POLL_INTERVAL_MS` (default `3000`)
+- `CHAOS_CREATION_ATTEMPTS` (default `30`) - wait attempts for scan run creation after trigger
+- `CHAOS_CREATION_INTERVAL_MS` (default `1000`)
+- `CHAOS_STALE_MINUTES` (default `10`)
+- `CHAOS_TARGETS` (comma-separated targets; defaults to `QA_TARGET_URL` or `https://example.com`)
+
 ## Known limitations
 
 - Not all routes/pages are fully role-hardened and standardized yet.
