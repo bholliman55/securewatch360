@@ -34,6 +34,34 @@ function fillCommandTemplate(
     .replaceAll("{{actionType}}", context.actionType);
 }
 
+function adapterEnvSegment(adapterKey: string | undefined): string {
+  if (!adapterKey || typeof adapterKey !== "string" || adapterKey.trim().length === 0) {
+    return "DEFAULT";
+  }
+  return adapterKey
+    .trim()
+    .replace(/[^a-zA-Z0-9]+/g, "_")
+    .replace(/_+/g, "_")
+    .toUpperCase();
+}
+
+function resolveCommandForStep(args: {
+  adapterKey: string | undefined;
+  step: "ISOLATE" | "VLAN" | "PATCH" | "REIMAGE" | "DEFAULT";
+  legacyEnv: string | undefined;
+}): string | undefined {
+  const seg = adapterEnvSegment(args.adapterKey);
+  const key = `REMEDIATION_EXEC_${seg}_${args.step}_COMMAND`;
+  const specific = process.env[key];
+  if (typeof specific === "string" && specific.trim().length > 0) {
+    return specific;
+  }
+  if (typeof args.legacyEnv === "string" && args.legacyEnv.trim().length > 0) {
+    return args.legacyEnv;
+  }
+  return undefined;
+}
+
 async function buildExecutionSteps(args: {
   actionType: string;
   dryRun: boolean;
@@ -41,6 +69,7 @@ async function buildExecutionSteps(args: {
   tenantId: string;
   findingId: string;
   target: string;
+  adapterKey: string | undefined;
 }): Promise<ExecutionStep[]> {
   const context = {
     target: args.target,
@@ -49,6 +78,7 @@ async function buildExecutionSteps(args: {
     actionType: args.actionType,
   };
   const steps: ExecutionStep[] = [];
+  const adapter = args.adapterKey;
 
   const runTemplateStep = async (
     stepName: string,
@@ -57,6 +87,14 @@ async function buildExecutionSteps(args: {
   ): Promise<ExecutionStep> => {
     if (args.dryRun) {
       return { name: stepName, status: "simulated", detail: fallbackDetail };
+    }
+    if (adapter === "ticketing" && (!commandTemplate || commandTemplate.trim().length === 0)) {
+      return {
+        name: stepName,
+        status: "skipped",
+        detail:
+          "Adapter `ticketing` does not use local shell steps by default; use a connector (e.g. API) or set an explicit REMEDIATION_EXEC_*_COMMAND.",
+      };
     }
     if (!commandTemplate || commandTemplate.trim().length === 0) {
       return {
@@ -78,44 +116,69 @@ async function buildExecutionSteps(args: {
 
   if (args.actionType === "isolate") {
     if (args.containment?.takeOffline) {
+      const cmd = resolveCommandForStep({
+        adapterKey: adapter,
+        step: "ISOLATE",
+        legacyEnv: process.env.REMEDIATION_EXEC_ISOLATE_COMMAND,
+      });
       steps.push(
         await runTemplateStep(
           "device.offline",
-          process.env.REMEDIATION_EXEC_ISOLATE_COMMAND,
+          cmd,
           "Device isolation requested."
         )
       );
     }
     if (args.containment?.vlanQuarantine) {
+      const cmd = resolveCommandForStep({
+        adapterKey: adapter,
+        step: "VLAN",
+        legacyEnv: process.env.REMEDIATION_EXEC_VLAN_COMMAND,
+      });
       steps.push(
         await runTemplateStep(
           "network.vlan.quarantine",
-          process.env.REMEDIATION_EXEC_VLAN_COMMAND,
+          cmd,
           "Quarantine VLAN assignment requested."
         )
       );
     }
   } else if (args.actionType === "patch") {
+    const cmd = resolveCommandForStep({
+      adapterKey: adapter,
+      step: "PATCH",
+      legacyEnv: process.env.REMEDIATION_EXEC_PATCH_COMMAND,
+    });
     steps.push(
       await runTemplateStep(
         "remediation.patch",
-        process.env.REMEDIATION_EXEC_PATCH_COMMAND,
+        cmd,
         "Patch action requested."
       )
     );
   } else if (args.actionType === "reimage") {
+    const cmd = resolveCommandForStep({
+      adapterKey: adapter,
+      step: "REIMAGE",
+      legacyEnv: process.env.REMEDIATION_EXEC_REIMAGE_COMMAND,
+    });
     steps.push(
       await runTemplateStep(
         "remediation.reimage",
-        process.env.REMEDIATION_EXEC_REIMAGE_COMMAND,
+        cmd,
         "Reimage action requested."
       )
     );
   } else {
+    const cmd = resolveCommandForStep({
+      adapterKey: adapter,
+      step: "DEFAULT",
+      legacyEnv: process.env.REMEDIATION_EXEC_DEFAULT_COMMAND,
+    });
     steps.push(
       await runTemplateStep(
         "remediation.execute",
-        process.env.REMEDIATION_EXEC_DEFAULT_COMMAND,
+        cmd,
         `Executed remediation action type ${args.actionType}.`
       )
     );
@@ -191,6 +254,15 @@ export async function executeRemediationActionById(input: {
   const payload = (remediation.execution_payload ?? {}) as Record<string, unknown>;
   const containment = (payload.containment ?? null) as Record<string, unknown> | null;
   const execution = (payload.execution ?? {}) as Record<string, unknown>;
+  const integration = (payload.integration ?? null) as Record<string, unknown> | null;
+  const adapterKey =
+    typeof integration?.adapterKey === "string" && integration.adapterKey.trim().length > 0
+      ? integration.adapterKey.trim()
+      : undefined;
+  const connector =
+    typeof integration?.connector === "string" && integration.connector.trim().length > 0
+      ? integration.connector.trim()
+      : undefined;
   const target =
     (typeof execution.targetValue === "string" && execution.targetValue.trim().length > 0
       ? execution.targetValue
@@ -205,6 +277,7 @@ export async function executeRemediationActionById(input: {
       tenantId: remediation.tenant_id,
       findingId: remediation.finding_id,
       target,
+      adapterKey,
     });
   } catch (error) {
     const failedAt = new Date().toISOString();
@@ -238,6 +311,14 @@ export async function executeRemediationActionById(input: {
     actionType: remediation.action_type,
     mode: remediation.execution_mode,
     target,
+    integration:
+      adapterKey || connector
+        ? {
+            adapterKey: adapterKey ?? null,
+            connector: connector ?? null,
+            commandResolution: "adapter_env_with_legacy_fallback",
+          }
+        : undefined,
     steps: executionSteps,
     note: note || null,
   };
