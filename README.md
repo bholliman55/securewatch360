@@ -183,29 +183,11 @@ Machine auth for catalog + exports (optional, for `api_mw_connector`):
 - call with `Authorization: Bearer <POLICY_PACK_EXPORT_TOKEN>` and a permitted `tenantId`
 - see `docs/API-MW-CONNECTOR.md`
 
-Regenerate the bundled SQL catalog after changing files under `data/policy-catalog/`:
-
-```bash
-npm run generate:policy-pack-sql
-```
-
 Validate policy pack data locally (DB + migrations, no HTTP server):
 
 ```bash
 npm run qa:policy-pack
 ```
-
-## Client learning loop (continuous improvement)
-
-Tenant interactions that teach us what to build or fix are stored in `client_interaction_learnings` and tied to **triage** and **target release** so they feed the next version, not one-off notes.
-
-- **Record** (analyst+): `POST /api/client-learnings` with `tenantId`, `source`, `interactionKind`, `title`, optional `body`, `structuredSignals`, `impact`, `productArea`, `targetRelease`, and optional links to a finding/entity.
-- **List** (viewer+): `GET /api/client-learnings?tenantId=<uuid>&triageStatus=<optional>&limit=<optional>`
-- **Triage / ship** (owner|admin): `PATCH /api/client-learnings/{id}` with `tenantId` and fields such as `triageStatus`, `targetRelease`, `shippedInVersion`, `releaseNotesRef`
-
-Server-side code can also call `recordClientLearning()` from `src/lib/clientLearning.ts` (best-effort, does not throw).
-
-Release planning: review open learnings, assign `targetRelease`, move through `new` → `reviewed` → `planned` → `in_progress` → `shipped`, and set `shippedInVersion` when the behavior ships. See `docs/CLIENT-LEARNING-LOOP.md`.
 
 CVE catalog and linkage:
 

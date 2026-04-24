@@ -1,5 +1,4 @@
 import { writeAuditLog } from "@/lib/audit";
-import { recordClientLearning } from "@/lib/clientLearning";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 
 export type AwarenessSignalType = "real_world" | "company";
@@ -57,24 +56,6 @@ export async function ingestAwarenessSignals(input: {
       source: input.source,
       count: signals.length,
     },
-  });
-
-  await recordClientLearning({
-    tenantId: input.tenantId,
-    source: "api",
-    interactionKind: "feedback",
-    title: `Awareness signals ingested (${input.signalType})`,
-    body: `Captured ${signals.length} awareness signal(s) from ${input.source}.`,
-    structuredSignals: {
-      signalType: input.signalType,
-      source: input.source,
-      signalCount: signals.length,
-      sample: signals.slice(0, 5),
-    },
-    impact: "medium",
-    productArea: "awareness",
-    relatedEntityType: "system",
-    createdBy: input.actorUserId,
   });
 
   return {

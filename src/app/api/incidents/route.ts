@@ -101,3 +101,114 @@ export async function GET(request: Request) {
     );
   }
 }
+
+type CreateIncidentBody = {
+  tenantId?: unknown;
+  title?: unknown;
+  description?: unknown;
+  findingId?: unknown;
+};
+
+export async function POST(request: Request) {
+  try {
+    let body: CreateIncidentBody;
+    try {
+      body = (await request.json()) as CreateIncidentBody;
+    } catch {
+      return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const tenantId = typeof body.tenantId === "string" ? body.tenantId.trim() : "";
+    const title = typeof body.title === "string" ? body.title.trim() : "";
+    const description = typeof body.description === "string" ? body.description.trim() : "";
+    const findingIdRaw = typeof body.findingId === "string" ? body.findingId.trim() : "";
+
+    if (!tenantId || !isUuid(tenantId)) {
+      return NextResponse.json({ ok: false, error: "tenantId must be a valid UUID" }, { status: 400 });
+    }
+    if (title.length === 0) {
+      return NextResponse.json({ ok: false, error: "title is required" }, { status: 400 });
+    }
+    if (title.length > 500) {
+      return NextResponse.json({ ok: false, error: "title must be 500 characters or less" }, { status: 400 });
+    }
+    let findingId: string | null = null;
+    if (findingIdRaw.length > 0) {
+      if (!isUuid(findingIdRaw)) {
+        return NextResponse.json({ ok: false, error: "findingId must be a valid UUID" }, { status: 400 });
+      }
+      findingId = findingIdRaw;
+    }
+
+    const guard = await requireTenantAccess({
+      tenantId,
+      allowedRoles: ["owner", "admin", "analyst"],
+    });
+    if (!guard.ok) {
+      return NextResponse.json({ ok: false, error: guard.error }, { status: guard.status });
+    }
+
+    const supabase = getSupabaseAdminClient();
+
+    if (findingId) {
+      const { data: finding, error: findingError } = await supabase
+        .from("findings")
+        .select("id")
+        .eq("id", findingId)
+        .eq("tenant_id", tenantId)
+        .maybeSingle();
+      if (findingError || !finding) {
+        return NextResponse.json(
+          { ok: false, error: "findingId not found for this tenant" },
+          { status: 404 }
+        );
+      }
+    }
+
+    const { data, error } = await supabase
+      .from("evidence_records")
+      .insert({
+        tenant_id: tenantId,
+        finding_id: findingId,
+        scan_run_id: null,
+        control_framework: "incident",
+        control_id: "manual",
+        evidence_type: "incident_response",
+        title,
+        description: description.length > 0 ? description : null,
+        payload: {
+          incident: {
+            state: "open",
+          },
+        },
+      })
+      .select("id, tenant_id, finding_id, title, description, created_at")
+      .single();
+
+    if (error || !data) {
+      throw new Error(error?.message ?? "Insert failed");
+    }
+
+    return NextResponse.json(
+      {
+        ok: true,
+        incident: {
+          id: data.id,
+          tenantId: data.tenant_id,
+          findingId: data.finding_id,
+          title: data.title,
+          description: data.description,
+          state: "open" as const,
+          createdAt: data.created_at,
+        },
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json(
+      { ok: false, error: "Failed to create incident", message },
+      { status: 500 }
+    );
+  }
+}

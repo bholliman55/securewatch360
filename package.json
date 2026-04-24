@@ -14,9 +14,7 @@
     "qa:v4:agents": "npx tsx scripts/qa-v4-agents-e2e.ts",
     "qa:v4:hardening": "npx tsx scripts/qa-v4-hardening.ts",
     "qa:v4:chaos": "npx tsx scripts/qa-v4-chaos.ts",
-    "qa:v1:connectors:real": "npx tsx scripts/qa-v1-connectors-real.ts",
     "qa:policy-pack": "npx tsx scripts/qa-policy-pack-validate.ts",
-    "generate:policy-pack-sql": "node scripts/generate-policy-pack-full-sql.mjs",
     "ui:dev": "npm run dev --prefix ui",
     "ui:build": "npm run build:console --prefix ui && node scripts/sync-ui.mjs"
   },
