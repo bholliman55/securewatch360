@@ -54,7 +54,9 @@ export async function GET(request: Request) {
     if (ids.length > 0) {
       const { data: cves, error: cvesError } = await supabase
         .from("cve_catalog")
-        .select("id, severity, description, reference_url, cvss_score, source, last_seen_at")
+        .select(
+          "id, severity, description, reference_url, cvss_score, source, last_seen_at, kev_cisa, epss_score, epss_percentile, priority_tier, enriched_at"
+        )
         .in("id", ids);
       if (cvesError) {
         throw new Error(cvesError.message);

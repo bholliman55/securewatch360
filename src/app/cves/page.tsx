@@ -6,6 +6,11 @@ type CveListItem = {
     severity?: string | null;
     cvss_score?: number | null;
     description?: string | null;
+    kev_cisa?: boolean;
+    epss_score?: number | null;
+    epss_percentile?: number | null;
+    priority_tier?: number | null;
+    enriched_at?: string | null;
   };
   findingId: string;
   scannerSource: string;
@@ -71,7 +76,11 @@ export default async function CvesPage({ searchParams }: PageProps) {
   return (
     <main>
       <h1>CVEs</h1>
-      <p>CVE links for the tenant, joined to catalog metadata when available.</p>
+      <p>
+        CVE links for the tenant, joined to catalog metadata when available. To pull CISA KEV + FIRST
+        EPSS into <code>cve_catalog</code>, POST to <code>/api/cves/enrich</code> with{" "}
+        <code>tenantId</code> (analyst+).
+      </p>
 
       <form method="GET" action="/cves" className="sw-form">
         <label className="sw-field">
@@ -107,6 +116,9 @@ export default async function CvesPage({ searchParams }: PageProps) {
             <tr>
               <th>CVE</th>
               <th>Severity</th>
+              <th>KEV</th>
+              <th>EPSS %ile</th>
+              <th>Tier</th>
               <th>Finding</th>
               <th>Package</th>
               <th>Linked</th>
@@ -116,6 +128,8 @@ export default async function CvesPage({ searchParams }: PageProps) {
             {rows.map((r) => {
               const c = r.cve;
               const id = typeof c?.id === "string" ? c.id : "—";
+              const p = c?.epss_percentile;
+              const pStr = typeof p === "number" && Number.isFinite(p) ? (p * 100).toFixed(1) + "%" : "—";
               return (
                 <tr key={`${r.findingId}-${id}`}>
                   <td>
@@ -126,6 +140,9 @@ export default async function CvesPage({ searchParams }: PageProps) {
                       {typeof c?.severity === "string" ? c.severity : "—"}
                     </span>
                   </td>
+                  <td>{c?.kev_cisa ? "Yes" : "—"}</td>
+                  <td>{pStr}</td>
+                  <td>{c?.priority_tier ?? "—"}</td>
                   <td>
                     <code>{r.findingId}</code>
                   </td>

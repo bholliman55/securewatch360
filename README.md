@@ -199,6 +199,8 @@ CVE catalog and linkage:
   - `finding_cves` (tenant finding-to-CVE links)
 - `GET /api/cves?tenantId=<uuid>&cveId=<optional>&limit=<optional>`
   - returns tenant CVE links with scanner/package/version context
+- `POST /api/cves/enrich` with `{ "tenantId", "limit?", "forceAll?" }` (analyst+)
+  - loads CISA KEV and FIRST EPSS (rate-limited) into `cve_catalog` (`kev_cisa`, `epss_percentile`, `priority_tier`, `enriched_at`)
 
 Notes:
 
