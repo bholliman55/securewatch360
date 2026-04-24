@@ -8,6 +8,9 @@ type RiskExceptionRow = {
   expires_at: string | null;
   created_at: string;
   updated_at: string;
+  review_sla_due_at: string | null;
+  sla_breached_at: string | null;
+  escalation_level: number;
 };
 
 type RiskExceptionsResponse = {
@@ -102,6 +105,8 @@ export default async function RiskExceptionsPage({ searchParams }: PageProps) {
             <tr>
               <th>Created At</th>
               <th>Status</th>
+              <th>Review SLA</th>
+              <th>SLA breach</th>
               <th>Finding</th>
               <th>Justification</th>
               <th>Expiration</th>
@@ -113,6 +118,8 @@ export default async function RiskExceptionsPage({ searchParams }: PageProps) {
               <tr key={exception.id}>
                 <td>{formatDate(exception.created_at)}</td>
                 <td>{exception.status}</td>
+                <td>{formatDate(exception.review_sla_due_at)}</td>
+                <td>{formatDate(exception.sla_breached_at)}</td>
                 <td>{exception.finding_id}</td>
                 <td>{exception.justification}</td>
                 <td>{formatDate(exception.expires_at)}</td>

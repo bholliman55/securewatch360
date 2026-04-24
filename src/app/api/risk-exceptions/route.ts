@@ -3,6 +3,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase";
 import { requireTenantAccess } from "@/lib/tenant-guard";
 import { requireTenantAccessForFinding } from "@/lib/tenant-guard";
 import { writeAuditLog } from "@/lib/audit";
+import { addHoursIsoString, getRiskExceptionReviewSlaHours } from "@/lib/sla";
 import { RISK_EXCEPTION_STATUSES, type RiskExceptionStatus } from "@/types/risk-exception";
 
 type RequestRiskExceptionBody = {
@@ -96,6 +97,8 @@ export async function POST(request: Request) {
     }
 
     const now = new Date().toISOString();
+    const reviewH = getRiskExceptionReviewSlaHours();
+    const reviewSlaDueAt = addHoursIsoString(now, reviewH);
     const { data, error } = await supabase
       .from("risk_exceptions")
       .insert({
@@ -107,9 +110,11 @@ export async function POST(request: Request) {
         justification,
         expires_at: parsedExpiresAt.value,
         updated_at: now,
+        review_sla_due_at: reviewSlaDueAt,
+        escalation_level: 0,
       })
       .select(
-        "id, tenant_id, finding_id, requested_by_user_id, approved_by_user_id, status, justification, expires_at, created_at, updated_at"
+        "id, tenant_id, finding_id, requested_by_user_id, approved_by_user_id, status, justification, expires_at, created_at, updated_at, review_sla_due_at, sla_breached_at, escalation_level"
       )
       .single();
 
@@ -189,7 +194,7 @@ export async function GET(request: Request) {
     let query = supabase
       .from("risk_exceptions")
       .select(
-        "id, tenant_id, finding_id, requested_by_user_id, approved_by_user_id, status, justification, expires_at, created_at, updated_at"
+        "id, tenant_id, finding_id, requested_by_user_id, approved_by_user_id, status, justification, expires_at, created_at, updated_at, review_sla_due_at, sla_breached_at, escalation_level"
       )
       .eq("tenant_id", tenantId)
       .order("created_at", { ascending: false })

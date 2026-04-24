@@ -4,6 +4,7 @@ import { remediationExecutionRequested } from "./remediation-execution-requested
 import { scanTenantRequested } from "./scan-tenant";
 import { scheduledDailyScans, scheduledWeeklyScans } from "./scheduled-scans";
 import { awarenessSignalsRefresh } from "./awareness-signals-refresh";
+import { approvalRiskSlaSweep } from "./approval-risk-sla-sweep";
 
 /**
  * All functions registered in one place so `serve()` stays a one-liner.
@@ -17,4 +18,5 @@ export const inngestFunctions = [
   scheduledDailyScans,
   scheduledWeeklyScans,
   awarenessSignalsRefresh,
+  approvalRiskSlaSweep,
 ];
