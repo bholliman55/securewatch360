@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { requireTenantAccess } from "@/lib/tenant-guard";
 import { writeAuditLog } from "@/lib/audit";
+import { recordClientLearning } from "@/lib/clientLearning";
 import {
   createConnectWiseServiceTicket,
   isConnectWiseConfigured,
@@ -178,6 +179,26 @@ export async function POST(request: Request) {
       action: "connectwise.ticket.create",
       summary: `ConnectWise service ticket #${ticket.id} created: ${title}`,
       payload: { connectwiseTicketId: ticket.id, priority, incidentId: incidentId ?? null },
+    });
+
+    await recordClientLearning({
+      tenantId,
+      source: "integration",
+      interactionKind: "feature_request",
+      title: `ConnectWise ticket created: ${title}`,
+      body: description.length > 0 ? description : "Ticket created from SecureWatch360 integration flow.",
+      structuredSignals: {
+        connectwiseTicketId: ticket.id,
+        priority,
+        incidentId,
+        requestedStatus: statusExtra || null,
+        requestedOwner: assignedTo || null,
+      },
+      impact: priority === "critical" || priority === "high" ? "high" : "medium",
+      productArea: "integrations",
+      relatedEntityType: incidentId ? "incident_response" : "system",
+      relatedEntityId: incidentId,
+      createdBy: guard.userId,
     });
 
     return NextResponse.json(
