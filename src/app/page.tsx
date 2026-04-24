@@ -90,7 +90,7 @@ export default function HomePage() {
       </p>
       <p>
         <Link href="/login">Login</Link> | <Link href="/signup">Sign up</Link> |{" "}
-        <Link href="/account">Account</Link> | <Link href="/console/">SOC Console (UI)</Link> |{" "}
+        <Link href="/account">Account</Link> | <Link href="/analyst">Analyst console</Link> |{" "}
         <Link href="/command-center">Command Center</Link> |{" "}
         <Link href="/policy-decisions">Policy Decisions</Link> |{" "}
         <Link href="/approval-requests">Approval Requests</Link> |{" "}
