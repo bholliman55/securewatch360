@@ -207,7 +207,16 @@ export async function evaluateDecision(input: DecisionInput): Promise<DecisionOu
   } catch (error) {
     // If OPA provider fails, fail open to rules for v4 bootstrap safety.
     if (provider.name !== "rules") {
-      return evaluateDecisionWithRules(input);
+      const fallback = await evaluateDecisionWithRules(input);
+      return {
+        ...fallback,
+        metadata: {
+          ...(fallback.metadata ?? {}),
+          sw360_decision_engine_fallback: "rules_after_provider_error",
+          sw360_decision_engine_provider: provider.name,
+          sw360_decision_engine_error: error instanceof Error ? error.message : String(error),
+        },
+      };
     }
     throw error;
   }

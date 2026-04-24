@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { FINDING_STATUSES } from "@/lib/statuses";
+import { API_TENANT_ROLES } from "@/lib/apiRoleMatrix";
 import { requireTenantAccess } from "@/lib/tenant-guard";
 
 const allowedSeverities = ["info", "low", "medium", "high", "critical"] as const;
@@ -70,7 +71,7 @@ export async function GET(request: Request) {
 
     const guard = await requireTenantAccess({
       tenantId,
-      allowedRoles: ["owner", "admin", "analyst", "viewer"],
+      allowedRoles: [...API_TENANT_ROLES.read],
     });
     if (!guard.ok) {
       return NextResponse.json({ ok: false, error: guard.error }, { status: guard.status });

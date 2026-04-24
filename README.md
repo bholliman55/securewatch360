@@ -201,7 +201,8 @@ Notes:
 
 - provider selection uses `DECISION_ENGINE_PROVIDER` (`rules` default, `opa` optional)
 - OPA integration expects an OPA-compatible HTTP endpoint via `OPA_POLICY_EVAL_URL`
-- if OPA path fails, v4 currently fails open to fallback rules
+- if OPA path fails, v4 currently fails open to fallback rules; on hard provider errors, `evaluateDecision` tags fallback output with `sw360_decision_engine_*` metadata
+- per-adapter execution hooks: `REMEDIATION_EXEC_{ADAPTERKEY}_{STEP}_COMMAND` (e.g. `REMEDIATION_EXEC_ANSIBLE_PATCH_COMMAND`) with legacy `REMEDIATION_EXEC_*_COMMAND` still supported; see `docs/RISKS-AND-MITIGATIONS.md`
 
 ## Approvals and risk exceptions
 

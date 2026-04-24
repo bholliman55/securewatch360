@@ -216,7 +216,14 @@ export async function evaluateAgainstPolicies(
     const message = error instanceof Error ? error.message : "OPA evaluation failed";
     errors.push(message);
     return {
-      decision: fallbackDecision,
+      decision: {
+        ...fallbackDecision,
+        metadata: {
+          ...(fallbackDecision.metadata ?? {}),
+          sw360_opa_endpoint_error: true,
+          sw360_opa_error_message: message,
+        },
+      },
       fallbackDecision,
       opaDecision: null,
       engine: "fallback",
