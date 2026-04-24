@@ -44,6 +44,8 @@ Core components:
 - **Decisioning layer:** `src/lib/decisionEngine.ts`, `src/lib/policyEvaluationService.ts`, `src/lib/policyPrecedence.ts`
 - **Agent hooks:** `src/lib/complianceAgent.ts`, `src/lib/remediationAgent.ts`
 - **Data layer:** Supabase/Postgres migrations in `supabase/migrations`
+- **Access:** Supabase Auth + `tenant_users` roles; enterprise SSO/SCIM notes: `docs/SSO-SCIM-SETUP.md`
+- **Tenant roster API:** `GET /api/tenant-users?tenantId=…` (owner|admin) lists membership; SCIM discovery: `GET /api/scim/v2/ServiceProviderConfig`
 
 Primary v4 workflow:
 
