@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { requireTenantAccess } from "@/lib/tenant-guard";
 import { writeAuditLog } from "@/lib/audit";
+import { addHoursIsoString, getApprovalSlaHours, getReminderOffsetHours } from "@/lib/sla";
 import { APPROVAL_REQUEST_STATUSES, APPROVAL_TYPES, type ApprovalType } from "@/types/approval";
 
 type CreateApprovalRequestBody = {
@@ -124,6 +125,10 @@ export async function POST(request: Request) {
     }
 
     const now = new Date().toISOString();
+    const approvalSlaH = getApprovalSlaHours();
+    const slaDueAt = addHoursIsoString(now, approvalSlaH);
+    const reminderH = getReminderOffsetHours(approvalSlaH);
+    const slaFirstReminderAt = addHoursIsoString(now, reminderH);
     const { data, error } = await supabase
       .from("approval_requests")
       .insert({
@@ -138,9 +143,12 @@ export async function POST(request: Request) {
         request_payload: requestPayload,
         response_payload: {},
         updated_at: now,
+        sla_due_at: slaDueAt,
+        sla_first_reminder_at: slaFirstReminderAt,
+        escalation_level: 0,
       })
       .select(
-        "id, tenant_id, finding_id, remediation_action_id, requested_by_user_id, assigned_approver_user_id, approval_type, status, reason, request_payload, response_payload, created_at, updated_at, resolved_at"
+        "id, tenant_id, finding_id, remediation_action_id, requested_by_user_id, assigned_approver_user_id, approval_type, status, reason, request_payload, response_payload, created_at, updated_at, resolved_at, sla_due_at, sla_first_reminder_at, sla_breached_at, escalation_level"
       )
       .single();
 
@@ -217,7 +225,7 @@ export async function GET(request: Request) {
     let query = supabase
       .from("approval_requests")
       .select(
-        "id, tenant_id, finding_id, remediation_action_id, requested_by_user_id, assigned_approver_user_id, approval_type, status, reason, request_payload, response_payload, created_at, updated_at, resolved_at"
+        "id, tenant_id, finding_id, remediation_action_id, requested_by_user_id, assigned_approver_user_id, approval_type, status, reason, request_payload, response_payload, created_at, updated_at, resolved_at, sla_due_at, sla_first_reminder_at, sla_breached_at, escalation_level"
       )
       .eq("tenant_id", tenantId)
       .order("created_at", { ascending: false })

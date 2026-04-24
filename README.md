@@ -212,6 +212,7 @@ Notes:
 - Stored in `approval_requests`.
 - Approval APIs support create/list/approve/reject flows.
 - Approval decisions are auditable and linked to finding/remediation entities.
+- SLA: `sla_due_at` / `sla_first_reminder_at` set on create from `APPROVAL_DEFAULT_SLA_HOURS` (default 72). Hourly Inngest `approval-risk-sla-sweep` sets `sla_breached_at` for pending items past due.
 
 ### Risk exceptions
 
@@ -219,6 +220,7 @@ Notes:
 - Stored in `risk_exceptions`.
 - Tracks justification, status lifecycle, optional expiration.
 - Finding `exception_status` is updated to keep triage state aligned.
+- Review SLA: `review_sla_due_at` on create from `RISK_EXCEPTION_REVIEW_SLA_HOURS` (default 168). Same scheduled sweep can mark `sla_breached_at` for `requested` rows past review due.
 
 ## Logical agents in v4
 

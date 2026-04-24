@@ -10,6 +10,9 @@ type ApprovalRequestRow = {
   response_payload: Record<string, unknown>;
   created_at: string;
   resolved_at: string | null;
+  sla_due_at: string | null;
+  sla_breached_at: string | null;
+  escalation_level: number;
 };
 
 type ApprovalRequestsResponse = {
@@ -116,6 +119,8 @@ export default async function ApprovalRequestsPage({ searchParams }: PageProps) 
             <tr>
               <th>Created At</th>
               <th>Status</th>
+              <th>SLA due</th>
+              <th>SLA breach</th>
               <th>Approver</th>
               <th>Linked Entity</th>
               <th>Reason</th>
@@ -127,6 +132,8 @@ export default async function ApprovalRequestsPage({ searchParams }: PageProps) 
               <tr key={request.id}>
                 <td>{formatDate(request.created_at)}</td>
                 <td>{request.status}</td>
+                <td>{formatDate(request.sla_due_at)}</td>
+                <td>{formatDate(request.sla_breached_at)}</td>
                 <td>{extractApprover(request)}</td>
                 <td>{renderLinkedEntity(request)}</td>
                 <td>{request.reason ?? "-"}</td>
