@@ -21,6 +21,11 @@ function isHumanInTheLoopEnabled(): boolean {
   return raw !== "false" && raw !== "0" && raw !== "off" && raw !== "no";
 }
 
+function extractExternalEventId(metadata: Record<string, unknown> | undefined): string | null {
+  const value = metadata?.externalEventId;
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
 /**
  * v1 alert-driven workflow:
  * 1) enrich incoming alert data
@@ -31,6 +36,7 @@ export const monitoringAlertReceived = inngest.createFunction(
   { event: "securewatch/monitoring.alert.received" as const },
   async ({ event, step, runId }) => {
     const payload: MonitoringAlertReceived = event.data;
+    const externalEventId = extractExternalEventId(payload.metadata);
     const supabase = getSupabaseAdminClient();
 
     const createdRun = await step.run("create-alert-run", async () => {
@@ -47,6 +53,7 @@ export const monitoringAlertReceived = inngest.createFunction(
             source: payload.source,
             alertType: payload.alertType,
             targetValue: payload.targetValue ?? null,
+            sourceEventId: externalEventId,
           },
         })
         .select("id")

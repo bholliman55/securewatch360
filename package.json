@@ -14,6 +14,7 @@
     "qa:v4:agents": "npx tsx scripts/qa-v4-agents-e2e.ts",
     "qa:v4:hardening": "npx tsx scripts/qa-v4-hardening.ts",
     "qa:v4:chaos": "npx tsx scripts/qa-v4-chaos.ts",
+    "qa:v1:connectors:real": "npx tsx scripts/qa-v1-connectors-real.ts",
     "qa:policy-pack": "npx tsx scripts/qa-policy-pack-validate.ts",
     "qa:iac": "npx tsx scripts/qa-iac-policy-pack-validate.ts",
     "qa:rego": "npx tsx scripts/qa-rego-opa-check.ts",
