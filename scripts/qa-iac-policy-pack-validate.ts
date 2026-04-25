@@ -65,7 +65,9 @@ function main() {
   console.info("[qa-iac] PASS — reference Terraform modules and/or Ansible roles validated");
 }
 
-main().catch((e) => {
+try {
+  main();
+} catch (e: unknown) {
   console.error("[qa-iac] FAIL:", e instanceof Error ? e.message : e);
   process.exit(1);
-});
+}
