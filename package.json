@@ -18,6 +18,11 @@
     "qa:iac": "npx tsx scripts/qa-iac-policy-pack-validate.ts",
     "qa:rego": "npx tsx scripts/qa-rego-opa-check.ts",
     "qa:policy-qa": "npm run qa:policy-pack && npm run qa:iac && npm run qa:rego",
+    "security:audit": "npm audit --audit-level=high",
+    "security:sast": "npx semgrep --config p/owasp-top-ten --config p/secrets --error",
+    "security:infra": "trivy fs --scanners vuln,misconfig,secret --severity HIGH,CRITICAL .",
+    "security:dast:local": "scripts\\zap-baseline.cmd -t http://host.docker.internal:3000 -m 2",
+    "security:baseline": "npm run security:audit && npm run security:sast && npm run security:infra",
     "ui:dev": "npm run dev --prefix ui",
     "ui:build": "npm run build:console --prefix ui && node scripts/sync-ui.mjs"
   },

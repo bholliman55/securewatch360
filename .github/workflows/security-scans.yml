@@ -1,0 +1,125 @@
+name: Security Scans
+
+on:
+  pull_request:
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "Optional DAST target URL override"
+        required: false
+        type: string
+  schedule:
+    # 02:30 UTC daily
+    - cron: "30 2 * * *"
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: security-scans-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline-security:
+    name: Baseline SCA/SAST/Infra
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Dependency audit (high+)
+        run: npm run security:audit
+
+      - name: Install Semgrep
+        run: python3 -m pip install --upgrade pip semgrep
+
+      - name: SAST scan with Semgrep
+        run: npm run security:sast
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,misconfig,secret
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+  nightly-dast:
+    name: Nightly DAST (OWASP ZAP)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    env:
+      TARGET_URL: ${{ inputs.target_url || secrets.ZAP_TARGET_URL }}
+    steps:
+      - name: Validate target URL is configured
+        run: |
+          if [ -z "$TARGET_URL" ]; then
+            echo "ZAP target URL is not configured. Set secret ZAP_TARGET_URL or pass workflow_dispatch input."
+            exit 1
+          fi
+
+      - name: Run OWASP ZAP baseline scan
+        run: |
+          docker run --rm \
+            -v "${PWD}:/zap/wrk" \
+            -t ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t "$TARGET_URL" \
+            -m 5 \
+            -J zap-report.json \
+            -w zap-report.md
+
+      - name: Upload ZAP reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-report
+          path: |
+            zap-report.json
+            zap-report.md
+
+  nightly-osint:
+    name: Nightly OSINT + Surface Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    env:
+      OSINT_DOMAIN: ${{ secrets.OSINT_PRIMARY_DOMAIN }}
+    steps:
+      - name: Validate OSINT domain is configured
+        run: |
+          if [ -z "$OSINT_DOMAIN" ]; then
+            echo "OSINT domain is not configured. Set secret OSINT_PRIMARY_DOMAIN."
+            exit 1
+          fi
+
+      - name: Passive subdomain enumeration (Amass)
+        run: |
+          docker run --rm caffix/amass:latest enum -passive -d "$OSINT_DOMAIN" > amass-subdomains.txt
+
+      - name: Nuclei scan discovered hosts
+        run: |
+          docker run --rm -v "${PWD}:/work" projectdiscovery/nuclei:latest \
+            -l /work/amass-subdomains.txt \
+            -severity medium,high,critical \
+            -o /work/nuclei-findings.txt
+
+      - name: Upload OSINT artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: osint-surface-report
+          path: |
+            amass-subdomains.txt
+            nuclei-findings.txt

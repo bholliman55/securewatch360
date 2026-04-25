@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { X } from 'lucide-react';
 import { ticketsService } from '../services/ticketsService';
 
@@ -44,7 +44,7 @@ export default function CreateTicketModal({
     });
   }, [isOpen, initialTitle, initialDescription]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!tenantId?.trim()) {

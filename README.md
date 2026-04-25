@@ -440,6 +440,31 @@ Optional tuning:
 - `CHAOS_STALE_MINUTES` (default `10`)
 - `CHAOS_TARGETS` (comma-separated targets; defaults to `QA_TARGET_URL` or `https://example.com`)
 
+## Security testing baseline (OWASP ZAP + Snyk + infra + OSINT)
+
+Security testing guidance and commands live in:
+
+- `docs/SECURITY-TESTING-PLAYBOOK.md`
+
+Recommended minimum weekly cadence:
+
+1. SCA: `snyk test` (or `npm audit` fallback)
+2. SAST: `semgrep` OWASP + secrets rules
+3. Infra/config/secrets: `trivy fs`
+4. DAST: `scripts/zap-baseline.cmd` against local/staging
+5. OSINT/attack surface: Amass + theHarvester + nuclei on approved domains only
+
+GitHub Actions workflow:
+
+- `.github/workflows/security-scans.yml`
+- PRs to `develop`: SCA + SAST + infra scans
+- Nightly/manual: ZAP DAST + OSINT surface scan
+
+Required repository secrets for scheduled/manual scans:
+
+- `ZAP_TARGET_URL` (staging URL for DAST)
+- `OSINT_PRIMARY_DOMAIN` (approved domain for passive OSINT/surface checks)
+
 ## Known limitations
 
 - Not all routes/pages are fully role-hardened and standardized yet.

@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, type ExecFileException } from "node:child_process";
 
 type RunProcessOptions = {
   timeoutMs?: number;
@@ -17,7 +17,7 @@ export function runProcess(
   const maxBuffer = options.maxBufferBytes ?? 10 * 1024 * 1024;
 
   return new Promise((resolve, reject) => {
-    execFile(command, args, { timeout, maxBuffer }, (error, stdout, stderr) => {
+    execFile(command, args, { timeout, maxBuffer }, (error: ExecFileException | null, stdout: string, stderr: string) => {
       if (error) {
         reject(
           new Error(

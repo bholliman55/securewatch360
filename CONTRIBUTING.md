@@ -13,6 +13,10 @@ This project follows a simplified Git Flow (see your team’s branching doc for 
 
 - `npm run typecheck` (or `npx tsc --noEmit`) passes.
 - `npm run build` passes.
+- Security checks pass for your scope:
+  - `npm audit --audit-level=high` (or `snyk test` when configured)
+  - `npx semgrep --config p/owasp-top-ten --error`
+  - `trivy fs --scanners vuln,misconfig,secret --severity HIGH,CRITICAL .`
 - New Inngest functions are exported from `src/inngest/functions/index.ts` and listed in the Inngest dashboard / Dev Server after deploy.
 
 ## Where to add code
