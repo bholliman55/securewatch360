@@ -5,6 +5,7 @@ import { scanTenantRequested } from "./scan-tenant";
 import { scheduledDailyScans, scheduledWeeklyScans } from "./scheduled-scans";
 import { awarenessSignalsRefresh } from "./awareness-signals-refresh";
 import { approvalRiskSlaSweep } from "./approval-risk-sla-sweep";
+import { compliancePostureDaily } from "./compliance-posture-daily";
 import { notificationDigest } from "./notification-digest";
 
 /**
@@ -20,5 +21,6 @@ export const inngestFunctions = [
   scheduledWeeklyScans,
   awarenessSignalsRefresh,
   approvalRiskSlaSweep,
+  compliancePostureDaily,
   notificationDigest,
 ];

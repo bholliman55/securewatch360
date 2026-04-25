@@ -12,7 +12,7 @@ function canRunOpa(): boolean {
   return spawnSync("opa", ["version"], { stdio: "ignore" }).status === 0;
 }
 
-function main() {
+async function main() {
   const requireOpa = process.env.CI === "true" || process.env.REQUIRE_OPA === "1";
   if (!canRunOpa()) {
     if (requireOpa) {
@@ -29,10 +29,17 @@ function main() {
     }
   }
 
+  const testRun = spawnSync("opa", ["test", REGO_EX], { cwd: REPO, stdio: "inherit" });
+  if (testRun.status !== 0) {
+    throw new Error(`[qa-rego] opa test failed for ${REGO_EX}`);
+  }
+
   console.info("[qa-rego] PASS — OPA check on policies/rego/seed and policies/rego/securewatch360");
 }
 
-main().catch((e) => {
+try {
+  main();
+} catch (e: unknown) {
   console.error("[qa-rego] FAIL:", e instanceof Error ? e.message : e);
   process.exit(1);
-});
+}

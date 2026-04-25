@@ -66,6 +66,7 @@ export const DECISION_REASONS = [
   "controlled_auto_remediation_allowed",
   "finding_already_resolved",
   "policy_not_matched",
+  "opa_endpoint_unavailable",
 ] as const;
 export type DecisionReason = (typeof DECISION_REASONS)[number];
 
