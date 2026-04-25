@@ -214,7 +214,7 @@ Notes:
 
 - provider selection uses `DECISION_ENGINE_PROVIDER` (`rules` default, `opa` optional)
 - OPA integration expects an OPA-compatible HTTP endpoint via `OPA_POLICY_EVAL_URL`
-- if OPA path fails, v4 currently fails open to fallback rules; on hard provider errors, `evaluateDecision` tags fallback output with `sw360_decision_engine_*` metadata
+- if `OPA_POLICY_EVAL_URL` is set but the OPA HTTP call fails (network, timeout, non-2xx) or the body is not a valid decision, evaluation uses engine `fallback` and sets metadata `sw360_opa_unavailable` / `sw360_opa_endpoint_error` (and `sw360_opa_error_message`). By default the **decision** still follows in-repo rules (fail-open to rules). Set `OPA_FAIL_ON_ENDPOINT_ERROR=true` for **fail-closed** behavior: **`escalate`** with **`requiresApproval: true`**, `autoRemediationAllowed: false`, `riskAcceptanceAllowed: false`, reason `opa_endpoint_unavailable`, plus `sw360_opa_fail_closed: true` in metadata (we use **escalate** rather than **block** so degraded policy service surfaces human review without a hard deny on the action enum). On hard **provider** errors outside this path, `evaluateDecision` may still tag output with `sw360_decision_engine_*` metadata
 - per-adapter execution hooks: `REMEDIATION_EXEC_{ADAPTERKEY}_{STEP}_COMMAND` (e.g. `REMEDIATION_EXEC_ANSIBLE_PATCH_COMMAND`) with legacy `REMEDIATION_EXEC_*_COMMAND` still supported; see `docs/RISKS-AND-MITIGATIONS.md`
 
 ## Approvals and risk exceptions
@@ -285,6 +285,8 @@ DECISION_ENGINE_PROVIDER=rules
 OPA_POLICY_EVAL_URL=
 OPA_POLICY_EVAL_TOKEN=
 OPA_POLICY_EVAL_TIMEOUT_MS=4000
+# When OPA URL is set: if true/1, OPA transport/HTTP/parse failures return escalate + approval (fail-closed); default false keeps rules fallback decision with OPA error metadata
+OPA_FAIL_ON_ENDPOINT_ERROR=
 
 # Remediation execution safety
 # true (default): require human approval for high-risk actions (e.g. isolate/config change)

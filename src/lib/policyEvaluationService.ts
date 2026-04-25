@@ -97,6 +97,54 @@ function resolveEndpointUrl(explicitUrl?: string): string | null {
   return null;
 }
 
+/** When true and `OPA_POLICY_EVAL_URL` is set, transport/HTTP/decision-parse failures return a non-permissive decision (see README). */
+function isOpaFailOnEndpointErrorEnabled(): boolean {
+  const v = process.env.OPA_FAIL_ON_ENDPOINT_ERROR?.trim().toLowerCase();
+  return v === "true" || v === "1";
+}
+
+function buildOpaUnavailableMetadata(
+  fallbackDecision: DecisionOutput,
+  message: string
+): Record<string, unknown> {
+  return {
+    ...(fallbackDecision.metadata ?? {}),
+    sw360_opa_unavailable: true,
+    sw360_opa_endpoint_error: true,
+    sw360_opa_error_message: message,
+  };
+}
+
+/**
+ * OPA was configured but the endpoint did not return a usable decision.
+ * Default: same as today (fallback rules decision + availability metadata).
+ * `OPA_FAIL_ON_ENDPOINT_ERROR=true`: fail-closed — `escalate` + requiresApproval (see README).
+ */
+function decisionWhenOpaUnavailable(
+  fallbackDecision: DecisionOutput,
+  errorMessage: string
+): DecisionOutput {
+  const metadata = buildOpaUnavailableMetadata(fallbackDecision, errorMessage);
+  if (!isOpaFailOnEndpointErrorEnabled()) {
+    return {
+      ...fallbackDecision,
+      metadata,
+    };
+  }
+  return {
+    ...fallbackDecision,
+    action: "escalate",
+    requiresApproval: true,
+    autoRemediationAllowed: false,
+    riskAcceptanceAllowed: false,
+    reasonCodes: ["opa_endpoint_unavailable"],
+    metadata: {
+      ...metadata,
+      sw360_opa_fail_closed: true,
+    },
+  };
+}
+
 async function callOpaCompatibleEndpoint(options: {
   endpointUrl: string;
   authToken?: string;
@@ -190,8 +238,10 @@ export async function evaluateAgainstPolicies(
     });
 
     if (!opaDecision) {
+      const message = "OPA response did not contain a valid decision";
+      errors.push(message);
       return {
-        decision: fallbackDecision,
+        decision: decisionWhenOpaUnavailable(fallbackDecision, message),
         fallbackDecision,
         opaDecision: null,
         engine: "fallback",
@@ -216,14 +266,7 @@ export async function evaluateAgainstPolicies(
     const message = error instanceof Error ? error.message : "OPA evaluation failed";
     errors.push(message);
     return {
-      decision: {
-        ...fallbackDecision,
-        metadata: {
-          ...(fallbackDecision.metadata ?? {}),
-          sw360_opa_endpoint_error: true,
-          sw360_opa_error_message: message,
-        },
-      },
+      decision: decisionWhenOpaUnavailable(fallbackDecision, message),
       fallbackDecision,
       opaDecision: null,
       engine: "fallback",
