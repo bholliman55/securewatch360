@@ -32,7 +32,9 @@ function main() {
   console.info("[qa-rego] PASS — OPA check on policies/rego/seed and policies/rego/securewatch360");
 }
 
-main().catch((e) => {
+try {
+  main();
+} catch (e: unknown) {
   console.error("[qa-rego] FAIL:", e instanceof Error ? e.message : e);
   process.exit(1);
-});
+}

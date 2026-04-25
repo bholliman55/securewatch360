@@ -171,6 +171,13 @@ Deployment-aware policy catalog endpoint:
 - `GET /api/policy/catalog?tenantId=<uuid>&framework=<optional>`
 - returns framework profiles and control entries with Terraform/Ansible deployment metadata
 
+Compliance posture (aggregated mapped findings vs control catalog):
+
+- `GET /api/compliance/posture?tenantId=<uuid>&framework=<optional>&includeStored=<optional>`
+  - returns live `summary` (pass/fail control counts, open mapping links, distinct open mapped findings)
+  - set `includeStored=true` to include the latest `tenant_compliance_posture` snapshot and `driftFromStored` deltas (after migration `20260427100000_tenant_compliance_posture.sql`)
+- daily Inngest cron `compliance-posture-daily` (07:00 UTC) upserts per-tenant snapshots for `__ALL__` and each `control_frameworks.framework_code`
+
 Policy pack IaC export (for pipelines or `api_mw_connector`):
 
 - `GET /api/policy/export/terraform?tenantId=<uuid>&framework=<optional>&download=1`
