@@ -21,6 +21,7 @@ Compared to v3 (scan/findings/remediation/compliance baseline), v4 adds:
 - **Central decisioning model**
   - `decision_input` and `decision_result` snapshots on findings/remediation actions
   - unified `evaluateDecision()` entrypoint
+  - optional asset context: `ownerEmail` and `businessCriticality` on `DecisionInput` (from `scan_targets` when set); update with `PUT` or `PATCH` `/api/scan-targets` and JSON body `{ "id", "tenantId", "ownerEmail"?, "businessCriticality"? }` (at least one of the last two)
 - **Policy-as-code persistence**
   - `policies`, `policy_bindings`, `policy_decisions` tables
   - immutable decision logs for each evaluated finding
@@ -44,6 +45,16 @@ Core components:
 - **Decisioning layer:** `src/lib/decisionEngine.ts`, `src/lib/policyEvaluationService.ts`, `src/lib/policyPrecedence.ts`
 - **Agent hooks:** `src/lib/complianceAgent.ts`, `src/lib/remediationAgent.ts`
 - **Data layer:** Supabase/Postgres migrations in `supabase/migrations`
+- **Access:** Supabase Auth + `tenant_users` roles; enterprise SSO/SCIM notes: `docs/SSO-SCIM-SETUP.md`
+- **Tenant roster API:** `GET /api/tenant-users?tenantId=…` (owner|admin) lists membership; SCIM discovery: `GET /api/scim/v2/ServiceProviderConfig`
+- **ITSM:** Jira and ServiceNow issue create APIs under `/api/integrations/jira/issues` and `/api/integrations/servicenow/incidents` (ConnectWise: `/api/integrations/connectwise/tickets`); see `docs/ITSM-INTEGRATIONS.md`
+
+## Notifications (MVP hub)
+
+- **Data:** `notification_subscription_rules` (tenant-wide when `user_id` is null, per-user when set); RLS policies align with `tenant_users` membership.
+- **APIs:** `GET` / `POST` `/api/notification-subscriptions?tenantId=…` (optional `scope=all|tenant|user` on GET); `PATCH` `/api/notification-subscriptions/{id}` (body includes `tenantId`). Fields: `minSeverity` (`info`–`critical`), `channel` (`email` | `slack` | `in_app`), `digestInterval` (`off` | `hourly` | `daily` | `weekly`), `scope` on create (`tenant` | `user`).
+- **Inngest:** `notification-digest` (hourly cron) writes audit + a stub `evidence_records` row per eligible rule when a digest would be sent; email/Slack are optional follow-ups.
+- **Env:** no additional variables for the stub path.
 
 Primary v4 workflow:
 
@@ -168,6 +179,13 @@ Deployment-aware policy catalog endpoint:
 - `GET /api/policy/catalog?tenantId=<uuid>&framework=<optional>`
 - returns framework profiles and control entries with Terraform/Ansible deployment metadata
 
+Compliance posture (aggregated mapped findings vs control catalog):
+
+- `GET /api/compliance/posture?tenantId=<uuid>&framework=<optional>&includeStored=<optional>`
+  - returns live `summary` (pass/fail control counts, open mapping links, distinct open mapped findings)
+  - set `includeStored=true` to include the latest `tenant_compliance_posture` snapshot and `driftFromStored` deltas (after migration `20260427100000_tenant_compliance_posture.sql`)
+- daily Inngest cron `compliance-posture-daily` (07:00 UTC) upserts per-tenant snapshots for `__ALL__` and each `control_frameworks.framework_code`
+
 Policy pack IaC export (for pipelines or `api_mw_connector`):
 
 - `GET /api/policy/export/terraform?tenantId=<uuid>&framework=<optional>&download=1`
@@ -183,29 +201,11 @@ Machine auth for catalog + exports (optional, for `api_mw_connector`):
 - call with `Authorization: Bearer <POLICY_PACK_EXPORT_TOKEN>` and a permitted `tenantId`
 - see `docs/API-MW-CONNECTOR.md`
 
-Regenerate the bundled SQL catalog after changing files under `data/policy-catalog/`:
-
-```bash
-npm run generate:policy-pack-sql
-```
-
 Validate policy pack data locally (DB + migrations, no HTTP server):
 
 ```bash
 npm run qa:policy-pack
 ```
-
-## Client learning loop (continuous improvement)
-
-Tenant interactions that teach us what to build or fix are stored in `client_interaction_learnings` and tied to **triage** and **target release** so they feed the next version, not one-off notes.
-
-- **Record** (analyst+): `POST /api/client-learnings` with `tenantId`, `source`, `interactionKind`, `title`, optional `body`, `structuredSignals`, `impact`, `productArea`, `targetRelease`, and optional links to a finding/entity.
-- **List** (viewer+): `GET /api/client-learnings?tenantId=<uuid>&triageStatus=<optional>&limit=<optional>`
-- **Triage / ship** (owner|admin): `PATCH /api/client-learnings/{id}` with `tenantId` and fields such as `triageStatus`, `targetRelease`, `shippedInVersion`, `releaseNotesRef`
-
-Server-side code can also call `recordClientLearning()` from `src/lib/clientLearning.ts` (best-effort, does not throw).
-
-Release planning: review open learnings, assign `targetRelease`, move through `new` → `reviewed` → `planned` → `in_progress` → `shipped`, and set `shippedInVersion` when the behavior ships. See `docs/CLIENT-LEARNING-LOOP.md`.
 
 CVE catalog and linkage:
 
@@ -214,12 +214,16 @@ CVE catalog and linkage:
   - `finding_cves` (tenant finding-to-CVE links)
 - `GET /api/cves?tenantId=<uuid>&cveId=<optional>&limit=<optional>`
   - returns tenant CVE links with scanner/package/version context
+- `POST /api/cves/enrich` with `{ "tenantId", "limit?", "forceAll?" }` (analyst+)
+  - loads CISA KEV and FIRST EPSS (rate-limited) into `cve_catalog` (`kev_cisa`, `epss_percentile`, `priority_tier`, `enriched_at`)
+- **Auditor evidence export:** `GET` or `POST /api/evidence/export` with `tenantId` and `start` / `end` (ISO-8601; range ≤ 366 days) — **owner|admin|analyst**; returns a single `application/json` document with a dated sample of `policy_decisions` and filtered `risk_exceptions`, `approval_requests`, and `audit_logs` (each section obeys row caps; see `truncated` in the `export` metadata). A future version may add `application/zip` of per-table JSON and/or a PDF report using the same payload as input—no server-side PDF engine in the MVP.
 
 Notes:
 
 - provider selection uses `DECISION_ENGINE_PROVIDER` (`rules` default, `opa` optional)
 - OPA integration expects an OPA-compatible HTTP endpoint via `OPA_POLICY_EVAL_URL`
-- if OPA path fails, v4 currently fails open to fallback rules
+- if `OPA_POLICY_EVAL_URL` is set but the OPA HTTP call fails (network, timeout, non-2xx) or the body is not a valid decision, evaluation uses engine `fallback` and sets metadata `sw360_opa_unavailable` / `sw360_opa_endpoint_error` (and `sw360_opa_error_message`). By default the **decision** still follows in-repo rules (fail-open to rules). Set `OPA_FAIL_ON_ENDPOINT_ERROR=true` for **fail-closed** behavior: **`escalate`** with **`requiresApproval: true`**, `autoRemediationAllowed: false`, `riskAcceptanceAllowed: false`, reason `opa_endpoint_unavailable`, plus `sw360_opa_fail_closed: true` in metadata (we use **escalate** rather than **block** so degraded policy service surfaces human review without a hard deny on the action enum). On hard **provider** errors outside this path, `evaluateDecision` may still tag output with `sw360_decision_engine_*` metadata
+- per-adapter execution hooks: `REMEDIATION_EXEC_{ADAPTERKEY}_{STEP}_COMMAND` (e.g. `REMEDIATION_EXEC_ANSIBLE_PATCH_COMMAND`) with legacy `REMEDIATION_EXEC_*_COMMAND` still supported; see `docs/RISKS-AND-MITIGATIONS.md`
 
 ## Approvals and risk exceptions
 
@@ -229,6 +233,7 @@ Notes:
 - Stored in `approval_requests`.
 - Approval APIs support create/list/approve/reject flows.
 - Approval decisions are auditable and linked to finding/remediation entities.
+- SLA: `sla_due_at` / `sla_first_reminder_at` set on create from `APPROVAL_DEFAULT_SLA_HOURS` (default 72). Hourly Inngest `approval-risk-sla-sweep` sets `sla_breached_at` for pending items past due.
 
 ### Risk exceptions
 
@@ -236,6 +241,7 @@ Notes:
 - Stored in `risk_exceptions`.
 - Tracks justification, status lifecycle, optional expiration.
 - Finding `exception_status` is updated to keep triage state aligned.
+- Review SLA: `review_sla_due_at` on create from `RISK_EXCEPTION_REVIEW_SLA_HOURS` (default 168). Same scheduled sweep can mark `sla_breached_at` for `requested` rows past review due.
 
 ## Logical agents in v4
 
@@ -287,6 +293,8 @@ DECISION_ENGINE_PROVIDER=rules
 OPA_POLICY_EVAL_URL=
 OPA_POLICY_EVAL_TOKEN=
 OPA_POLICY_EVAL_TIMEOUT_MS=4000
+# When OPA URL is set: if true/1, OPA transport/HTTP/parse failures return escalate + approval (fail-closed); default false keeps rules fallback decision with OPA error metadata
+OPA_FAIL_ON_ENDPOINT_ERROR=
 
 # Remediation execution safety
 # true (default): require human approval for high-risk actions (e.g. isolate/config change)
@@ -380,6 +388,24 @@ Optional without finding/remediation:
 ```bash
 npx tsx scripts/seed-v4.ts --no-sample-finding
 ```
+
+Policy Rego in the seed is loaded from `policies/rego/seed/*.rego` (edit files, re-run `npm run seed:v4`).
+
+### Policy pack + IaC + Rego validation
+
+Validates the **framework catalog** SQL export shape (`npm run qa:policy-pack`), the **in-repo reference pack** under `iac/securewatch360-policy-pack/` (Terraform + Ansible), and **OPA syntax** for `policies/rego/**` when the CLIs are installed.
+
+```bash
+npm run qa:policy-pack
+npm run qa:iac
+npm run qa:rego
+# or all three:
+npm run qa:policy-qa
+```
+
+- **Terraform / Ansible:** install Terraform 1.5+ and Ansible. In CI, set `CI=true` (or `REQUIRE_TERRAFORM_ANSIBLE=1`) so missing binaries fail the run.
+- **OPA:** install the `opa` CLI; set `CI=true` or `REQUIRE_OPA=1` to require it.
+- The reference modules under `iac/securewatch360-policy-pack/terraform/modules/policies/` match **NIST** paths used in `policy_framework_controls` (e.g. `modules/policies/nist_gv_po_01`). The full catalog points at the same **path convention**; replace stubs with your registry modules in a consuming repo.
 
 ### Run v4 end-to-end QA
 

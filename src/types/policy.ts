@@ -66,6 +66,7 @@ export const DECISION_REASONS = [
   "controlled_auto_remediation_allowed",
   "finding_already_resolved",
   "policy_not_matched",
+  "opa_endpoint_unavailable",
 ] as const;
 export type DecisionReason = (typeof DECISION_REASONS)[number];
 
@@ -108,6 +109,10 @@ export interface DecisionInput {
   severity?: "info" | "low" | "medium" | "high" | "critical";
   category?: string | null;
   assetType?: string | null;
+  /** Accountable contact for the asset (e.g. from scan_targets.owner_email). */
+  ownerEmail?: string | null;
+  /** Business impact tier for the asset (e.g. from scan_targets.business_criticality). */
+  businessCriticality?: "low" | "medium" | "high" | "critical" | null;
   targetType?: string | null;
   exposure?: "internet" | "external" | "partner" | "internal" | "isolated" | "unknown" | null;
   scannerName?: string | null;

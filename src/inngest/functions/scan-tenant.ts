@@ -25,6 +25,8 @@ type ScanTargetRow = {
   target_type: string;
   target_value: string;
   status: "active" | "paused" | "archived";
+  owner_email: string | null;
+  business_criticality: "low" | "medium" | "high" | "critical" | null;
 };
 
 type FindingSeverity = "info" | "low" | "medium" | "high" | "critical";
@@ -154,7 +156,7 @@ export const scanTenantRequested = inngest.createFunction(
       const target = await step.run("load-target", async (): Promise<ScanTargetRow> => {
         const { data, error } = await supabase
           .from("scan_targets")
-          .select("id, tenant_id, target_name, target_type, target_value, status")
+          .select("id, tenant_id, target_name, target_type, target_value, status, owner_email, business_criticality")
           .eq("id", payload.scanTargetId)
           .eq("tenant_id", payload.tenantId)
           .single();
@@ -182,6 +184,8 @@ export const scanTenantRequested = inngest.createFunction(
               targetName: target.target_name,
               targetType: target.target_type,
               targetValue: target.target_value,
+              ownerEmail: target.owner_email,
+              businessCriticality: target.business_criticality,
             },
           })
           .eq("id", scanRunId as string);
@@ -310,6 +314,8 @@ export const scanTenantRequested = inngest.createFunction(
             severity: finding.severity,
             category: finding.category,
             assetType: target.target_type,
+            ownerEmail: target.owner_email,
+            businessCriticality: target.business_criticality,
             targetType: target.target_type,
             exposure,
             scannerName: scanResult.scannerName,

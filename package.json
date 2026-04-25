@@ -16,7 +16,9 @@
     "qa:v4:chaos": "npx tsx scripts/qa-v4-chaos.ts",
     "qa:v1:connectors:real": "npx tsx scripts/qa-v1-connectors-real.ts",
     "qa:policy-pack": "npx tsx scripts/qa-policy-pack-validate.ts",
-    "generate:policy-pack-sql": "node scripts/generate-policy-pack-full-sql.mjs",
+    "qa:iac": "npx tsx scripts/qa-iac-policy-pack-validate.ts",
+    "qa:rego": "npx tsx scripts/qa-rego-opa-check.ts",
+    "qa:policy-qa": "npm run qa:policy-pack && npm run qa:iac && npm run qa:rego",
     "ui:dev": "npm run dev --prefix ui",
     "ui:build": "npm run build:console --prefix ui && node scripts/sync-ui.mjs"
   },

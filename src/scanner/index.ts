@@ -1,71 +1,76 @@
-import { fetchSemgrepFindings } from "@/scanner/connectors/semgrep";
-import { fetchTenableFindings } from "@/scanner/connectors/tenable";
-import { dedupeByExternalId } from "@/scanner/reliability";
-import type { RawScannerFinding, ScanConnectorResult, ScanTargetInput } from "@/scanner/types";
+import type {
+  ScanContext,
+  ScannerAdapter,
+  ScannerAdapterId,
+  ScannerRunResult,
+} from "./adapters";
+import { nmapScannerAdapter } from "./adapters/nmap";
+import { osvScannerAdapter } from "./adapters/osv";
+import { trivyScannerAdapter } from "./adapters/trivy";
+import { zapScannerAdapter } from "./adapters/zap";
+import { mockScannerAdapter } from "./mockScanner";
+import { getRecommendedScannersForTargetType } from "./selectionRules";
 
-function isCodeTarget(targetType: string): boolean {
-  const value = targetType.toLowerCase();
-  return (
-    value.includes("repo") ||
-    value.includes("git") ||
-    value.includes("code") ||
-    value.includes("container_image")
-  );
+const scannerRegistry: Record<ScannerAdapterId, ScannerAdapter> = {
+  mock: mockScannerAdapter,
+  nmap: nmapScannerAdapter,
+  zap: zapScannerAdapter,
+  trivy: trivyScannerAdapter,
+  osv: osvScannerAdapter,
+};
+
+type RunScanInput = ScanContext & {
+  scannerId?: ScannerAdapterId;
+};
+
+/**
+ * Direct scanner runner by scanner ID.
+ */
+export async function runScan(input: RunScanInput): Promise<ScannerRunResult> {
+  const chosenId = input.scannerId ?? "mock";
+  const scanner = scannerRegistry[chosenId];
+  if (!scanner) {
+    throw new Error(`Scanner '${chosenId}' is not registered`);
+  }
+
+  if (!scanner.metadata.implemented) {
+    throw new Error(`Scanner '${chosenId}' exists but is not implemented yet`);
+  }
+
+  return scanner.run(input);
 }
 
-function buildFallbackFinding(target: ScanTargetInput, reason: string): RawScannerFinding {
-  return {
-    externalId: `fallback:${target.scanTargetId}`,
-    severity: "medium",
-    category: "connector_fallback",
-    title: "Scanner connector fallback result",
-    description: `No live scanner data available. ${reason}`,
-    cves: [],
-    metadata: {
-      source: "securewatch_fallback",
-      targetType: target.targetType,
-      targetValue: target.targetValue,
-      reason,
-    },
-  };
-}
+/**
+ * Generic scanner entrypoint for workflow usage.
+ * Scanner is selected from target_type and falls back to `mock` in v1.
+ */
+export async function runScanForTarget(input: ScanContext): Promise<ScannerRunResult> {
+  const recommended = getRecommendedScannersForTargetType(input.targetType);
+  const failures: Array<{ scannerId: ScannerAdapterId; error: string }> = [];
 
-export async function runScanForTarget(target: ScanTargetInput): Promise<ScanConnectorResult> {
-  if (isCodeTarget(target.targetType)) {
-    try {
-      const findings = await fetchSemgrepFindings(target);
-      return {
-        scanner: "semgrep",
-        scannerName: "Semgrep",
-        scannerType: "code",
-        findings: dedupeByExternalId(findings),
-      };
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : "Unknown Semgrep failure";
-      return {
-        scanner: "semgrep-fallback",
-        scannerName: "Semgrep (fallback)",
-        scannerType: "mock",
-        findings: [buildFallbackFinding(target, reason)],
-      };
+  for (const scannerId of recommended) {
+    const scanner = scannerRegistry[scannerId];
+    if (scanner && scanner.metadata.implemented) {
+      try {
+        return await scanner.run(input);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        failures.push({ scannerId, error: message });
+      }
     }
   }
 
-  try {
-    const findings = await fetchTenableFindings(target);
-    return {
-      scanner: "tenable",
-      scannerName: "Tenable/Nessus",
-      scannerType: "infra",
-      findings: dedupeByExternalId(findings),
-    };
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : "Unknown Tenable failure";
-    return {
-      scanner: "tenable-fallback",
-      scannerName: "Tenable/Nessus (fallback)",
-      scannerType: "mock",
-      findings: [buildFallbackFinding(target, reason)],
+  // Final safety net for v1.
+  const fallbackResult = await scannerRegistry.mock.run(input);
+  if (failures.length > 0 && fallbackResult.findings[0]) {
+    fallbackResult.findings[0].evidence = {
+      ...fallbackResult.findings[0].evidence,
+      realScannerFailures: failures,
     };
   }
+  return fallbackResult;
+}
+
+export function listScanners(): ScannerAdapter[] {
+  return Object.values(scannerRegistry);
 }
