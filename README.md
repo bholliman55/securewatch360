@@ -201,6 +201,7 @@ CVE catalog and linkage:
   - returns tenant CVE links with scanner/package/version context
 - `POST /api/cves/enrich` with `{ "tenantId", "limit?", "forceAll?" }` (analyst+)
   - loads CISA KEV and FIRST EPSS (rate-limited) into `cve_catalog` (`kev_cisa`, `epss_percentile`, `priority_tier`, `enriched_at`)
+- **Auditor evidence export:** `GET` or `POST /api/evidence/export` with `tenantId` and `start` / `end` (ISO-8601; range ≤ 366 days) — **owner|admin|analyst**; returns a single `application/json` document with a dated sample of `policy_decisions` and filtered `risk_exceptions`, `approval_requests`, and `audit_logs` (each section obeys row caps; see `truncated` in the `export` metadata). A future version may add `application/zip` of per-table JSON and/or a PDF report using the same payload as input—no server-side PDF engine in the MVP.
 
 Notes:
 
