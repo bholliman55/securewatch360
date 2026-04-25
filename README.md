@@ -371,6 +371,24 @@ Optional without finding/remediation:
 npx tsx scripts/seed-v4.ts --no-sample-finding
 ```
 
+Policy Rego in the seed is loaded from `policies/rego/seed/*.rego` (edit files, re-run `npm run seed:v4`).
+
+### Policy pack + IaC + Rego validation
+
+Validates the **framework catalog** SQL export shape (`npm run qa:policy-pack`), the **in-repo reference pack** under `iac/securewatch360-policy-pack/` (Terraform + Ansible), and **OPA syntax** for `policies/rego/**` when the CLIs are installed.
+
+```bash
+npm run qa:policy-pack
+npm run qa:iac
+npm run qa:rego
+# or all three:
+npm run qa:policy-qa
+```
+
+- **Terraform / Ansible:** install Terraform 1.5+ and Ansible. In CI, set `CI=true` (or `REQUIRE_TERRAFORM_ANSIBLE=1`) so missing binaries fail the run.
+- **OPA:** install the `opa` CLI; set `CI=true` or `REQUIRE_OPA=1` to require it.
+- The reference modules under `iac/securewatch360-policy-pack/terraform/modules/policies/` match **NIST** paths used in `policy_framework_controls` (e.g. `modules/policies/nist_gv_po_01`). The full catalog points at the same **path convention**; replace stubs with your registry modules in a consuming repo.
+
 ### Run v4 end-to-end QA
 
 Runs workflow trigger + artifact assertions for v4 decisioning/remediation behavior.

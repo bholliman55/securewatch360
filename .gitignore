@@ -26,3 +26,9 @@ yarn-error.log*
 # misc
 .DS_Store
 *.tsbuildinfo
+
+# local terraform plugin cache (reference policy pack)
+iac/**/.terraform/
+iac/**/terraform.tfstate
+iac/**/terraform.tfstate.backup
+iac/**/crash.log

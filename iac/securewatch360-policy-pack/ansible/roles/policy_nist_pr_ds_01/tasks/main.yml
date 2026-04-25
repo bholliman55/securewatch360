@@ -1,0 +1,4 @@
+---
+- name: Document NIST PR.DS-01 (advisory)
+  ansible.builtin.debug:
+    msg: "securewatch360 policy pack role policy_nist_pr_ds_01"
