@@ -21,6 +21,7 @@ Compared to v3 (scan/findings/remediation/compliance baseline), v4 adds:
 - **Central decisioning model**
   - `decision_input` and `decision_result` snapshots on findings/remediation actions
   - unified `evaluateDecision()` entrypoint
+  - optional asset context: `ownerEmail` and `businessCriticality` on `DecisionInput` (from `scan_targets` when set); update with `PUT` or `PATCH` `/api/scan-targets` and JSON body `{ "id", "tenantId", "ownerEmail"?, "businessCriticality"? }` (at least one of the last two)
 - **Policy-as-code persistence**
   - `policies`, `policy_bindings`, `policy_decisions` tables
   - immutable decision logs for each evaluated finding

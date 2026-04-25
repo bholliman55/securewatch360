@@ -22,6 +22,9 @@ const allowedTargetTypes = [
   "package_manifest",
 ] as const;
 
+const CRITICALITY = ["low", "medium", "high", "critical"] as const;
+const MAX_EMAIL_LEN = 320;
+
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value
@@ -75,7 +78,9 @@ export async function GET(request: Request) {
     const supabase = getSupabaseAdminClient();
     let query = supabase
       .from("scan_targets")
-      .select("id, tenant_id, target_name, target_type, target_value, status, created_at")
+      .select(
+        "id, tenant_id, target_name, target_type, target_value, status, owner_email, business_criticality, created_at"
+      )
       .eq("tenant_id", tenantId)
       .order("created_at", { ascending: false })
       .limit(500);
@@ -143,7 +148,9 @@ export async function POST(request: Request) {
         target_value: targetValue,
         status: "active",
       })
-      .select("id, tenant_id, target_name, target_type, target_value, status, created_at")
+      .select(
+        "id, tenant_id, target_name, target_type, target_value, status, owner_email, business_criticality, created_at"
+      )
       .single();
 
     if (error) {
@@ -155,6 +162,136 @@ export async function POST(request: Request) {
     const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
       { ok: false, error: "Failed to create scan target", message },
+      { status: 500 }
+    );
+  }
+}
+
+type PatchScanTargetBody = {
+  id?: unknown;
+  tenantId?: unknown;
+  ownerEmail?: unknown;
+  businessCriticality?: unknown;
+};
+
+/**
+ * Update optional asset metadata (owner email, business criticality) for a scan target.
+ * Body: `id` (target UUID), `tenantId`, and at least one of `ownerEmail`, `businessCriticality`.
+ * (Id in body avoids a dynamic route segment named `[id]`, which is awkward on some Windows toolchains.)
+ */
+export async function PATCH(request: Request) {
+  return patchScanTargetMetadata(request);
+}
+
+export async function PUT(request: Request) {
+  return patchScanTargetMetadata(request);
+}
+
+async function patchScanTargetMetadata(request: Request) {
+  try {
+    let body: PatchScanTargetBody;
+    try {
+      body = (await request.json()) as PatchScanTargetBody;
+    } catch {
+      return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const targetId = typeof body.id === "string" ? body.id.trim() : "";
+    if (!targetId || !isUuid(targetId)) {
+      return NextResponse.json({ ok: false, error: "id must be a valid scan target UUID" }, { status: 400 });
+    }
+
+    const tenantId = typeof body.tenantId === "string" ? body.tenantId.trim() : "";
+    if (!tenantId || !isUuid(tenantId)) {
+      return NextResponse.json({ ok: false, error: "tenantId must be a valid UUID" }, { status: 400 });
+    }
+
+    if (body.ownerEmail === undefined && body.businessCriticality === undefined) {
+      return NextResponse.json(
+        { ok: false, error: "At least one of ownerEmail, businessCriticality is required" },
+        { status: 400 }
+      );
+    }
+
+    const guard = await requireTenantAccess({
+      tenantId,
+      allowedRoles: ["owner", "admin", "analyst"],
+    });
+    if (!guard.ok) {
+      return NextResponse.json({ ok: false, error: guard.error }, { status: guard.status });
+    }
+
+    const patch: Record<string, string | null> = {};
+
+    if (body.ownerEmail !== undefined) {
+      if (body.ownerEmail === null) {
+        patch.owner_email = null;
+      } else if (typeof body.ownerEmail === "string") {
+        const v = body.ownerEmail.trim();
+        if (v.length === 0) {
+          patch.owner_email = null;
+        } else if (v.length > MAX_EMAIL_LEN) {
+          return NextResponse.json(
+            { ok: false, error: `ownerEmail must be at most ${MAX_EMAIL_LEN} characters` },
+            { status: 400 }
+          );
+        } else {
+          patch.owner_email = v;
+        }
+      } else {
+        return NextResponse.json({ ok: false, error: "ownerEmail must be a string or null" }, { status: 400 });
+      }
+    }
+
+    if (body.businessCriticality !== undefined) {
+      if (body.businessCriticality === null) {
+        patch.business_criticality = null;
+      } else if (typeof body.businessCriticality === "string") {
+        const c = body.businessCriticality.trim().toLowerCase();
+        if (c.length === 0) {
+          patch.business_criticality = null;
+        } else if (!CRITICALITY.includes(c as (typeof CRITICALITY)[number])) {
+          return NextResponse.json(
+            { ok: false, error: `businessCriticality must be one of: ${CRITICALITY.join(", ")}` },
+            { status: 400 }
+          );
+        } else {
+          patch.business_criticality = c;
+        }
+      } else {
+        return NextResponse.json(
+          { ok: false, error: "businessCriticality must be a string or null" },
+          { status: 400 }
+        );
+      }
+    }
+
+    const supabase = getSupabaseAdminClient();
+    const { data, error } = await supabase
+      .from("scan_targets")
+      .update(patch)
+      .eq("id", targetId)
+      .eq("tenant_id", tenantId)
+      .select(
+        "id, tenant_id, target_name, target_type, target_value, status, owner_email, business_criticality, created_at"
+      )
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+    if (!data) {
+      return NextResponse.json(
+        { ok: false, error: "Scan target not found for this tenant" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ ok: true, scanTarget: data }, { status: 200 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Internal server error";
+    return NextResponse.json(
+      { ok: false, error: "Failed to update scan target", message },
       { status: 500 }
     );
   }
