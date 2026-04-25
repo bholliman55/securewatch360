@@ -1,0 +1,11 @@
+---
+# Reference roles for GET /api/policy/export/ansible — names match policy_framework_controls.ansible_role
+# Example: roles/policy_nist_gv_po_01
+- name: SecureWatch360 policy pack (reference)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - role: policy_nist_gv_po_01
+    - role: policy_nist_id_am_01
+    - role: policy_nist_pr_ds_01

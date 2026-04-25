@@ -1,0 +1,4 @@
+---
+- name: Document NIST GV.PO-01 (advisory) — replace with your hardening tasks
+  ansible.builtin.debug:
+    msg: "securewatch360 policy pack role policy_nist_gv_po_01"

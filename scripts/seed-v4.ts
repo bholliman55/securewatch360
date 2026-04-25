@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { getSupabaseAdminClient } from "../src/lib/supabase";
 import { loadEnvConfig } from "@next/env";
 
@@ -13,11 +15,20 @@ const IDS = {
   policyTriage: "51217c10-c801-4438-9a5a-a98f2e1aa001",
   policyAutoRemediation: "51217c10-c801-4438-9a5a-a98f2e1aa002",
   policyCompliance: "51217c10-c801-4438-9a5a-a98f2e1aa003",
+  policyEscalation: "51217c10-c801-4438-9a5a-a98f2e1aa004",
+  policyMonitoring: "51217c10-c801-4438-9a5a-a98f2e1aa005",
   bindingTenantTriage: "a4951220-2d82-4d4d-b68a-b1a994f1d001",
   bindingTargetApiAutoRemediate: "a4951220-2d82-4d4d-b68a-b1a994f1d002",
   bindingStageCompliance: "a4951220-2d82-4d4d-b68a-b1a994f1d003",
   bindingTargetWebCompliance: "a4951220-2d82-4d4d-b68a-b1a994f1d004",
+  bindingTenantEscalation: "a4951220-2d82-4d4d-b68a-b1a994f1d005",
+  bindingStageMonitoring: "a4951220-2d82-4d4d-b68a-b1a994f1d006",
 } as const;
+
+function readSeedRego(filename: string): string {
+  const full = path.join(process.cwd(), "policies", "rego", "seed", filename);
+  return fs.readFileSync(full, "utf-8");
+}
 
 const SAMPLE_WORKFLOW_RUN_ID = "seed-v4-workflow-run";
 const INCLUDE_SAMPLE_FINDING =
@@ -84,13 +95,7 @@ async function seedPoliciesAndBindings() {
         policy_type: "gating",
         framework: null,
         description: "Escalate high/critical findings for immediate triage.",
-        rego_code: `package securewatch.gating
-
-default allow = false
-
-allow {
-  input.severity == "critical"
-}`,
+        rego_code: readSeedRego("critical_triage.rego"),
         is_active: true,
         version: "v1",
         updated_at: now,
@@ -102,14 +107,7 @@ allow {
         policy_type: "remediation",
         framework: null,
         description: "Allow controlled auto-remediation for API/dependency issues.",
-        rego_code: `package securewatch.remediation
-
-default auto_remediate = false
-
-auto_remediate {
-  input.targetType == "api"
-  input.severity == "high"
-}`,
+        rego_code: readSeedRego("api_auto_remediate.rego"),
         is_active: true,
         version: "v1",
         updated_at: now,
@@ -121,13 +119,31 @@ auto_remediate {
         policy_type: "compliance",
         framework: "soc2",
         description: "Flag policy decisions that should generate explainability evidence.",
-        rego_code: `package securewatch.compliance
-
-default evidence_required = false
-
-evidence_required {
-  input.severity == "high"
-}`,
+        rego_code: readSeedRego("soc2_compliance.rego"),
+        is_active: true,
+        version: "v1",
+        updated_at: now,
+      },
+      {
+        id: IDS.policyEscalation,
+        tenant_id: IDS.tenant,
+        name: "seed-internet-critical-escalation",
+        policy_type: "escalation",
+        framework: "nist",
+        description: "Escalate when critical issues hit internet-exposed assets (OPA gating / routing).",
+        rego_code: readSeedRego("critical_internet_gating.rego"),
+        is_active: true,
+        version: "v1",
+        updated_at: now,
+      },
+      {
+        id: IDS.policyMonitoring,
+        tenant_id: IDS.tenant,
+        name: "seed-container-high-monitoring",
+        policy_type: "monitoring",
+        framework: "cis",
+        description: "Monitor-only emphasis for high-severity container image findings until patch.",
+        rego_code: readSeedRego("container_high_monitor.rego"),
         is_active: true,
         version: "v1",
         updated_at: now,
@@ -167,6 +183,20 @@ evidence_required {
         policy_id: IDS.policyCompliance,
         binding_type: "target_type",
         binding_target: "url",
+        created_at: now,
+      },
+      {
+        id: IDS.bindingTenantEscalation,
+        policy_id: IDS.policyEscalation,
+        binding_type: "tenant",
+        binding_target: IDS.tenant,
+        created_at: now,
+      },
+      {
+        id: IDS.bindingStageMonitoring,
+        policy_id: IDS.policyMonitoring,
+        binding_type: "workflow_stage",
+        binding_target: "finding_triage",
         created_at: now,
       },
     ],
@@ -303,7 +333,14 @@ async function main() {
   console.info("[seed-v4] Seed complete.");
   console.info("[seed-v4] tenant_id:", IDS.tenant);
   console.info("[seed-v4] scan_target_ids:", IDS.scanTargetWeb, IDS.scanTargetApi);
-  console.info("[seed-v4] policy_ids:", IDS.policyTriage, IDS.policyAutoRemediation, IDS.policyCompliance);
+  console.info(
+    "[seed-v4] policy_ids:",
+    IDS.policyTriage,
+    IDS.policyAutoRemediation,
+    IDS.policyCompliance,
+    IDS.policyEscalation,
+    IDS.policyMonitoring
+  );
   if (INCLUDE_SAMPLE_FINDING) {
     console.info("[seed-v4] finding_id:", IDS.finding);
     console.info("[seed-v4] remediation_action_id:", IDS.remediationAction);
