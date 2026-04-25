@@ -1,15 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { ticketsService } from '../services/ticketsService';
 
 interface CreateTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Required for ConnectWise /api/integrations/connectwise/tickets */
+  tenantId: string;
   incidentId?: string;
   onTicketCreated: () => void;
+  initialTitle?: string;
+  initialDescription?: string;
 }
 
-export default function CreateTicketModal({ isOpen, onClose, incidentId, onTicketCreated }: CreateTicketModalProps) {
+export default function CreateTicketModal({
+  isOpen,
+  onClose,
+  tenantId,
+  incidentId,
+  onTicketCreated,
+  initialTitle = '',
+  initialDescription = '',
+}: CreateTicketModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -20,17 +32,35 @@ export default function CreateTicketModal({ isOpen, onClose, incidentId, onTicke
     assigned_to: ''
   });
 
+  useEffect(() => {
+    if (!isOpen) return;
+    setError(null);
+    setFormData({
+      title: initialTitle ?? '',
+      description: initialDescription ?? '',
+      priority: 'medium',
+      status: 'open',
+      assigned_to: '',
+    });
+  }, [isOpen, initialTitle, initialDescription]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!tenantId?.trim()) {
+      setError('Select a tenant before creating a ticket.');
+      return;
+    }
     setLoading(true);
 
     try {
-      await ticketsService.createTicket({
-        ...formData,
+      await ticketsService.createTicket(tenantId, {
+        title: formData.title,
+        description: formData.description,
+        priority: formData.priority,
+        status: formData.status,
+        assigned_to: formData.assigned_to,
         incident_id: incidentId || null,
-        client_id: 0,
-        created_by: "System",
       });
 
       setFormData({
@@ -53,7 +83,7 @@ export default function CreateTicketModal({ isOpen, onClose, incidentId, onTicke
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full mx-4">
         <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
