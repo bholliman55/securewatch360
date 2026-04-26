@@ -14,11 +14,22 @@
     "qa:v4:agents": "npx tsx scripts/qa-v4-agents-e2e.ts",
     "qa:v4:hardening": "npx tsx scripts/qa-v4-hardening.ts",
     "qa:v4:chaos": "npx tsx scripts/qa-v4-chaos.ts",
+    "qa:opa-optional": "npx tsx scripts/qa-opa-optional.ts",
+    "qa:token-optimization": "npx tsx scripts/qa-token-optimization.ts",
+    "qa:token-estimator": "npx tsx scripts/qa-token-estimator-examples.ts",
+    "qa:prompt-hash": "npx tsx scripts/qa-prompt-hash-examples.ts",
+    "qa:context-sanitizer": "npx tsx scripts/qa-context-sanitizer-examples.ts",
+    "qa:context-compressor": "npx tsx scripts/qa-context-compressor-examples.ts",
     "qa:v1:connectors:real": "npx tsx scripts/qa-v1-connectors-real.ts",
     "qa:policy-pack": "npx tsx scripts/qa-policy-pack-validate.ts",
     "qa:iac": "npx tsx scripts/qa-iac-policy-pack-validate.ts",
     "qa:rego": "npx tsx scripts/qa-rego-opa-check.ts",
     "qa:policy-qa": "npm run qa:policy-pack && npm run qa:iac && npm run qa:rego",
+    "security:audit": "npm audit --audit-level=high",
+    "security:sast": "npx semgrep --config p/owasp-top-ten --config p/secrets --error",
+    "security:infra": "trivy fs --scanners vuln,misconfig,secret --severity HIGH,CRITICAL .",
+    "security:dast:local": "scripts\\zap-baseline.cmd -t http://host.docker.internal:3000 -m 2",
+    "security:baseline": "npm run security:audit && npm run security:sast && npm run security:infra",
     "ui:dev": "npm run dev --prefix ui",
     "ui:build": "npm run build:console --prefix ui && node scripts/sync-ui.mjs"
   },
@@ -31,9 +42,11 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
+    "@types/node": "^22.19.17",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "typescript": "^5.7.0"
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^15.5.15",
+    "typescript": "^5.9.3"
   }
 }

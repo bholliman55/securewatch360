@@ -83,8 +83,8 @@ export default function SystemStatus({ agents, alerts }: SystemStatusProps) {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
+      <div className="bg-[var(--sw-surface)] rounded-lg shadow-lg border border-[var(--sw-border)] p-6">
+        <h3 className="text-lg font-bold text-[var(--sw-text-primary)] mb-4">
           Agent Status
         </h3>
         <div className="space-y-4">
@@ -100,29 +100,29 @@ export default function SystemStatus({ agents, alerts }: SystemStatusProps) {
               return (
                 <div
                   key={agent.id}
-                  className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg hover:shadow-md transition-all duration-200 group"
+                  className="flex items-center justify-between p-4 bg-[var(--sw-surface-elevated)] rounded-lg hover:shadow-md transition-all duration-200 group"
                 >
                   <div className="flex items-center space-x-4 flex-1">
-                    <div className="bg-gradient-to-r from-purple-600 to-purple-900 p-2 rounded-lg group-hover:scale-110 transition-transform">
+                    <div className="bg-gradient-to-r from-[#1565c0] to-[#112d4e] p-2 rounded-lg group-hover:scale-110 transition-transform">
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <h4 className="font-semibold text-slate-900 dark:text-slate-100">
+                        <h4 className="font-semibold text-[var(--sw-text-primary)]">
                           {agent.name}
                         </h4>
                         <Circle
                           className={`w-2 h-2 ${getStatusColor(agent.status)} fill-current animate-pulse`}
                         />
                       </div>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                      <p className="text-xs text-[var(--sw-text-muted)] mt-1">
                         Last active: {formatRelativeTime(agent.lastActivity)}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => setSelectedAgent(agent)}
-                    className="text-purple-600 dark:text-purple-400 text-sm font-medium hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="text-[#29b6f6] text-sm font-medium hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     View Details
                   </button>
@@ -130,15 +130,15 @@ export default function SystemStatus({ agents, alerts }: SystemStatusProps) {
               );
             })
           ) : (
-            <p className="text-slate-500 dark:text-slate-400 text-center py-4">
+            <p className="text-[var(--sw-text-muted)] text-center py-4">
               No agent data available
             </p>
           )}
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
+      <div className="bg-[var(--sw-surface)] rounded-lg shadow-lg border border-[var(--sw-border)] p-6">
+        <h3 className="text-lg font-bold text-[var(--sw-text-primary)] mb-4">
           Recent Alerts
         </h3>
         <div className="space-y-3">
@@ -146,7 +146,7 @@ export default function SystemStatus({ agents, alerts }: SystemStatusProps) {
             alerts.map((alert) => (
               <div
                 key={alert.id}
-                className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg hover:shadow-md transition-all duration-200 group"
+                className="p-4 bg-[var(--sw-surface-elevated)] rounded-lg hover:shadow-md transition-all duration-200 group"
               >
                 <div className="flex items-start justify-between mb-2">
                   <span
@@ -156,22 +156,24 @@ export default function SystemStatus({ agents, alerts }: SystemStatusProps) {
                   </span>
                   <button
                     onClick={() => setSelectedAlert(alert)}
-                    className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
+                    aria-label={`Open details for ${alert.title}`}
+                    title="View alert details"
+                    className="text-[#29b6f6] hover:text-[#00e5ff] transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
                   </button>
                 </div>
-                <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">
+                <h4 className="font-medium text-[var(--sw-text-primary)] mb-2">
                   {alert.title}
                 </h4>
-                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <div className="flex items-center justify-between text-xs text-[var(--sw-text-muted)]">
                   <span>Source: {alert.source}</span>
                   <span>{formatRelativeTime(alert.timestamp)}</span>
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-slate-500 dark:text-slate-400 text-center py-4">
+            <p className="text-[var(--sw-text-muted)] text-center py-4">
               No alerts available
             </p>
           )}

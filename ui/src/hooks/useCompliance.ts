@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { complianceService, ComplianceAudit } from "../services/complianceService";
+import { complianceService, ComplianceAudit, ComplianceMetrics } from "../services/complianceService";
 import { useTenant } from "../contexts/TenantContext";
 
 export function useCompliance() {
   const { selectedTenantId } = useTenant();
   const [audits, setAudits] = useState<ComplianceAudit[]>([]);
-  const [metrics, setMetrics] = useState<Record<string, unknown> | null>(null);
+  const [metrics, setMetrics] = useState<ComplianceMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const initialLoadDone = useRef(false);

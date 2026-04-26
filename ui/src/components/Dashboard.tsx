@@ -63,13 +63,13 @@ export default function Dashboard({
   };
 
   const renderPlaceholderView = () => (
-    <div className="flex items-center justify-center h-96 bg-white dark:bg-slate-800 rounded-lg shadow-lg">
+    <div className="flex items-center justify-center h-96 bg-[var(--sw-surface)] rounded-lg shadow-lg border border-[var(--sw-border)]">
       <div className="text-center">
         <div className="text-6xl mb-4">🚧</div>
-        <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+        <h3 className="text-2xl font-bold text-[var(--sw-text-primary)] mb-2">
           {getViewTitle()}
         </h3>
-        <p className="text-slate-600 dark:text-slate-400">
+        <p className="text-[var(--sw-text-muted)]">
           This section is under construction. Coming soon!
         </p>
       </div>
@@ -79,22 +79,22 @@ export default function Dashboard({
   return (
     <div className="flex-1 overflow-auto">
       <div className="p-6 space-y-6">
-        <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
-          <span className="hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors">
+        <div className="flex items-center space-x-2 text-sm text-[var(--sw-text-muted)]">
+          <span className="hover:text-[#29b6f6] cursor-pointer transition-colors">
             Home
           </span>
           <ChevronRight className="w-4 h-4" />
-          <span className="text-slate-900 dark:text-slate-100 font-medium">
+          <span className="text-[var(--sw-text-primary)] font-medium">
             {getViewTitle()}
           </span>
         </div>
 
         {(activeView === 'dashboard' || activeView === 'settings' || activeView === 'analytics') && (
           <div>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+            <h2 className="text-3xl font-bold text-[var(--sw-text-primary)] mb-2">
               {getViewTitle()}
             </h2>
-            <p className="text-slate-600 dark:text-slate-400">
+            <p className="text-[var(--sw-text-muted)]">
               {activeView === 'dashboard'
                 ? 'Real-time security operations monitoring and analytics'
                 : activeView === 'analytics'
@@ -126,8 +126,8 @@ export default function Dashboard({
               <>
                 <HeroMetricsSkeleton />
                 <SystemStatusSkeleton />
-                <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6">
-                  <div className="h-6 w-48 bg-slate-200 dark:bg-slate-700 rounded mb-6 animate-pulse" />
+                <div className="bg-[var(--sw-surface)] rounded-lg shadow-lg border border-[var(--sw-border)] p-6">
+                  <div className="h-6 w-48 bg-[var(--sw-surface-elevated)] rounded mb-6 animate-pulse" />
                   <SkeletonChartPlaceholder />
                 </div>
                 <ActivityTimelineSkeleton />

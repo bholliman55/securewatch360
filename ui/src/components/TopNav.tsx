@@ -35,26 +35,28 @@ export default function TopNav({ onRefresh }: { onRefresh?: () => void }) {
   const roleLabel = tenants.find((t) => t.id === selectedTenantId)?.role ?? "member";
 
   return (
-    <nav className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 transition-colors duration-200">
+    <nav className="bg-[var(--sw-surface)]/95 border-b border-[var(--sw-border)] px-6 py-4 transition-colors duration-200 backdrop-blur">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-2 rounded-lg shadow-lg shadow-cyan-500/20">
+          <div className="bg-gradient-to-br from-[#1565c0] to-[#29b6f6] p-2 rounded-lg shadow-lg shadow-[#29b6f6]/20">
             <Shield className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">SecureWatch360</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Security Operations Center</p>
+            <h1 className="text-xl font-bold text-[var(--sw-text-primary)] tracking-tight">SecureWatch360</h1>
+            <p className="text-xs uppercase tracking-[0.14em] text-[#29b6f6]">Security Operations Center</p>
           </div>
         </div>
 
         <div className="flex items-center space-x-4">
           {tenants.length > 1 ? (
-            <div className="relative flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600 rounded-lg hover:border-cyan-400 dark:hover:border-cyan-500 transition-colors group">
-              <Building2 className="w-4 h-4 text-slate-400 group-hover:text-cyan-500 dark:group-hover:text-cyan-400 transition-colors shrink-0" />
+            <div className="relative flex items-center gap-2 px-3 py-2 bg-[var(--sw-surface-elevated)] border border-[var(--sw-border)] rounded-lg hover:border-[#29b6f6] transition-colors group">
+              <Building2 className="w-4 h-4 text-[var(--sw-text-muted)] group-hover:text-[#29b6f6] transition-colors shrink-0" />
               <select
                 value={selectedTenantId ?? ""}
                 onChange={(e) => setSelectedTenantId(e.target.value || null)}
-                className="bg-transparent text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer pr-5 appearance-none"
+                aria-label="Select organization"
+                title="Select organization"
+                className="bg-transparent text-sm font-medium text-[var(--sw-text-primary)] focus:outline-none cursor-pointer pr-5 appearance-none"
               >
                 {tenants.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -62,67 +64,67 @@ export default function TopNav({ onRefresh }: { onRefresh?: () => void }) {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 pointer-events-none absolute right-2.5" />
+              <ChevronDown className="w-3.5 h-3.5 text-[var(--sw-text-muted)] pointer-events-none absolute right-2.5" />
             </div>
           ) : selectedTenantName ? (
-            <div className="flex items-center gap-2 px-3 py-2 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg">
-              <Building2 className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
-              <span className="text-sm font-semibold text-cyan-700 dark:text-cyan-300">{selectedTenantName}</span>
+            <div className="flex items-center gap-2 px-3 py-2 bg-[#1565c0]/10 border border-[#1e88e5]/40 rounded-lg">
+              <Building2 className="w-4 h-4 text-[#29b6f6] shrink-0" />
+              <span className="text-sm font-semibold text-[#29b6f6]">{selectedTenantName}</span>
             </div>
           ) : null}
 
           <div className="hidden md:flex flex-col items-end">
-            <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{formatTime(currentTime)}</div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">{formatDate(currentTime)}</div>
+            <div className="text-sm font-semibold text-[var(--sw-text-primary)] tabular-nums">{formatTime(currentTime)}</div>
+            <div className="text-xs text-[var(--sw-text-muted)]">{formatDate(currentTime)}</div>
           </div>
 
           <div className="flex items-center gap-1">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200"
+              className="p-2 rounded-lg hover:bg-[var(--sw-surface-elevated)] transition-all duration-200"
               title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
             >
               {theme === "dark" ? (
-                <Sun className="w-5 h-5 text-yellow-500" />
+                <Sun className="w-5 h-5 text-[#29b6f6]" />
               ) : (
-                <Moon className="w-5 h-5 text-slate-600" />
+                <Moon className="w-5 h-5 text-[var(--sw-text-muted)]" />
               )}
             </button>
 
             <button
               onClick={onRefresh}
-              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200"
+              className="p-2 rounded-lg hover:bg-[var(--sw-surface-elevated)] transition-all duration-200"
               title="Refresh data"
             >
-              <RefreshCw className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+              <RefreshCw className="w-5 h-5 text-[var(--sw-text-muted)]" />
             </button>
 
             <button
-              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200"
+              className="p-2 rounded-lg hover:bg-[var(--sw-surface-elevated)] transition-all duration-200"
               title="Settings"
             >
-              <Settings className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+              <Settings className="w-5 h-5 text-[var(--sw-text-muted)]" />
             </button>
           </div>
 
-          <div className="flex items-center space-x-2 pl-3 border-l border-slate-200 dark:border-slate-700">
+          <div className="flex items-center space-x-2 pl-3 border-l border-[var(--sw-border)]">
             <div className="hidden md:flex flex-col items-end">
-              <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+              <div className="text-sm font-medium text-[var(--sw-text-primary)]">
                 {user?.email?.split("@")[0] || "User"}
               </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 capitalize">
+              <div className="text-xs text-[var(--sw-text-muted)] capitalize">
                 {selectedTenantName ? `${roleLabel} · ${selectedTenantName}` : roleLabel}
               </div>
             </div>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center shadow">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#1565c0] to-[#112d4e] flex items-center justify-center shadow">
               <User className="w-4 h-4 text-white" />
             </div>
             <button
               onClick={signOut}
-              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200"
+              className="p-2 rounded-lg hover:bg-[var(--sw-surface-elevated)] transition-all duration-200"
               title="Sign out"
             >
-              <LogOut className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+              <LogOut className="w-5 h-5 text-[var(--sw-text-muted)]" />
             </button>
           </div>
         </div>

@@ -13,12 +13,21 @@ export interface TrainingModule {
   updated_at: string;
 }
 
+export interface TrainingMetrics {
+  totalModules: number;
+  activeModules: number;
+  totalEnrolled: number;
+  totalCompleted: number;
+  avgCompletionRate: number;
+  categoryStats: Array<{ name: string; enrolled: number; completed: number; rate: number }>;
+}
+
 export const trainingService = {
   async getModules(_tenantId?: string | null): Promise<TrainingModule[]> {
     return [];
   },
 
-  async getMetrics(_tenantId?: string | null) {
+  async getMetrics(_tenantId?: string | null): Promise<TrainingMetrics> {
     return {
       totalModules: 0,
       activeModules: 0,

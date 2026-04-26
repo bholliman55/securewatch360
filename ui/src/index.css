@@ -1,8 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --sw-bg: #dce8f5;
+    --sw-surface: #ffffff;
+    --sw-surface-elevated: #f4f8fc;
+    --sw-border: #c9d9ea;
+    --sw-text-primary: #112d4e;
+    --sw-text-muted: #4a6a8a;
+    --sw-accent: #1565c0;
+    --sw-accent-hover: #1e88e5;
+    --sw-accent-bright: #29b6f6;
+  }
+
+  .dark {
+    --sw-bg: #07111f;
+    --sw-surface: #0d1e33;
+    --sw-surface-elevated: #112d4e;
+    --sw-border: rgba(41, 182, 246, 0.2);
+    --sw-text-primary: #ffffff;
+    --sw-text-muted: #8ab4d4;
+    --sw-accent: #1565c0;
+    --sw-accent-hover: #1e88e5;
+    --sw-accent-bright: #29b6f6;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--sw-bg);
+    color: var(--sw-text-primary);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 0.01em;
+  }
+
   * {
     @apply transition-colors duration-200;
   }
@@ -59,13 +101,14 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-slate-100 dark:bg-slate-800;
+  background: var(--sw-surface);
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-300 dark:bg-slate-600 rounded-full;
+  background: var(--sw-accent);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-400 dark:bg-slate-500;
+  background: var(--sw-accent-hover);
 }

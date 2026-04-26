@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { trainingService, TrainingModule } from "../services/trainingService";
+import { trainingService, TrainingModule, TrainingMetrics } from "../services/trainingService";
 import { useTenant } from "../contexts/TenantContext";
 
 export function useTraining() {
   const { selectedTenantId } = useTenant();
   const [modules, setModules] = useState<TrainingModule[]>([]);
-  const [metrics, setMetrics] = useState<Record<string, unknown> | null>(null);
+  const [metrics, setMetrics] = useState<TrainingMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const initialLoadDone = useRef(false);

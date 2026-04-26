@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureWatch360 — Brand Kit</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy-deep:    #07111f;
+    --navy-dark:    #0d1e33;
+    --navy-mid:     #112d4e;
+    --navy-light:   #1a3d63;
+    --blue-primary: #1565c0;
+    --blue-bright:  #1e88e5;
+    --blue-electric:#29b6f6;
+    --cyan:         #00e5ff;
+    --silver:       #b0c4de;
+    --silver-light: #dce8f5;
+    --green:        #22c55e;
+    --green-dim:    #166534;
+    --white:        #ffffff;
+    --text-muted:   #8ab4d4;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--navy-deep);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(7,17,31,.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(29,136,229,.2);
+    display: flex; align-items: center; gap: 32px;
+    padding: 0 48px; height: 60px;
+  }
+  nav .brand { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: .05em; color: var(--blue-electric); }
+  nav a { color: var(--text-muted); font-size: 13px; font-weight: 500; text-decoration: none; letter-spacing: .04em; text-transform: uppercase; transition: color .2s; }
+  nav a:hover { color: var(--white); }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative; overflow: hidden;
+    background: linear-gradient(160deg, #091525 0%, #0d2240 50%, #071220 100%);
+    padding: 80px 48px 72px;
+    border-bottom: 1px solid rgba(29,136,229,.15);
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 800px 500px at 70% 50%, rgba(21,101,192,.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; max-width: 1200px; margin: 0 auto; position: relative; }
+  .hero-logo img { width: 100%; max-width: 480px; filter: drop-shadow(0 0 40px rgba(41,182,246,.3)); }
+  .hero-text .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--blue-electric); margin-bottom: 16px; }
+  .hero-text h1 { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 52px; line-height: 1.05; letter-spacing: .01em; margin-bottom: 20px; }
+  .hero-text h1 em { font-style: normal; color: var(--blue-electric); }
+  .hero-text .tagline { font-size: 17px; color: var(--silver); line-height: 1.5; margin-bottom: 28px; }
+  .badge { display: inline-block; padding: 6px 16px; border: 1px solid rgba(41,182,246,.35); border-radius: 4px; font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--blue-electric); background: rgba(41,182,246,.07); }
+
+  /* ── SECTION WRAPPER ── */
+  .section { padding: 72px 48px; max-width: 1200px; margin: 0 auto; }
+  .section-header { margin-bottom: 40px; }
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--blue-electric); margin-bottom: 8px; }
+  .section-title { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 32px; letter-spacing: .02em; }
+  .divider { height: 1px; background: linear-gradient(90deg, rgba(29,136,229,.3) 0%, transparent 100%); margin: 0 48px; }
+
+  /* ── COLORS ── */
+  .color-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
+  .swatch { border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,.08); }
+  .swatch-block { height: 80px; }
+  .swatch-info { padding: 12px 14px; background: rgba(255,255,255,.04); }
+  .swatch-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .swatch-hex { font-size: 11px; color: var(--text-muted); font-family: 'Courier New', monospace; letter-spacing: .05em; }
+  .swatch-role { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── TYPOGRAPHY ── */
+  .type-samples { display: flex; flex-direction: column; gap: 24px; }
+  .type-row { display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: baseline; padding: 24px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .type-meta { }
+  .type-meta .type-label { font-size: 11px; font-weight: 600; letter-spacing: .15em; text-transform: uppercase; color: var(--blue-electric); margin-bottom: 4px; }
+  .type-meta .type-spec { font-size: 12px; color: var(--text-muted); line-height: 1.7; }
+
+  /* ── LOGO USAGE ── */
+  .logo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .logo-card { border-radius: 8px; padding: 40px 32px; display: flex; flex-direction: column; align-items: center; gap: 16px; border: 1px solid rgba(255,255,255,.07); }
+  .logo-card img { max-width: 200px; width: 100%; }
+  .logo-card .logo-bg-label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted); }
+  .logo-dark  { background: var(--navy-deep); }
+  .logo-mid   { background: var(--navy-mid); }
+  .logo-light { background: #dce8f5; }
+  .logo-light .logo-bg-label { color: #4a6a8a; }
+
+  /* ── VOICE ── */
+  .voice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .voice-card { padding: 28px; border-radius: 8px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); }
+  .voice-card h4 { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: .05em; margin-bottom: 12px; color: var(--blue-electric); }
+  .voice-card ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .voice-card li { font-size: 14px; color: var(--silver); padding-left: 16px; position: relative; }
+  .voice-card li::before { content: '—'; position: absolute; left: 0; color: var(--blue-bright); }
+  .messaging-block { background: rgba(21,101,192,.1); border: 1px solid rgba(29,136,229,.25); border-radius: 8px; padding: 32px 36px; margin-bottom: 16px; }
+  .messaging-block .msg-label { font-size: 11px; font-weight: 600; letter-spacing: .15em; text-transform: uppercase; color: var(--blue-electric); margin-bottom: 10px; }
+  .messaging-block p { font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.2; letter-spacing: .01em; }
+  .messaging-block p em { font-style: normal; color: var(--blue-electric); }
+
+  /* ── DIFFERENTIATORS ── */
+  .diff-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .diff-card { display: flex; gap: 16px; align-items: flex-start; padding: 20px 22px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 8px; transition: border-color .2s; }
+  .diff-card:hover { border-color: rgba(41,182,246,.3); }
+  .diff-num { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 28px; color: rgba(41,182,246,.25); line-height: 1; flex-shrink: 0; width: 36px; }
+  .diff-card h4 { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: .03em; margin-bottom: 5px; color: var(--white); }
+  .diff-card p { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .diff-badge { display: inline-block; margin-top: 8px; padding: 2px 10px; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; border-radius: 3px; background: rgba(21,101,192,.3); color: var(--blue-electric); border: 1px solid rgba(41,182,246,.25); }
+
+  /* ── ICON SYSTEM ── */
+  .icon-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .icon-card { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 12px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 8px; }
+  .icon-card svg { color: var(--blue-electric); }
+  .icon-card span { font-size: 11px; color: var(--text-muted); text-align: center; line-height: 1.3; }
+
+  /* ── PATTERNS ── */
+  .pattern-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .pattern-card { border-radius: 8px; padding: 32px; min-height: 140px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; overflow: hidden; position: relative; }
+  .pattern-card .p-label { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--text-muted); }
+  .pattern-card .p-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 20px; }
+
+  /* ── FOOTER ── */
+  footer { padding: 40px 48px; border-top: 1px solid rgba(255,255,255,.07); display: flex; align-items: center; justify-content: space-between; }
+  footer .f-brand { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: .05em; }
+  footer .f-brand span { color: var(--blue-electric); }
+  footer .f-note { font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="brand">SW360 BRAND KIT</span>
+  <a href="#colors">Colors</a>
+  <a href="#typography">Typography</a>
+  <a href="#logo">Logo</a>
+  <a href="#voice">Voice</a>
+  <a href="#differentiators">Differentiators</a>
+  <a href="#patterns">Patterns</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-grid">
+    <div class="hero-logo">
+      <img src="uploads/IMG_8748.png" alt="SecureWatch360 Logo">
+    </div>
+    <div class="hero-text">
+      <div class="eyebrow">Brand Identity System</div>
+      <h1>SECURE<em>WATCH</em><br>360°</h1>
+      <p class="tagline">One Platform. Total Protection. Continuous Compliance.</p>
+      <span class="badge">2026 Brand Kit</span>
+    </div>
+  </div>
+</div>
+
+<!-- COLORS -->
+<div class="divider"></div>
+<div class="section" id="colors">
+  <div class="section-header">
+    <div class="section-label">01 — Color System</div>
+    <div class="section-title">Brand Palette</div>
+  </div>
+  <div class="color-grid">
+    <div class="swatch">
+      <div class="swatch-block" style="background:#07111f;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Deep Navy</div>
+        <div class="swatch-hex">#07111F</div>
+        <div class="swatch-role">Primary Background</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#0d1e33;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Navy Dark</div>
+        <div class="swatch-hex">#0D1E33</div>
+        <div class="swatch-role">Surface / Card BG</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#112d4e;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Navy Mid</div>
+        <div class="swatch-hex">#112D4E</div>
+        <div class="swatch-role">Elevated Panels</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#1565c0;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Command Blue</div>
+        <div class="swatch-hex">#1565C0</div>
+        <div class="swatch-role">Primary Action</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#1e88e5;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Bright Blue</div>
+        <div class="swatch-hex">#1E88E5</div>
+        <div class="swatch-role">Interactive / Hover</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#29b6f6;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Electric Blue</div>
+        <div class="swatch-hex">#29B6F6</div>
+        <div class="swatch-role">Highlights / Labels</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:linear-gradient(135deg,#29b6f6,#00e5ff);"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Cyan Pulse</div>
+        <div class="swatch-hex">#00E5FF</div>
+        <div class="swatch-role">Glow / Live Threat</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#b0c4de;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Steel Silver</div>
+        <div class="swatch-hex">#B0C4DE</div>
+        <div class="swatch-role">Body Text / Icons</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#22c55e;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Compliance Green</div>
+        <div class="swatch-hex">#22C55E</div>
+        <div class="swatch-role">Success / Compliant</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#ffffff; border-top: 1px solid #e0e0e0;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">White</div>
+        <div class="swatch-hex">#FFFFFF</div>
+        <div class="swatch-role">Headlines / Reverse</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TYPOGRAPHY -->
+<div class="divider"></div>
+<div class="section" id="typography">
+  <div class="section-header">
+    <div class="section-label">02 — Typography</div>
+    <div class="section-title">Type System</div>
+  </div>
+  <div class="type-samples">
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="type-label">Display</div>
+        <div class="type-spec">Rajdhani Bold<br>64px / -0.5px<br>ALL CAPS</div>
+      </div>
+      <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:64px;line-height:1;letter-spacing:-.5px;text-transform:uppercase;">SECURE<span style="color:#29b6f6">WATCH</span>360</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="type-label">Headline</div>
+        <div class="type-spec">Rajdhani Bold<br>36px / 1.1<br>Title Case</div>
+      </div>
+      <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:36px;line-height:1.1;">A Complete Security<br><span style="color:#29b6f6">Command Center</span></div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="type-label">Subhead</div>
+        <div class="type-spec">Rajdhani SemiBold<br>22px / 1.3<br>Mixed Case</div>
+      </div>
+      <div style="font-family:'Rajdhani',sans-serif;font-weight:600;font-size:22px;line-height:1.3;color:#b0c4de;">One Platform. Total Protection. Continuous Compliance.</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="type-label">Body</div>
+        <div class="type-spec">Inter Regular<br>15px / 1.6<br>Sentence case</div>
+      </div>
+      <div style="font-family:'Inter',sans-serif;font-weight:400;font-size:15px;color:#8ab4d4;max-width:560px;">Most organizations rely on multiple point solutions that leave gaps, create alert fatigue, and slow down response. SecureWatch360 replaces the noise with a single unified command center.</div>
+    </div>
+    <div class="type-row">
+      <div class="type-meta">
+        <div class="type-label">Label / UI</div>
+        <div class="type-spec">Inter SemiBold<br>11px / 1.4<br>ALL CAPS + tracking</div>
+      </div>
+      <div style="font-family:'Inter',sans-serif;font-weight:600;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#29b6f6;">OUR DIFFERENTIATOR #1 &nbsp;·&nbsp; POLICY AS CODE &nbsp;·&nbsp; REAL-TIME</div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGO -->
+<div class="divider"></div>
+<div class="section" id="logo">
+  <div class="section-header">
+    <div class="section-label">03 — Logo</div>
+    <div class="section-title">Logo Usage</div>
+  </div>
+  <div class="logo-grid">
+    <div class="logo-card logo-dark">
+      <img src="uploads/IMG_8748.png" alt="Logo on dark">
+      <span class="logo-bg-label">On Deep Navy — Preferred</span>
+    </div>
+    <div class="logo-card logo-mid">
+      <img src="uploads/IMG_8748.png" alt="Logo on mid">
+      <span class="logo-bg-label">On Navy Mid — Acceptable</span>
+    </div>
+    <div class="logo-card logo-light" style="filter:brightness(0.92);">
+      <img src="uploads/IMG_8748.png" alt="Logo on light" style="filter:brightness(.7) saturate(1.2);">
+      <span class="logo-bg-label">On Light — Use Sparingly</span>
+    </div>
+  </div>
+
+  <div style="margin-top:32px; display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:24px;">
+      <div class="section-label" style="margin-bottom:12px;">Logo Mark Anatomy</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#29b6f6;flex-shrink:0;"></div>
+          <span style="font-size:13px;color:#b0c4de;"><strong style="color:#fff;">Shield</strong> — Protection, defense posture</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#1e88e5;flex-shrink:0;"></div>
+          <span style="font-size:13px;color:#b0c4de;"><strong style="color:#fff;">Camera Aperture</strong> — Continuous visibility, the "watch"</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#b0c4de;flex-shrink:0;"></div>
+          <span style="font-size:13px;color:#b0c4de;"><strong style="color:#fff;">Orbital Arrows</strong> — 360° continuous monitoring</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0;"></div>
+          <span style="font-size:13px;color:#b0c4de;"><strong style="color:#fff;">Steel Finish</strong> — Enterprise-grade reliability</span>
+        </div>
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:24px;">
+      <div class="section-label" style="margin-bottom:12px;">Clear Space &amp; Don'ts</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0;"></div>
+          <span style="font-size:13px;color:#b0c4de;">Never place on busy photographic backgrounds</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0;"></div>
+          <span style="font-size:13px;color:#b0c4de;">Never stretch, rotate, or recolor the mark</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0;"></div>
+          <span style="font-size:13px;color:#b0c4de;">Never use on backgrounds lighter than #dce8f5</span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0;"></div>
+          <span style="font-size:13px;color:#b0c4de;">Minimum width: 120px digital / 1 inch print</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VOICE & MESSAGING -->
+<div class="divider"></div>
+<div class="section" id="voice">
+  <div class="section-header">
+    <div class="section-label">04 — Voice &amp; Messaging</div>
+    <div class="section-title">Brand Voice</div>
+  </div>
+
+  <div class="messaging-block">
+    <div class="msg-label">Primary Headline</div>
+    <p>Not Just Another Tool.<br><em>A Complete Security Command Center.</em></p>
+  </div>
+  <div class="messaging-block">
+    <div class="msg-label">Tagline</div>
+    <p><em>One Platform.</em> Total Protection. Continuous Compliance.</p>
+  </div>
+  <div class="messaging-block">
+    <div class="msg-label">Brand Promise</div>
+    <p>SecureWatch360 isn't just another cybersecurity tool.<br>It's your <em>360° shield</em> in a world of evolving threats.</p>
+  </div>
+
+  <div style="margin-top:24px;" class="voice-grid">
+    <div class="voice-card">
+      <h4>We Sound Like</h4>
+      <ul>
+        <li>Confident, not arrogant</li>
+        <li>Technical, but accessible</li>
+        <li>Proactive and decisive</li>
+        <li>Authoritative without jargon</li>
+        <li>Solution-first, not fear-first</li>
+      </ul>
+    </div>
+    <div class="voice-card">
+      <h4>We Don't Sound Like</h4>
+      <ul>
+        <li>Vague or over-qualified</li>
+        <li>Panic-driven or fear-mongering</li>
+        <li>Buzzword-heavy without meaning</li>
+        <li>Generic enterprise software</li>
+        <li>Passive or reactive</li>
+      </ul>
+    </div>
+    <div class="voice-card">
+      <h4>Power Words</h4>
+      <ul>
+        <li>Detect · Decide · Act · Comply · Evolve</li>
+        <li>Autonomous · Unified · Real-Time</li>
+        <li>360° · Command · Shield</li>
+        <li>Proactive · Continuous · Always</li>
+      </ul>
+    </div>
+    <div class="voice-card">
+      <h4>The Challenge We Solve</h4>
+      <ul>
+        <li>Siloed tools with visibility gaps</li>
+        <li>Alert overload &amp; false positives</li>
+        <li>Slow manual investigation</li>
+        <li>Compliance drift out of sync</li>
+        <li>Reactive-only security posture</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DIFFERENTIATORS -->
+<div class="divider"></div>
+<div class="section" id="differentiators">
+  <div class="section-header">
+    <div class="section-label">05 — Differentiators</div>
+    <div class="section-title">How We Are Different</div>
+  </div>
+  <div class="diff-grid">
+    <div class="diff-card">
+      <div class="diff-num">01</div>
+      <div>
+        <h4>Policy as Code. Compliance in Sync.</h4>
+        <p>We use Rego rules to enforce security policies and compliance in real time. Always in sync. Always audit-ready.</p>
+        <span class="diff-badge">Differentiator #1</span>
+      </div>
+    </div>
+    <div class="diff-card">
+      <div class="diff-num">02</div>
+      <div>
+        <h4>Autonomous Threat Response</h4>
+        <p>We don't just alert — we act. Find, contain, and fix threats autonomously without waiting for human intervention.</p>
+        <span class="diff-badge">Differentiator #2</span>
+      </div>
+    </div>
+    <div class="diff-card">
+      <div class="diff-num">03</div>
+      <div>
+        <h4>Unified Platform</h4>
+        <p>All-in-one solution with complete visibility and control across endpoints, network, cloud, and users.</p>
+      </div>
+    </div>
+    <div class="diff-card">
+      <div class="diff-num">04</div>
+      <div>
+        <h4>Smarter Detection</h4>
+        <p>AI and behavioral analytics catch what others miss — reducing noise while surfacing real threats faster.</p>
+      </div>
+    </div>
+    <div class="diff-card">
+      <div class="diff-num">05</div>
+      <div>
+        <h4>Proactive Security</h4>
+        <p>Threat hunting and prediction stop attacks early, before they spread or cause damage.</p>
+      </div>
+    </div>
+    <div class="diff-card">
+      <div class="diff-num">06</div>
+      <div>
+        <h4>Actionable Alerts</h4>
+        <p>Prioritized, accurate alerts so your team focuses on what actually matters — not a flood of false positives.</p>
+      </div>
+    </div>
+    <div class="diff-card">
+      <div class="diff-num">07</div>
+      <div>
+        <h4>Automated Workflows</h4>
+        <p>Respond faster with built-in automation and orchestration that eliminates manual investigation steps.</p>
+      </div>
+    </div>
+    <div class="diff-card">
+      <div class="diff-num">08</div>
+      <div>
+        <h4>Built for Growth</h4>
+        <p>Simple. Scalable. Secure. Scales with your organization without adding complexity as you grow.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PATTERNS -->
+<div class="divider"></div>
+<div class="section" id="patterns">
+  <div class="section-header">
+    <div class="section-label">06 — Visual Patterns</div>
+    <div class="section-title">Background &amp; Texture Treatments</div>
+  </div>
+  <div class="pattern-grid">
+    <div class="pattern-card" style="background:linear-gradient(160deg,#07111f 0%,#0d2240 60%,#071220 100%);">
+      <div class="p-label">Pattern</div>
+      <div class="p-name">Command Dark</div>
+    </div>
+    <div class="pattern-card" style="background:linear-gradient(135deg,#091525 0%,#112d4e 100%); box-shadow:inset 0 0 80px rgba(21,101,192,.15);">
+      <div class="p-label">Pattern</div>
+      <div class="p-name">Navy Depth</div>
+    </div>
+    <div class="pattern-card" style="background:radial-gradient(ellipse at 30% 50%,#1565c0 0%,#07111f 65%);">
+      <div class="p-label">Pattern</div>
+      <div class="p-name">Blue Glow</div>
+    </div>
+    <div class="pattern-card" style="background:linear-gradient(180deg,#112d4e 0%,#07111f 100%); border-top: 3px solid #1e88e5;">
+      <div class="p-label">Pattern</div>
+      <div class="p-name">Panel Elevated</div>
+    </div>
+    <div class="pattern-card" style="background:rgba(21,101,192,.12);border:1px solid rgba(29,136,229,.3);">
+      <div class="p-label">Pattern</div>
+      <div class="p-name">Glass Card</div>
+    </div>
+    <div class="pattern-card" style="background:linear-gradient(135deg,#0d2240 0%,#071e14 100%); border-left: 3px solid #22c55e;">
+      <div class="p-label">Pattern</div>
+      <div class="p-name">Compliance Panel</div>
+    </div>
+  </div>
+
+  <!-- Result bar -->
+  <div style="margin-top:32px;background:rgba(21,101,192,.1);border:1px solid rgba(29,136,229,.2);border-radius:8px;padding:24px 32px;display:flex;gap:40px;align-items:center;flex-wrap:wrap;">
+    <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;letter-spacing:.08em;text-transform:uppercase;color:#29b6f6;">RESULT:</div>
+    <div style="display:flex;gap:32px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span style="font-family:'Rajdhani',sans-serif;font-weight:600;font-size:16px;">Stronger Security</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span style="font-family:'Rajdhani',sans-serif;font-weight:600;font-size:16px;">Faster Response</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span style="font-family:'Rajdhani',sans-serif;font-weight:600;font-size:16px;">Lower Costs</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        <span style="font-family:'Rajdhani',sans-serif;font-weight:600;font-size:16px;">Better Outcomes</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="divider"></div>
+<footer>
+  <div class="f-brand">SECURE<span>WATCH</span>360</div>
+  <div class="f-note">Brand Kit · April 2026 · Confidential</div>
+</footer>
+
+</body>
+</html>

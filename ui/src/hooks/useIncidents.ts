@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { incidentsService, Incident } from "../services/incidentsService";
+import { incidentsService, Incident, IncidentMetrics } from "../services/incidentsService";
 import { useTenant } from "../contexts/TenantContext";
 
 export function useIncidents() {
   const { selectedTenantId } = useTenant();
   const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [metrics, setMetrics] = useState<Record<string, unknown> | null>(null);
+  const [metrics, setMetrics] = useState<IncidentMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const initialLoadDone = useRef(false);

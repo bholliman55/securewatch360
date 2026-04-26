@@ -55,7 +55,18 @@ describe("dashboardService", () => {
       assetsMonitored: 0,
       lastScanTime: null,
     });
-    vi.mocked(incidentsService.getMetrics).mockResolvedValue({ open: 2, total: 2 });
+    vi.mocked(incidentsService.getMetrics).mockResolvedValue({
+      total: 2,
+      open: 2,
+      investigating: 0,
+      resolved: 0,
+      closed: 0,
+      critical: 0,
+      high: 0,
+      medium: 2,
+      low: 0,
+      avgResolutionTimeHours: 0,
+    });
     vi.mocked(complianceService.getMetrics).mockResolvedValue({
       total: 0,
       compliant: 0,

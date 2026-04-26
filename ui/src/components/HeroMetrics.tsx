@@ -79,18 +79,18 @@ export default function HeroMetrics({ metrics: data }: HeroMetricsProps) {
           <div
             key={index}
             onClick={() => isClickable && setShowVulnerabilities(true)}
-            className={`bg-white dark:bg-slate-800 rounded-lg shadow-lg border-l-4 ${metric.borderColor} p-6 transition-all duration-500 hover:shadow-xl hover:-translate-y-1 ${
+            className={`bg-[var(--sw-surface)] rounded-lg shadow-lg border border-[var(--sw-border)] border-l-4 ${metric.borderColor} p-6 transition-all duration-500 hover:shadow-xl hover:-translate-y-1 ${
               animated ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             } ${isClickable ? 'cursor-pointer' : ''}`}
             style={{ transitionDelay: `${index * 100}ms` }}
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
+                <p className="text-sm font-medium text-[var(--sw-text-muted)] mb-2">
                   {metric.label}
                 </p>
                 <div className="flex items-baseline space-x-2">
-                  <h3 className="text-4xl font-bold text-slate-900 dark:text-slate-100">
+                  <h3 className="text-4xl font-bold text-[var(--sw-text-primary)]">
                     {animated ? metric.value : 0}
                     {metric.suffix && <span className="text-2xl">{metric.suffix}</span>}
                   </h3>
@@ -100,7 +100,7 @@ export default function HeroMetrics({ metrics: data }: HeroMetricsProps) {
                   <span className={`text-sm font-medium ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
                     {Math.abs(metric.trend)}%
                   </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">vs last period</span>
+                  <span className="text-xs text-[var(--sw-text-muted)]">vs last period</span>
                 </div>
               </div>
               <div className={`${metric.bgColor} p-3 rounded-lg`}>

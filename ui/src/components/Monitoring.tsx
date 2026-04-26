@@ -17,7 +17,7 @@ export default function Monitoring() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1e88e5]"></div>
       </div>
     );
   }
@@ -34,16 +34,16 @@ export default function Monitoring() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+          <h2 className="text-3xl font-bold text-[var(--sw-text-primary)] mb-2">
             Monitoring Agent
           </h2>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-[var(--sw-text-muted)]">
             Real-time system health and performance monitoring
           </p>
         </div>
         <button
           onClick={refresh}
-          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--sw-surface)] border border-[var(--sw-border)] rounded-lg hover:bg-[var(--sw-surface-elevated)] transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh
@@ -52,7 +52,7 @@ export default function Monitoring() {
 
       {metrics && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-200 dark:border-slate-700">
+          <div className="bg-[var(--sw-surface)] rounded-lg shadow-lg p-6 border border-[var(--sw-border)]">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
@@ -68,7 +68,7 @@ export default function Monitoring() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-200 dark:border-slate-700">
+          <div className="bg-[var(--sw-surface)] rounded-lg shadow-lg p-6 border border-[var(--sw-border)]">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
@@ -84,7 +84,7 @@ export default function Monitoring() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-200 dark:border-slate-700">
+          <div className="bg-[var(--sw-surface)] rounded-lg shadow-lg p-6 border border-[var(--sw-border)]">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
@@ -94,13 +94,13 @@ export default function Monitoring() {
                   {metrics.avgResponseTime}ms
                 </p>
               </div>
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              <div className="p-3 bg-[#1565c0]/15 rounded-lg">
+                <Clock className="w-6 h-6 text-[#29b6f6]" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-200 dark:border-slate-700">
+          <div className="bg-[var(--sw-surface)] rounded-lg shadow-lg p-6 border border-[var(--sw-border)]">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
@@ -118,15 +118,15 @@ export default function Monitoring() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
-        <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+      <div className="bg-[var(--sw-surface)] rounded-lg shadow-lg border border-[var(--sw-border)]">
+        <div className="p-6 border-b border-[var(--sw-border)]">
+          <h3 className="text-lg font-bold text-[var(--sw-text-primary)]">
             Active Monitoring Checks
           </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-50 dark:bg-slate-900/50">
+            <thead className="bg-[var(--sw-surface-elevated)]">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Check Name
@@ -151,7 +151,7 @@ export default function Monitoring() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+            <tbody className="divide-y divide-[var(--sw-border)]">
               {checks.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
@@ -160,7 +160,7 @@ export default function Monitoring() {
                 </tr>
               ) : (
                 checks.map((check) => (
-                  <tr key={check.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <tr key={check.id} className="hover:bg-[var(--sw-surface-elevated)] transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                         {check.check_name}

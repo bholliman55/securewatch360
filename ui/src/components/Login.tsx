@@ -58,14 +58,14 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#07111f] via-[#0d1e33] to-[#07111f] flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#1565c0] to-[#29b6f6] rounded-2xl mb-4">
             <Shield className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">SecureWatch360 AI</h1>
-          <p className="text-slate-400">
+          <h1 className="text-4xl font-bold text-white mb-2 tracking-wide">SecureWatch360 AI</h1>
+          <p className="text-[#b0c4de]">
             {isForgotPassword
               ? 'Reset your password'
               : isLogin
@@ -74,11 +74,11 @@ export default function Login() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-8">
+        <div className="bg-[var(--sw-surface)] rounded-xl shadow-2xl border border-[var(--sw-border)] p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {!isLogin && !isForgotPassword && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-[var(--sw-text-muted)] mb-2 uppercase tracking-[0.08em]">
                   Full Name
                 </label>
                 <input
@@ -87,35 +87,35 @@ export default function Login() {
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="John Doe"
                   required={!isLogin}
-                  className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 rounded-lg border border-[var(--sw-border)] bg-[var(--sw-surface-elevated)] text-[var(--sw-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#1e88e5]"
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-[var(--sw-text-muted)] mb-2 uppercase tracking-[0.08em]">
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--sw-text-muted)]" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-[var(--sw-border)] bg-[var(--sw-surface-elevated)] text-[var(--sw-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#1e88e5]"
                 />
               </div>
             </div>
 
             {!isForgotPassword && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-[var(--sw-text-muted)] mb-2 uppercase tracking-[0.08em]">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--sw-text-muted)]" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
@@ -123,12 +123,12 @@ export default function Login() {
                     placeholder="••••••••"
                     required
                     minLength={6}
-                    className="w-full pl-10 pr-12 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-10 pr-12 py-3 rounded-lg border border-[var(--sw-border)] bg-[var(--sw-surface-elevated)] text-[var(--sw-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#1e88e5]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--sw-text-muted)] hover:text-[var(--sw-text-primary)]"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -153,7 +153,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full py-3 px-4 bg-[#1565c0] hover:bg-[#1e88e5] text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {loading ? (
                 <>
@@ -170,7 +170,7 @@ export default function Login() {
             {!isForgotPassword && isLogin && (
               <button
                 onClick={() => setIsForgotPassword(true)}
-                className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                className="w-full text-center text-sm text-[#29b6f6] hover:underline"
               >
                 Forgot your password?
               </button>
@@ -183,13 +183,13 @@ export default function Login() {
                   setError('');
                   setSuccess('');
                 }}
-                className="w-full text-center text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                className="w-full text-center text-sm text-[var(--sw-text-muted)] hover:text-[var(--sw-text-primary)]"
               >
                 Back to sign in
               </button>
             ) : (
               <div className="text-center">
-                <span className="text-sm text-slate-600 dark:text-slate-400">
+                <span className="text-sm text-[var(--sw-text-muted)]">
                   {isLogin ? "Don't have an account? " : 'Already have an account? '}
                 </span>
                 <button
@@ -198,7 +198,7 @@ export default function Login() {
                     setError('');
                     setSuccess('');
                   }}
-                  className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                  className="text-sm text-[#29b6f6] hover:underline font-medium"
                 >
                   {isLogin ? 'Sign up' : 'Sign in'}
                 </button>
@@ -207,7 +207,7 @@ export default function Login() {
           </div>
         </div>
 
-        <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-8">
+        <p className="text-center text-sm text-[#8ab4d4] mt-8">
           Secure multi-agent security operations platform
         </p>
       </div>

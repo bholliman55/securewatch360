@@ -4,7 +4,7 @@ import type {
   DecisionOutput,
   DecisionReason,
 } from "@/types/policy";
-import { evaluateAgainstPolicies } from "@/lib/policyEvaluationService";
+import { evaluateDecisionWithOpa } from "@/lib/opaClient";
 
 type EnginePolicyRef = {
   policyId: string;
@@ -174,13 +174,7 @@ export async function evaluateDecisionWithRules(input: DecisionInput): Promise<D
 
 const opaProvider: DecisionProvider = {
   name: "opa",
-  evaluate: async (input: DecisionInput) => {
-    const result = await evaluateAgainstPolicies({
-      input,
-      fallbackEvaluator: evaluateDecisionWithRules,
-    });
-    return result.decision;
-  },
+  evaluate: async (input: DecisionInput) => evaluateDecisionWithOpa({ input }),
 };
 
 const rulesProvider: DecisionProvider = {
@@ -189,7 +183,7 @@ const rulesProvider: DecisionProvider = {
 };
 
 function resolveProvider(): DecisionProvider {
-  const requested = (process.env.DECISION_ENGINE_PROVIDER ?? "rules").toLowerCase();
+  const requested = (process.env.DECISION_ENGINE_PROVIDER ?? "opa").toLowerCase();
   if (requested === "opa") {
     return opaProvider;
   }
@@ -207,6 +201,10 @@ export async function evaluateDecision(input: DecisionInput): Promise<DecisionOu
   } catch (error) {
     // If OPA provider fails, fail open to rules for v4 bootstrap safety.
     if (provider.name !== "rules") {
+      console.warn("[decision-engine] OPA unavailable, falling back to local rules", {
+        provider: provider.name,
+        error: error instanceof Error ? error.message : String(error),
+      });
       const fallback = await evaluateDecisionWithRules(input);
       return {
         ...fallback,

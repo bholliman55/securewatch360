@@ -19,7 +19,7 @@ export default function Settings() {
   const checkDatabaseConnection = async () => {
     setDbStatus('checking');
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('scan_results')
         .select('id', { count: 'exact', head: true });
 
