@@ -49,6 +49,13 @@ Core components:
 - **Tenant roster API:** `GET /api/tenant-users?tenantId=…` (owner|admin) lists membership; SCIM discovery: `GET /api/scim/v2/ServiceProviderConfig`
 - **ITSM:** Jira and ServiceNow issue create APIs under `/api/integrations/jira/issues` and `/api/integrations/servicenow/incidents` (ConnectWise: `/api/integrations/connectwise/tickets`); see `docs/ITSM-INTEGRATIONS.md`
 
+## Notifications (MVP hub)
+
+- **Data:** `notification_subscription_rules` (tenant-wide when `user_id` is null, per-user when set); RLS policies align with `tenant_users` membership.
+- **APIs:** `GET` / `POST` `/api/notification-subscriptions?tenantId=…` (optional `scope=all|tenant|user` on GET); `PATCH` `/api/notification-subscriptions/{id}` (body includes `tenantId`). Fields: `minSeverity` (`info`–`critical`), `channel` (`email` | `slack` | `in_app`), `digestInterval` (`off` | `hourly` | `daily` | `weekly`), `scope` on create (`tenant` | `user`).
+- **Inngest:** `notification-digest` (hourly cron) writes audit + a stub `evidence_records` row per eligible rule when a digest would be sent; email/Slack are optional follow-ups.
+- **Env:** no additional variables for the stub path.
+
 Primary v4 workflow:
 
 1. `securewatch/scan.requested` event is sent.

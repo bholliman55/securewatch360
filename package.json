@@ -20,6 +20,7 @@
     "qa:prompt-hash": "npx tsx scripts/qa-prompt-hash-examples.ts",
     "qa:context-sanitizer": "npx tsx scripts/qa-context-sanitizer-examples.ts",
     "qa:context-compressor": "npx tsx scripts/qa-context-compressor-examples.ts",
+    "qa:v1:connectors:real": "npx tsx scripts/qa-v1-connectors-real.ts",
     "qa:policy-pack": "npx tsx scripts/qa-policy-pack-validate.ts",
     "qa:iac": "npx tsx scripts/qa-iac-policy-pack-validate.ts",
     "qa:rego": "npx tsx scripts/qa-rego-opa-check.ts",
