@@ -14,6 +14,15 @@ export interface MonitoringCheck {
   updated_at: string;
 }
 
+export interface MonitoringMetrics {
+  total: number;
+  healthy: number;
+  warning: number;
+  critical: number;
+  avgResponseTime: number;
+  avgUptime: number;
+}
+
 function requireTenant(tenantId: string | null | undefined): string {
   if (!tenantId || tenantId.trim() === "") {
     throw new Error("Select a tenant to load monitoring data.");
@@ -64,7 +73,7 @@ export const monitoringService = {
     return rows.map((r, i) => runToCheck(r, i));
   },
 
-  async getMetrics(tenantId?: string | null) {
+  async getMetrics(tenantId?: string | null): Promise<MonitoringMetrics> {
     const checks = await this.getChecks(tenantId);
 
     const statusCounts = checks.reduce(

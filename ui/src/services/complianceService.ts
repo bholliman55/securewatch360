@@ -15,6 +15,15 @@ export interface ComplianceAudit {
   updated_at: string;
 }
 
+export interface ComplianceMetrics {
+  total: number;
+  compliant: number;
+  non_compliant: number;
+  partial: number;
+  overallScore: number;
+  frameworkScores: Array<{ name: string; score: number }>;
+}
+
 function requireTenant(tenantId: string | null | undefined): string {
   if (!tenantId || tenantId.trim() === "") {
     throw new Error("Select a tenant to load compliance data.");
@@ -54,7 +63,7 @@ export const complianceService = {
     }));
   },
 
-  async getMetrics(tenantId?: string | null) {
+  async getMetrics(tenantId?: string | null): Promise<ComplianceMetrics> {
     const audits = await this.getAudits(tenantId);
 
     const statusCounts = audits.reduce(

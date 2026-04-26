@@ -22,6 +22,19 @@ export interface Incident {
   updated_at: string;
 }
 
+export interface IncidentMetrics {
+  total: number;
+  open: number;
+  investigating: number;
+  resolved: number;
+  closed: number;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+  avgResolutionTimeHours: number;
+}
+
 function requireTenant(tenantId: string | null | undefined): string {
   if (!tenantId || tenantId.trim() === "") {
     throw new Error("Select a tenant to load incidents.");
@@ -67,7 +80,7 @@ export const incidentsService = {
     return (res.incidents ?? []).map(mapIncident);
   },
 
-  async getMetrics(tenantId?: string | null) {
+  async getMetrics(tenantId?: string | null): Promise<IncidentMetrics> {
     const incidents = await this.getIncidents(tenantId);
 
     const statusCounts = incidents.reduce(

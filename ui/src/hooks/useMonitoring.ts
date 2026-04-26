@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { monitoringService, MonitoringCheck } from "../services/monitoringService";
+import { monitoringService, MonitoringCheck, MonitoringMetrics } from "../services/monitoringService";
 import { useTenant } from "../contexts/TenantContext";
 
 export function useMonitoring() {
   const { selectedTenantId } = useTenant();
   const [checks, setChecks] = useState<MonitoringCheck[]>([]);
-  const [metrics, setMetrics] = useState<Record<string, unknown> | null>(null);
+  const [metrics, setMetrics] = useState<MonitoringMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const initialLoadDone = useRef(false);

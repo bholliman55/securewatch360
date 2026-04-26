@@ -282,7 +282,11 @@ INNGEST_SIGNING_KEY=
 # Decision engine provider (optional; default is rules)
 DECISION_ENGINE_PROVIDER=rules
 
-# OPA-compatible policy evaluation endpoint (optional)
+# OPA base URL (optional for local dev; default http://localhost:8181)
+OPA_BASE_URL=http://localhost:8181
+# OPA decision path (defaults to /v1/data/securewatch/v4/decision)
+OPA_POLICY_PATH=
+# Legacy OPA-compatible policy evaluation endpoint (optional; adapter path)
 OPA_POLICY_EVAL_URL=
 OPA_POLICY_EVAL_TOKEN=
 OPA_POLICY_EVAL_TIMEOUT_MS=4000
@@ -342,9 +346,15 @@ INNGEST_APP_URL=http://localhost:3001/api/inngest npm run inngest:dev
 
 ## Run OPA locally for development
 
-v4 supports OPA through an OPA-compatible HTTP endpoint. You can still run vanilla OPA locally to author/test Rego policies.
+v4 can call local OPA directly via `OPA_BASE_URL` and policy path `OPA_POLICY_PATH` (default `/v1/data/securewatch/v4/decision`).
 
-Start OPA with local policy files:
+Quick start command:
+
+```bash
+docker run -p 8181:8181 openpolicyagent/opa run --server --addr :8181
+```
+
+Start OPA with local policy files mounted (recommended):
 
 ```bash
 docker run --rm -p 8181:8181 -v "$PWD/policies/rego:/policies" openpolicyagent/opa:latest run --server --addr :8181 /policies
@@ -365,6 +375,8 @@ Important: current app integration expects `OPA_POLICY_EVAL_URL` to accept a pay
 ```
 
 So for end-to-end OPA provider mode in-app, point `OPA_POLICY_EVAL_URL` to an endpoint that is OPA-compatible with that contract.
+
+For local OPA setup and troubleshooting details, see `docs/OPA-LOCAL-DEV.md`.
 
 ## Seed and QA scripts
 

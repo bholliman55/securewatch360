@@ -1,5 +1,5 @@
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, AreaChart, Area } from 'recharts';
-import { TrendingUp, TrendingDown, AlertCircle, CheckCircle, Clock, Target } from 'lucide-react';
+import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, AreaChart, Area } from 'recharts';
+import { TrendingUp, TrendingDown, AlertCircle, CheckCircle } from 'lucide-react';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useScannerData } from '../hooks/useScannerData';
 import { useIncidents } from '../hooks/useIncidents';
@@ -18,11 +18,11 @@ const COLORS = {
 
 export default function Analytics() {
   const dashboardData = useDashboardData();
-  const scannerData = useScannerData();
-  const incidentsData = useIncidents();
-  const complianceData = useCompliance();
-  const trainingData = useTraining();
-  const monitoringData = useMonitoring();
+  useScannerData();
+  useIncidents();
+  useCompliance();
+  useTraining();
+  useMonitoring();
 
   const generateTrendData = () => [
     { date: 'Feb 15', threats: 45, incidents: 8, compliance: 82 },
@@ -75,7 +75,26 @@ export default function Analytics() {
     { name: 'Cache Layer', uptime: 99.96, responseTime: 12 }
   ];
 
-  const MetricCard = ({ label, value, trend, trendDirection }: any) => (
+  type TrendDirection = 'up' | 'down';
+  interface MetricCardProps {
+    label: string;
+    value: string | number;
+    trend: string;
+    trendDirection: TrendDirection;
+  }
+  interface TrainingMetric {
+    category: string;
+    enrolled: number;
+    completed: number;
+    completion: number;
+  }
+  interface MonitoringUptime {
+    name: string;
+    uptime: number;
+    responseTime: number;
+  }
+
+  const MetricCard = ({ label, value, trend, trendDirection }: MetricCardProps) => (
     <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
       <div className="flex items-center justify-between">
         <div>
@@ -184,7 +203,7 @@ export default function Analytics() {
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-200 dark:border-slate-700">
           <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">Training Completion Rate</h3>
           <div className="space-y-4">
-            {generateTrainingMetrics().map((item: any) => (
+            {generateTrainingMetrics().map((item: TrainingMetric) => (
               <div key={item.category}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{item.category}</span>
@@ -206,7 +225,7 @@ export default function Analytics() {
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-200 dark:border-slate-700">
           <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">System Uptime & Response Time</h3>
           <div className="space-y-4">
-            {generateMonitoringUptime().map((item: any) => (
+            {generateMonitoringUptime().map((item: MonitoringUptime) => (
               <div key={item.name} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{item.name}</p>

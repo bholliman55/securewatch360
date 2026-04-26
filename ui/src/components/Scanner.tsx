@@ -9,10 +9,7 @@ import {
   ChevronRight,
   RefreshCw,
   Play,
-  Search,
-  Filter,
-  Grid2x2,
-  List
+  Search
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useScannerData } from '../hooks/useScannerData';

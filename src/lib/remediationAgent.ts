@@ -1,5 +1,8 @@
 import { writeAuditLog } from "@/lib/audit";
 import { evaluateGuardrails } from "@/lib/guardrails";
+import { buildRemediationContextBundle } from "@/lib/token-optimization/context-builders/remediationContextBuilder";
+import { MockLlmProviderAdapter } from "@/lib/token-optimization/mockLlmProviderAdapter";
+import { optimizedLlmGateway } from "@/lib/token-optimization/optimizedLlmGateway";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import type { DecisionInput, DecisionOutput } from "@/types/policy";
 import type {
@@ -45,6 +48,14 @@ type RemediationRoutingPlan = {
   adapterKey: "script_runner" | "ansible" | "cloud_api" | "ticketing";
   executionPayload: Record<string, unknown>;
   notes: string;
+};
+
+type RecommendationResult = {
+  text: string;
+  source: "llm" | "deterministic_fallback";
+  cacheHit: boolean;
+  promptLogId: string | null;
+  warnings: string[];
 };
 
 type ActionRule = {
@@ -268,11 +279,63 @@ function determineExecutionPlan(candidate: RemediationCandidate): RemediationRou
   };
 }
 
+function buildDeterministicRecommendation(
+  candidate: RemediationCandidate,
+  plan: RemediationRoutingPlan
+): RecommendationResult {
+  // Deterministic fallback keeps remediation flow available even when gateway/provider fails.
+  const text = `Recommended action: ${plan.actionType}. Execution mode: ${plan.executionMode}. Target ${candidate.targetType} ${candidate.targetValue} should be remediated per policy decision ${candidate.decisionOutput.action}.`;
+  return {
+    text,
+    source: "deterministic_fallback",
+    cacheHit: false,
+    promptLogId: null,
+    warnings: ["llm_unavailable_fallback_used"],
+  };
+}
+
+async function buildRecommendation(
+  candidate: RemediationCandidate,
+  plan: RemediationRoutingPlan
+): Promise<RecommendationResult> {
+  try {
+    // LLM is assistive only: recommendation wording for analysts, not decision override or execution control.
+    const llmResult = await optimizedLlmGateway(new MockLlmProviderAdapter(), {
+      tenantId: candidate.tenantId,
+      agent: "remediation",
+      taskType: "remediation_recommendation_wording",
+      model: "mock-securewatch-v1",
+      instruction:
+        "Generate concise remediation recommendation wording suitable for a security analyst runbook. Keep to two sentences max. Do not alter policy decisions.",
+      contextBundle: await buildRemediationContextBundle({
+        tenantId: candidate.tenantId,
+        findingId: candidate.findingId,
+        scanRunId: candidate.scanRunId,
+      }),
+      maxCompletionTokens: 220,
+      allowCache: true,
+      allowSummaryReuse: true,
+      includePromptPreviewInLogs: false,
+    });
+
+    return {
+      text: llmResult.response,
+      source: "llm",
+      cacheHit: llmResult.cacheHit,
+      promptLogId: llmResult.promptLogId ?? null,
+      warnings: llmResult.warnings,
+    };
+  } catch {
+    return buildDeterministicRecommendation(candidate, plan);
+  }
+}
+
 export async function routeRemediationCandidate(
   candidate: RemediationCandidate
 ): Promise<RoutedRemediationResult> {
   const supabase = getSupabaseAdminClient();
   const plan = determineExecutionPlan(candidate);
+  const recommendation = await buildRecommendation(candidate, plan);
 
   const { data: existingAction } = await supabase
     .from("remediation_actions")
@@ -290,12 +353,21 @@ export async function routeRemediationCandidate(
     action_status: plan.actionStatus,
     execution_status: plan.executionStatus,
     execution_mode: plan.executionMode,
-    execution_payload: plan.executionPayload,
+    execution_payload: {
+      ...plan.executionPayload,
+      recommendation: {
+        text: recommendation.text,
+        source: recommendation.source,
+        cacheHit: recommendation.cacheHit,
+        promptLogId: recommendation.promptLogId,
+        warnings: recommendation.warnings,
+      },
+    },
     decision_input: candidate.decisionInput,
     decision_result: candidate.decisionOutput,
     approval_status: candidate.approvalStatus,
     exception_status: candidate.exceptionStatus,
-    notes: plan.notes,
+    notes: `${plan.notes} recommendation=${recommendation.text}`,
     updated_at: new Date().toISOString(),
   };
 

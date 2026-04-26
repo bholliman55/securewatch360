@@ -38,7 +38,7 @@ export interface Activity {
     discovered_date?: string | null;
     cve_id?: string | null;
     cvss_score?: number | null;
-    affected_asset?: string;
+    affected_asset?: string | null;
     asset_id?: number;
     remediation_steps?: string | null;
     package_name?: string | null;
@@ -189,7 +189,7 @@ class DashboardService {
           id: 1,
           name: 'Scanner',
           status: recentScans.length > 0 && recentScans[0].status === 'running' ? 'Active' : 'Idle',
-          lastActivity: recentScans[0]?.created_at || new Date().toISOString()
+          lastActivity: recentScans[0]?.started_at || new Date().toISOString()
         },
         {
           id: 2,
