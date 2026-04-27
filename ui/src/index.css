@@ -5,15 +5,19 @@
 
 @layer base {
   :root {
-    --sw-bg: #dce8f5;
+    --sw-bg: #eef3f9;
     --sw-surface: #ffffff;
-    --sw-surface-elevated: #f4f8fc;
-    --sw-border: #c9d9ea;
-    --sw-text-primary: #112d4e;
-    --sw-text-muted: #4a6a8a;
-    --sw-accent: #1565c0;
-    --sw-accent-hover: #1e88e5;
+    --sw-surface-elevated: #f7faff;
+    --sw-border: #d4deeb;
+    --sw-text-primary: #0f2745;
+    --sw-text-muted: #4e6784;
+    --sw-accent: #0f5cb8;
+    --sw-accent-hover: #0d4e9f;
     --sw-accent-bright: #29b6f6;
+    --sw-nav-active-bg: linear-gradient(135deg, #0f5cb8 0%, #0d3f84 100%);
+    --sw-nav-active-text: #ffffff;
+    --sw-card-shadow: 0 10px 30px -18px rgba(17, 45, 78, 0.35);
+    --sw-card-shadow-hover: 0 16px 34px -18px rgba(17, 45, 78, 0.45);
   }
 
   .dark {
@@ -26,6 +30,10 @@
     --sw-accent: #1565c0;
     --sw-accent-hover: #1e88e5;
     --sw-accent-bright: #29b6f6;
+    --sw-nav-active-bg: linear-gradient(135deg, #1565c0 0%, #112d4e 100%);
+    --sw-nav-active-text: #ffffff;
+    --sw-card-shadow: 0 14px 34px -20px rgba(0, 0, 0, 0.55);
+    --sw-card-shadow-hover: 0 20px 40px -18px rgba(0, 0, 0, 0.65);
   }
 
   html,
@@ -36,8 +44,12 @@
 
   body {
     font-family: 'Inter', sans-serif;
-    background: var(--sw-bg);
+    background: radial-gradient(circle at top right, #f8fbff 0%, var(--sw-bg) 45%);
     color: var(--sw-text-primary);
+  }
+
+  .dark body {
+    background: var(--sw-bg);
   }
 
   h1, h2, h3, h4, h5, h6 {

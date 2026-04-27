@@ -25,8 +25,8 @@ type ScanTargetRow = {
   target_type: string;
   target_value: string;
   status: "active" | "paused" | "archived";
-  owner_email: string | null;
-  business_criticality: "low" | "medium" | "high" | "critical" | null;
+  owner_email?: string | null;
+  business_criticality?: "low" | "medium" | "high" | "critical" | null;
 };
 
 type FindingSeverity = "info" | "low" | "medium" | "high" | "critical";
@@ -77,6 +77,10 @@ type RoutedRemediationRow = {
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown workflow failure";
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function mapDecisionResult(decision: DecisionOutput): DecisionResult {
@@ -154,22 +158,40 @@ export const scanTenantRequested = inngest.createFunction(
 
       currentStep = "load-target";
       const target = await step.run("load-target", async (): Promise<ScanTargetRow> => {
-        const { data, error } = await supabase
-          .from("scan_targets")
-          .select("id, tenant_id, target_name, target_type, target_value, status, owner_email, business_criticality")
-          .eq("id", payload.scanTargetId)
-          .eq("tenant_id", payload.tenantId)
-          .single();
+        const targetLookupAttempts = 6;
+        const targetLookupDelayMs = 600;
+        let lastErrorMessage: string | null = null;
 
-        if (error || !data) {
-          throw new Error(`Scan target not found for tenant: ${payload.scanTargetId}`);
+        for (let attempt = 1; attempt <= targetLookupAttempts; attempt++) {
+          const { data, error } = await supabase
+            .from("scan_targets")
+            .select("id, tenant_id, target_name, target_type, target_value, status")
+            .eq("id", payload.scanTargetId)
+            .eq("tenant_id", payload.tenantId)
+            .maybeSingle();
+
+          if (error) {
+            throw new Error(`Could not load scan target ${payload.scanTargetId}: ${error.message}`);
+          }
+
+          if (data) {
+            if (data.status !== "active") {
+              throw new Error(`Scan target is not active (status=${data.status})`);
+            }
+            return {
+              ...data,
+              owner_email: null,
+              business_criticality: null,
+            };
+          }
+
+          lastErrorMessage = `Scan target not found for tenant: ${payload.scanTargetId} (attempt ${attempt}/${targetLookupAttempts})`;
+          if (attempt < targetLookupAttempts) {
+            await sleep(targetLookupDelayMs);
+          }
         }
 
-        if (data.status !== "active") {
-          throw new Error(`Scan target is not active (status=${data.status})`);
-        }
-
-        return data;
+        throw new Error(lastErrorMessage ?? `Scan target not found for tenant: ${payload.scanTargetId}`);
       });
 
       currentStep = "mark-run-running";

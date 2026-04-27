@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { serverApiFetch } from "@/lib/serverApi";
 
 type ControlStatusRow = {
   controlRequirementId: string;
@@ -24,25 +24,14 @@ type PageProps = {
   }>;
 };
 
-async function getBaseUrl() {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const protocol = h.get("x-forwarded-proto") ?? "http";
-  if (host) return `${protocol}://${host}`;
-  return "http://localhost:3000";
-}
-
 async function loadComplianceStatus(
   tenantId: string,
   framework?: string
 ): Promise<ComplianceResponse> {
-  const baseUrl = await getBaseUrl();
   const params = new URLSearchParams();
   params.set("tenantId", tenantId);
   if (framework) params.set("framework", framework);
-  const response = await fetch(`${baseUrl}/api/compliance/control-status?${params.toString()}`, {
-    cache: "no-store",
-  });
+  const response = await serverApiFetch(`/api/compliance/control-status?${params.toString()}`);
   return (await response.json()) as ComplianceResponse;
 }
 

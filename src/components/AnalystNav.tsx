@@ -28,7 +28,10 @@ export function AnalystNav() {
 
   return (
     <nav className="sw-side-nav" aria-label="Analyst console">
-      <p className="sw-side-nav__title">SecureWatch360</p>
+      <div className="sw-side-nav__brand">
+        <p className="sw-side-nav__eyebrow">SecureWatch360</p>
+        <p className="sw-side-nav__title">Security Command Center</p>
+      </div>
       <ul className="sw-side-nav__list">
         {NAV_LINKS.map((item) => {
           const isHome = item.href === "/analyst";
@@ -39,7 +42,7 @@ export function AnalystNav() {
                 href={`${item.href}${q}`}
                 className={active ? "sw-side-nav__link sw-side-nav__link--active" : "sw-side-nav__link"}
               >
-                {item.label}
+                <span className="sw-side-nav__link-label">{item.label}</span>
               </Link>
             </li>
           );

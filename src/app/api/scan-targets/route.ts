@@ -24,6 +24,7 @@ const allowedTargetTypes = [
 
 const CRITICALITY = ["low", "medium", "high", "critical"] as const;
 const MAX_EMAIL_LEN = 320;
+const SCAN_TARGET_BASE_SELECT = "id, tenant_id, target_name, target_type, target_value, status, created_at";
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -78,9 +79,7 @@ export async function GET(request: Request) {
     const supabase = getSupabaseAdminClient();
     let query = supabase
       .from("scan_targets")
-      .select(
-        "id, tenant_id, target_name, target_type, target_value, status, owner_email, business_criticality, created_at"
-      )
+      .select(SCAN_TARGET_BASE_SELECT)
       .eq("tenant_id", tenantId)
       .order("created_at", { ascending: false })
       .limit(500);
@@ -94,7 +93,12 @@ export async function GET(request: Request) {
       throw new Error(error.message);
     }
 
-    return NextResponse.json({ ok: true, scanTargets: data ?? [], count: data?.length ?? 0 }, { status: 200 });
+    const scanTargets = (data ?? []).map((row) => ({
+      ...row,
+      owner_email: null,
+      business_criticality: null,
+    }));
+    return NextResponse.json({ ok: true, scanTargets, count: scanTargets.length }, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
@@ -148,16 +152,24 @@ export async function POST(request: Request) {
         target_value: targetValue,
         status: "active",
       })
-      .select(
-        "id, tenant_id, target_name, target_type, target_value, status, owner_email, business_criticality, created_at"
-      )
+      .select(SCAN_TARGET_BASE_SELECT)
       .single();
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return NextResponse.json({ ok: true, scanTarget: data }, { status: 201 });
+    return NextResponse.json(
+      {
+        ok: true,
+        scanTarget: {
+          ...data,
+          owner_email: null,
+          business_criticality: null,
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
@@ -272,9 +284,7 @@ async function patchScanTargetMetadata(request: Request) {
       .update(patch)
       .eq("id", targetId)
       .eq("tenant_id", tenantId)
-      .select(
-        "id, tenant_id, target_name, target_type, target_value, status, owner_email, business_criticality, created_at"
-      )
+      .select(SCAN_TARGET_BASE_SELECT)
       .single();
 
     if (error) {
@@ -287,7 +297,17 @@ async function patchScanTargetMetadata(request: Request) {
       );
     }
 
-    return NextResponse.json({ ok: true, scanTarget: data }, { status: 200 });
+    return NextResponse.json(
+      {
+        ok: true,
+        scanTarget: {
+          ...data,
+          owner_email: null,
+          business_criticality: null,
+        },
+      },
+      { status: 200 }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
