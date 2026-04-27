@@ -33,7 +33,7 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
 
   return (
     <aside
-      className={`bg-[var(--sw-surface)] border-r border-[var(--sw-border)] transition-all duration-300 ${
+      className={`bg-[var(--sw-surface)]/96 border-r border-[var(--sw-border)] transition-all duration-300 shadow-[8px_0_24px_-24px_rgba(17,45,78,0.35)] ${
         collapsed ? 'w-20' : 'w-64'
       }`}
     >
@@ -50,7 +50,7 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
                   onClick={() => onViewChange(item.id)}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                     isActive
-                      ? 'bg-gradient-to-r from-[#1565c0] to-[#112d4e] text-white shadow-lg'
+                      ? 'text-[var(--sw-nav-active-text)] shadow-[var(--sw-card-shadow)] bg-[image:var(--sw-nav-active-bg)]'
                       : 'text-[var(--sw-text-muted)] hover:bg-[var(--sw-surface-elevated)]'
                   }`}
                 >

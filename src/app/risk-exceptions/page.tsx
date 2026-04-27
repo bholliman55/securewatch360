@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { serverApiFetch } from "@/lib/serverApi";
 
 type RiskExceptionRow = {
   id: string;
@@ -26,27 +26,16 @@ type PageProps = {
   }>;
 };
 
-async function getBaseUrl() {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const protocol = h.get("x-forwarded-proto") ?? "http";
-  if (host) return `${protocol}://${host}`;
-  return "http://localhost:3000";
-}
-
 async function loadRiskExceptions(
   tenantId?: string,
   status?: string
 ): Promise<RiskExceptionsResponse> {
-  const baseUrl = await getBaseUrl();
   const params = new URLSearchParams();
   if (tenantId) params.set("tenantId", tenantId);
   if (status) params.set("status", status);
   const query = params.toString();
 
-  const response = await fetch(`${baseUrl}/api/risk-exceptions${query ? `?${query}` : ""}`, {
-    cache: "no-store",
-  });
+  const response = await serverApiFetch(`/api/risk-exceptions${query ? `?${query}` : ""}`);
   return (await response.json()) as RiskExceptionsResponse;
 }
 

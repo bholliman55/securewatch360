@@ -1,15 +1,32 @@
+@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap");
+
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
+:root {
+  --sw-navy-deep: #07111f;
+  --sw-navy-dark: #0d1e33;
+  --sw-navy-mid: #112d4e;
+  --sw-blue-primary: #1565c0;
+  --sw-blue-bright: #1e88e5;
+  --sw-blue-electric: #29b6f6;
+  --sw-cyan: #00e5ff;
+  --sw-silver: #b0c4de;
+  --sw-text-muted: #8ab4d4;
+  --sw-green: #22c55e;
+}
+
 html,
 body {
   max-width: 100%;
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   line-height: 1.5;
+  background: var(--sw-navy-deep);
+  color: #fff;
 }
 
 .sw-app-shell {
@@ -35,17 +52,34 @@ main {
   min-height: 100vh;
   margin: 0;
   padding: 1rem 0.75rem 2rem 1rem;
-  background: #0b1220;
+  background: var(--sw-navy-dark);
   color: #e6edf5;
   flex-shrink: 0;
-  border-right: 1px solid #1b2838;
+  border-right: 1px solid rgba(30, 136, 229, 0.25);
 }
 
 .sw-side-nav__title {
+  font-family: "Rajdhani", "Inter", sans-serif;
   font-weight: 700;
   font-size: 0.95rem;
-  margin: 0 0 0.75rem 0.25rem;
+  margin: 0;
   letter-spacing: 0.02em;
+}
+
+.sw-side-nav__brand {
+  margin: 0.2rem 0.4rem 0.9rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(41, 182, 246, 0.22);
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(17, 45, 78, 0.8), rgba(13, 30, 51, 0.85));
+}
+
+.sw-side-nav__eyebrow {
+  margin: 0 0 0.2rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.68rem;
+  color: var(--sw-blue-electric);
 }
 
 .sw-side-nav__list {
@@ -62,18 +96,22 @@ main {
   display: block;
   padding: 0.35rem 0.5rem;
   border-radius: 6px;
-  color: #b8c3d0;
+  color: var(--sw-silver);
   text-decoration: none;
   font-size: 0.875rem;
 }
 
+.sw-side-nav__link-label {
+  display: inline-block;
+}
+
 .sw-side-nav__link:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(41, 182, 246, 0.12);
   color: #fff;
 }
 
 .sw-side-nav__link--active {
-  background: rgba(100, 160, 255, 0.2);
+  background: rgba(21, 101, 192, 0.38);
   color: #fff;
   font-weight: 600;
 }
@@ -83,7 +121,7 @@ main {
   padding: 0.5rem 0.35rem 0 0.35rem;
   font-size: 0.7rem;
   line-height: 1.35;
-  color: #8b9aad;
+  color: var(--sw-text-muted);
   word-break: break-all;
 }
 
@@ -106,10 +144,19 @@ main {
 .sw-input {
   width: 100%;
   padding: 0.5rem;
+  border: 1px solid rgba(30, 136, 229, 0.35);
+  border-radius: 6px;
+  background: rgba(13, 30, 51, 0.9);
+  color: #fff;
 }
 
 .sw-button {
   padding: 0.6rem 1rem;
+  border: 1px solid rgba(41, 182, 246, 0.35);
+  border-radius: 6px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--sw-blue-primary), var(--sw-blue-bright));
+  font-weight: 600;
 }
 
 .sw-success {
@@ -117,7 +164,7 @@ main {
 }
 
 .sw-error {
-  color: crimson;
+  color: #ff6b6b;
 }
 
 .sw-table {
@@ -130,7 +177,7 @@ main {
 .sw-table td {
   text-align: left;
   padding: 0.5rem;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid rgba(176, 196, 222, 0.25);
 }
 
 .sw-sev {
@@ -175,16 +222,17 @@ main {
 }
 
 .sw-kpi-card {
-  border: 1px solid #ddd;
+  border: 1px solid rgba(30, 136, 229, 0.25);
   border-radius: 8px;
   padding: 0.75rem;
-  background: #fff;
+  background: linear-gradient(160deg, rgba(13, 30, 51, 0.95), rgba(17, 45, 78, 0.9));
 }
 
 .sw-kpi-card h2 {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
+  color: var(--sw-silver);
 }
 
 .sw-kpi-value {
@@ -219,4 +267,67 @@ main {
   margin-top: 1.5rem;
   font-size: 0.9rem;
   color: #5c6674;
+}
+
+.sw-hero-card {
+  margin-bottom: 1rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 12px;
+  border: 1px solid rgba(41, 182, 246, 0.25);
+  background: radial-gradient(circle at top right, rgba(41, 182, 246, 0.16), transparent 35%),
+    linear-gradient(145deg, rgba(13, 30, 51, 0.95), rgba(17, 45, 78, 0.88));
+}
+
+.sw-hero-card h1 {
+  margin: 0 0 0.4rem;
+  font-family: "Rajdhani", sans-serif;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.sw-hero-card p {
+  margin: 0;
+  color: var(--sw-silver);
+}
+
+.sw-hero-card__eyebrow {
+  margin: 0 0 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  color: var(--sw-blue-electric);
+}
+
+.sw-capability-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.sw-capability-card {
+  border: 1px solid rgba(30, 136, 229, 0.26);
+  border-radius: 10px;
+  padding: 0.85rem 0.9rem;
+  text-decoration: none;
+  color: inherit;
+  background: rgba(13, 30, 51, 0.88);
+}
+
+.sw-capability-card:hover {
+  border-color: rgba(41, 182, 246, 0.55);
+  box-shadow: 0 6px 18px rgba(21, 101, 192, 0.22);
+}
+
+.sw-capability-card h3 {
+  margin: 0 0 0.3rem;
+  font-family: "Rajdhani", sans-serif;
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.sw-capability-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--sw-text-muted);
 }

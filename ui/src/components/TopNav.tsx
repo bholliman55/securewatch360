@@ -35,7 +35,7 @@ export default function TopNav({ onRefresh }: { onRefresh?: () => void }) {
   const roleLabel = tenants.find((t) => t.id === selectedTenantId)?.role ?? "member";
 
   return (
-    <nav className="bg-[var(--sw-surface)]/95 border-b border-[var(--sw-border)] px-6 py-4 transition-colors duration-200 backdrop-blur">
+    <nav className="bg-[var(--sw-surface)]/96 border-b border-[var(--sw-border)] px-6 py-4 transition-colors duration-200 backdrop-blur supports-[backdrop-filter]:bg-[var(--sw-surface)]/82 shadow-[0_8px_28px_-22px_rgba(17,45,78,0.45)]">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="bg-gradient-to-br from-[#1565c0] to-[#29b6f6] p-2 rounded-lg shadow-lg shadow-[#29b6f6]/20">
@@ -49,8 +49,8 @@ export default function TopNav({ onRefresh }: { onRefresh?: () => void }) {
 
         <div className="flex items-center space-x-4">
           {tenants.length > 1 ? (
-            <div className="relative flex items-center gap-2 px-3 py-2 bg-[var(--sw-surface-elevated)] border border-[var(--sw-border)] rounded-lg hover:border-[#29b6f6] transition-colors group">
-              <Building2 className="w-4 h-4 text-[var(--sw-text-muted)] group-hover:text-[#29b6f6] transition-colors shrink-0" />
+            <div className="relative flex items-center gap-2 px-3 py-2 bg-[var(--sw-surface-elevated)] border border-[var(--sw-border)] rounded-lg hover:border-[var(--sw-accent)] transition-colors group">
+              <Building2 className="w-4 h-4 text-[var(--sw-text-muted)] group-hover:text-[var(--sw-accent)] transition-colors shrink-0" />
               <select
                 value={selectedTenantId ?? ""}
                 onChange={(e) => setSelectedTenantId(e.target.value || null)}
@@ -67,9 +67,9 @@ export default function TopNav({ onRefresh }: { onRefresh?: () => void }) {
               <ChevronDown className="w-3.5 h-3.5 text-[var(--sw-text-muted)] pointer-events-none absolute right-2.5" />
             </div>
           ) : selectedTenantName ? (
-            <div className="flex items-center gap-2 px-3 py-2 bg-[#1565c0]/10 border border-[#1e88e5]/40 rounded-lg">
-              <Building2 className="w-4 h-4 text-[#29b6f6] shrink-0" />
-              <span className="text-sm font-semibold text-[#29b6f6]">{selectedTenantName}</span>
+            <div className="flex items-center gap-2 px-3 py-2 bg-[color:color-mix(in_srgb,var(--sw-accent)_10%,transparent)] border border-[color:color-mix(in_srgb,var(--sw-accent)_35%,transparent)] rounded-lg">
+              <Building2 className="w-4 h-4 text-[var(--sw-accent)] shrink-0" />
+              <span className="text-sm font-semibold text-[var(--sw-accent)]">{selectedTenantName}</span>
             </div>
           ) : null}
 

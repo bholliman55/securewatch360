@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { serverApiFetch } from "@/lib/serverApi";
 
 type ScanRun = {
   id: string;
@@ -24,28 +24,17 @@ type PageProps = {
   }>;
 };
 
-async function getBaseUrl() {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const protocol = h.get("x-forwarded-proto") ?? "http";
-  if (host) return `${protocol}://${host}`;
-  return "http://localhost:3000";
-}
-
 function formatDate(value: string | null): string {
   if (!value) return "-";
   return new Date(value).toLocaleString();
 }
 
 async function loadScanRuns(tenantId?: string, status?: string): Promise<ScanRunsResponse> {
-  const baseUrl = await getBaseUrl();
   const params = new URLSearchParams();
   if (tenantId) params.set("tenantId", tenantId);
   if (status) params.set("status", status);
   const query = params.toString();
-  const response = await fetch(`${baseUrl}/api/scan-runs${query ? `?${query}` : ""}`, {
-    cache: "no-store",
-  });
+  const response = await serverApiFetch(`/api/scan-runs${query ? `?${query}` : ""}`);
   return (await response.json()) as ScanRunsResponse;
 }
 

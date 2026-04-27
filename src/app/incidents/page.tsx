@@ -1,5 +1,5 @@
-import { headers } from "next/headers";
 import Link from "next/link";
+import { serverApiFetch } from "@/lib/serverApi";
 
 type IncidentRow = {
   id: string;
@@ -25,22 +25,13 @@ type PageProps = {
   }>;
 };
 
-async function getBaseUrl() {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const protocol = h.get("x-forwarded-proto") ?? "http";
-  if (host) return `${protocol}://${host}`;
-  return "http://localhost:3000";
-}
-
 async function loadIncidents(
   tenantId: string,
   state?: string
 ): Promise<IncidentsResponse> {
-  const baseUrl = await getBaseUrl();
   const p = new URLSearchParams({ tenantId });
   if (state) p.set("state", state);
-  const res = await fetch(`${baseUrl}/api/incidents?${p.toString()}`, { cache: "no-store" });
+  const res = await serverApiFetch(`/api/incidents?${p.toString()}`);
   return (await res.json()) as IncidentsResponse;
 }
 

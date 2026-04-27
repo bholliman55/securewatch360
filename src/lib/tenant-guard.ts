@@ -25,6 +25,13 @@ type TenantGuardResult =
       error: string;
     };
 
+function isDemoTenantBypassEnabled(tenantId: string): boolean {
+  if (process.env.NODE_ENV === "production") return false;
+  if (process.env.INNGEST_DEV !== "1") return false;
+  const demoTenantId = process.env.TEST_TENANT_ID?.trim();
+  return Boolean(demoTenantId && tenantId === demoTenantId);
+}
+
 /**
  * Lightweight tenant-aware route guard.
  * - reads current auth user
@@ -49,6 +56,13 @@ export async function requireTenantAccess(
       .single();
 
     if (error || !data) {
+      if (isDemoTenantBypassEnabled(options.tenantId)) {
+        console.warn("[tenant-guard] demo tenant bypass enabled for local development", {
+          tenantId: options.tenantId,
+          userId: user.id,
+        });
+        return { ok: true, userId: user.id, role: "owner" };
+      }
       return { ok: false, status: 403, error: "User is not a member of this tenant" };
     }
 

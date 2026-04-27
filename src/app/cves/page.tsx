@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { serverApiFetch } from "@/lib/serverApi";
 
 type CveListItem = {
   cve: {
@@ -33,19 +33,10 @@ type PageProps = {
   }>;
 };
 
-async function getBaseUrl() {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const protocol = h.get("x-forwarded-proto") ?? "http";
-  if (host) return `${protocol}://${host}`;
-  return "http://localhost:3000";
-}
-
 async function loadCves(tenantId: string, cveId?: string): Promise<CvesResponse> {
-  const baseUrl = await getBaseUrl();
   const p = new URLSearchParams({ tenantId, limit: "200" });
   if (cveId) p.set("cveId", cveId);
-  const res = await fetch(`${baseUrl}/api/cves?${p.toString()}`, { cache: "no-store" });
+  const res = await serverApiFetch(`/api/cves?${p.toString()}`);
   return (await res.json()) as CvesResponse;
 }
 

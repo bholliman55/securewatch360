@@ -24,6 +24,38 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const DEFAULT_DEMO_TENANT_ID = "8c2b980c-9fc8-4b71-9b5f-2e90a5c3a001";
+
+function buildDemoUser(): User {
+  return {
+    id: "local-demo-user",
+    aud: "authenticated",
+    role: "authenticated",
+    email: "demo@securewatch360.local",
+    email_confirmed_at: new Date().toISOString(),
+    app_metadata: {},
+    user_metadata: { full_name: "Demo User" },
+    identities: [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  } as User;
+}
+
+function buildDemoTenant(): TenantOption {
+  const tenantId = import.meta.env.VITE_TEST_TENANT_ID || DEFAULT_DEMO_TENANT_ID;
+  return {
+    id: tenantId,
+    name: "Demo Tenant",
+    role: "owner",
+  };
+}
+
+function isLocalDemoMode(): boolean {
+  const configured = import.meta.env.VITE_DEMO_MODE;
+  if (configured === "1" || configured === "true") return true;
+  if (configured === "0" || configured === "false") return false;
+  return window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+}
 
 async function fetchMe(): Promise<TenantOption[]> {
   try {
@@ -59,7 +91,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (s?.user) {
         await refreshTenants();
       } else {
-        setTenants([]);
+        if (isLocalDemoMode()) {
+          setUser(buildDemoUser());
+          setTenants([buildDemoTenant()]);
+        } else {
+          setTenants([]);
+        }
       }
       setLoading(false);
     });
@@ -73,7 +110,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (s?.user) {
           await refreshTenants();
         } else {
-          setTenants([]);
+          if (isLocalDemoMode()) {
+            setUser(buildDemoUser());
+            setTenants([buildDemoTenant()]);
+          } else {
+            setTenants([]);
+          }
         }
       })();
     });

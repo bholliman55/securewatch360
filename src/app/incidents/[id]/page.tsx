@@ -1,5 +1,5 @@
-import { headers } from "next/headers";
 import Link from "next/link";
+import { serverApiFetch } from "@/lib/serverApi";
 
 type IncidentDetail = {
   id: string;
@@ -24,22 +24,13 @@ type PageProps = {
   }>;
 };
 
-async function getBaseUrl() {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const protocol = h.get("x-forwarded-proto") ?? "http";
-  if (host) return `${protocol}://${host}`;
-  return "http://localhost:3000";
-}
-
 export default async function IncidentDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const { tenantId = "" } = await searchParams;
   const tid = tenantId.trim();
 
   const data = await (async (): Promise<IncidentDetailResponse> => {
-    const baseUrl = await getBaseUrl();
-    const res = await fetch(`${baseUrl}/api/incidents/${id}`, { cache: "no-store" });
+    const res = await serverApiFetch(`/api/incidents/${id}`);
     return (await res.json()) as IncidentDetailResponse;
   })();
 

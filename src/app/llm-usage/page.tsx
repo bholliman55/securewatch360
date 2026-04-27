@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { serverApiFetch } from "@/lib/serverApi";
 
 type UsageSummaryResponse = {
   ok: boolean;
@@ -33,24 +33,13 @@ type PageProps = {
   searchParams: Promise<{ tenantId?: string; fromDate?: string; toDate?: string }>;
 };
 
-async function getBaseUrl() {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const protocol = h.get("x-forwarded-proto") ?? "http";
-  if (host) return `${protocol}://${host}`;
-  return "http://localhost:3000";
-}
-
 async function loadSummary(params: {
   tenantId: string;
   fromDate: string;
   toDate: string;
 }): Promise<UsageSummaryResponse> {
-  const baseUrl = await getBaseUrl();
   const query = new URLSearchParams(params).toString();
-  const response = await fetch(`${baseUrl}/api/llm/token-usage?${query}`, {
-    cache: "no-store",
-  });
+  const response = await serverApiFetch(`/api/llm/token-usage?${query}`);
   return (await response.json()) as UsageSummaryResponse;
 }
 
