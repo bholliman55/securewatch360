@@ -15,6 +15,7 @@
     "generate:compliance-templates:all": "node scripts/generate-framework-org-template-stubs.mjs --all",
     "qa:v4:e2e": "npx tsx scripts/qa-v4-e2e.ts",
     "qa:v4:agents": "npx tsx scripts/qa-v4-agents-e2e.ts",
+    "qa:hipaa:operational": "npx tsx scripts/qa-hipaa-operational.ts",
     "qa:v4:hardening": "npx tsx scripts/qa-v4-hardening.ts",
     "qa:v4:chaos": "npx tsx scripts/qa-v4-chaos.ts",
     "qa:opa-optional": "npx tsx scripts/qa-opa-optional.ts",
