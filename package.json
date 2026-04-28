@@ -10,6 +10,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "seed:v4": "npx tsx scripts/seed-v4.ts",
+    "seed:cve-catalog": "node scripts/seed-cve-catalog.mjs",
     "qa:v4:e2e": "npx tsx scripts/qa-v4-e2e.ts",
     "qa:v4:agents": "npx tsx scripts/qa-v4-agents-e2e.ts",
     "qa:v4:hardening": "npx tsx scripts/qa-v4-hardening.ts",
@@ -47,6 +48,7 @@
     "@types/react-dom": "^19.0.0",
     "eslint": "^8.57.1",
     "eslint-config-next": "^15.5.15",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }
