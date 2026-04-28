@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import { User, Session } from "@supabase/supabase-js";
+import { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { supabase } from "../services/supabaseClient";
 import { apiJson } from "../lib/apiFetch";
 import type { TenantOption } from "./TenantContext";
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
+    supabase.auth.getSession().then(async ({ data: { session: s } }: { data: { session: Session | null } }) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, s) => {
+    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, s: Session | null) => {
       void (async () => {
         setSession(s);
         setUser(s?.user ?? null);
