@@ -179,6 +179,8 @@ Deployment-aware policy catalog endpoint:
 - `GET /api/policy/catalog?tenantId=<uuid>&framework=<optional>`
 - returns framework profiles and control entries with Terraform/Ansible deployment metadata
 
+Org policy Markdown stubs (per catalog control) and generator: `docs/compliance/TEMPLATES.md`, `npm run generate:compliance-templates:all`. Migration `20260428120000_sync_policy_catalog_to_control_requirements.sql` copies `policy_framework_controls` into `control_requirements` so `complianceAgent` can resolve control UUIDs for mappings.
+
 Compliance posture (aggregated mapped findings vs control catalog):
 
 - `GET /api/compliance/posture?tenantId=<uuid>&framework=<optional>&includeStored=<optional>`

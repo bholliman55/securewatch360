@@ -133,6 +133,36 @@ const rules: DecisionRule[] = [
   },
   {
     policy: {
+      policyId: "sw360.rule.hipaa-ephi-context",
+      policyName: "HIPAA / ePHI context requires strict review",
+      version: "v1",
+    },
+    applies: (input) => {
+      const cat = (input.category ?? "").toLowerCase();
+      const fromField = Array.isArray(input.regulatedFrameworks)
+        ? input.regulatedFrameworks.filter((x): x is string => typeof x === "string")
+        : [];
+      const fromMeta = Array.isArray(input.metadata?.regulatedFrameworks)
+        ? (input.metadata?.regulatedFrameworks as unknown[]).filter((x): x is string => typeof x === "string")
+        : [];
+      const regs = [...fromField, ...fromMeta];
+      const hipaaMeta = regs.map((r) => r.toLowerCase()).includes("hipaa");
+      const hipaaCat =
+        cat.includes("phi") ||
+        cat.includes("hipaa") ||
+        cat.includes("health") ||
+        cat.includes("ephi") ||
+        cat.includes("medical");
+      return hipaaMeta || hipaaCat;
+    },
+    apply: (state) => {
+      state.requiresApproval = true;
+      state.reasonCodes.add("compliance_control_required");
+      state.metadata.hipaaStrictReview = true;
+    },
+  },
+  {
+    policy: {
       policyId: "sw360.rule.unresolved-high-remediation",
       policyName: "Unresolved High Severity Requires Remediation",
       version: "v1",

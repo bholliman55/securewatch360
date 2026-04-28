@@ -64,8 +64,37 @@ const DEFAULT_COMPLIANCE_MAPPING_RULES: ComplianceMappingRule[] = [
     minimumImpact: "moderate",
   },
   {
-    categoryPatterns: ["phi", "hipaa", "privacy", "pii", "health"],
-    controls: [{ frameworkCode: "HIPAA", controlCode: "164.308(a)(1)" }],
+    categoryPatterns: ["phi", "hipaa", "privacy", "pii", "health", "ephi", "breach", "medical"],
+    controls: [
+      { frameworkCode: "HIPAA", controlCode: "164.308(a)(1)" },
+      { frameworkCode: "HIPAA", controlCode: "164.308(a)(6)" },
+      { frameworkCode: "HIPAA", controlCode: "164.312(b)" },
+      { frameworkCode: "HIPAA", controlCode: "164.308(a)(5)" },
+    ],
+    minimumImpact: "high",
+  },
+  {
+    categoryPatterns: ["encrypt", "tls", "ssl", "transmission", "mitm", "eavesdrop"],
+    controls: [
+      { frameworkCode: "HIPAA", controlCode: "164.312(e)(1)" },
+      { frameworkCode: "HIPAA", controlCode: "164.312(e)(2)(ii)" },
+    ],
+    minimumImpact: "moderate",
+  },
+  {
+    categoryPatterns: ["backup", "disaster", "recovery", "availability", "outage"],
+    controls: [
+      { frameworkCode: "HIPAA", controlCode: "164.308(a)(7)(ii)(A)" },
+      { frameworkCode: "HIPAA", controlCode: "164.308(a)(7)(ii)(B)" },
+    ],
+    minimumImpact: "moderate",
+  },
+  {
+    categoryPatterns: ["gdpr", "personal data", "data subject", "dpo", "processor", "ropa"],
+    controls: [
+      { frameworkCode: "GDPR", controlCode: "Art_32" },
+      { frameworkCode: "GDPR", controlCode: "Art_33" },
+    ],
     minimumImpact: "high",
   },
   {

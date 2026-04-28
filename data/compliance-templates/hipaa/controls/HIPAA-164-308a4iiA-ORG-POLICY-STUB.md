@@ -1,41 +1,40 @@
 # Organization policy and procedures (stub)
 
-**Framework:** HIPAA Security Rule (45 CFR Part 164 Subpart C)  
+**Framework:** HIPAA (SecureWatch360 policy pack catalog)  
 **Control:** `164.308(a)(4)(ii)(A)`  
 **Summary:** HIPAA Security Rule 164.308(a)(4)(ii)(A) — Isolating health care clearinghouse functions
 
 ## Purpose
 
-This document is an organization-level policy/procedure **template** aligned to control `164.308(a)(4)(ii)(A)`.  
-Customize all bracketed fields for your entity. This is not legal advice.
+Organization-level policy/procedure template aligned to control `164.308(a)(4)(ii)(A)`. Replace bracketed fields; not legal advice.
 
 ## Scope
 
-- **Covered entity / business associate:** [Organization name]  
-- **Systems in scope:** [e.g., systems that create, receive, maintain, or transmit ePHI]  
-- **Workforce / roles:** [List]
+- **Organization:** [Name]  
+- **Systems / data in scope:** [Describe]  
+- **Roles:** [List]
 
 ## Policy statements
 
-1. [Describe how the organization implements the requirement in plain language.]
-2. [Reference technical and administrative measures; align evidence collection in SecureWatch360.]
+1. [Plain-language implementation of the control for your environment.]
+2. [Evidence ownership, tooling (e.g. SecureWatch360), and review cadence.]
 
 ## Roles and responsibilities
 
-| Role        | Responsibility |
-|------------|----------------|
-| [Title]    | [Duty]         |
+| Role     | Responsibility |
+|----------|------------------|
+| [Title]  | [Duty]           |
 
 ## Evidence and review
 
-- **Evidence types:** [policies, training records, access reviews, tickets, scan exports, BAA, etc.]
-- **Review cadence:** [e.g., annual / upon material change]
-- **Catalog note:** Catalog control 164.308(a)(4)(ii)(A). Map evidence collection, ownership, and automation to organizational policy. Framework: HIPAA Security Rule (45 CFR Part 164 Subpart C).
+- **Evidence:** [policies, tickets, scans, training, contracts, logs, etc.]
+- **Review cadence:** [e.g. annual / on change]
+- **Catalog note:** advisory
 
-## Rego (policy-as-code) pairing
+## Policy-as-code pairing
 
-- Machine-enforceable rules for SecureWatch decisioning live under `policies/rego/securewatch360/hipaa_*.rego`.
-- Map this control to the policy catalog entry with the same control code in `policy_framework_controls`.
+- Enforceable checks belong in Rego under `policies/rego/securewatch360/` (see framework triage stubs and v4 decision bundle).
+- Catalog metadata (Terraform/Ansible paths) lives in `policy_framework_controls` for this control.
 
 ---
-*Stub generated for onboarding; fill before relying on for compliance attestation.*
+*Stub generated from repo migration extract; customize before attestation.*
