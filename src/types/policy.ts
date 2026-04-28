@@ -120,6 +120,11 @@ export interface DecisionInput {
   environment?: "dev" | "staging" | "prod" | "unknown" | null;
   tenantRiskProfile?: "low" | "medium" | "high" | "critical" | null;
   currentFindingStatus?: "open" | "acknowledged" | "in_progress" | "resolved" | "risk_accepted" | null;
+  /**
+   * Optional regulatory context (e.g. `hipaa`, `gdpr`) for decision bias; mirrors
+   * `metadata.regulatedFrameworks` when callers only attach metadata.
+   */
+  regulatedFrameworks?: string[] | null;
   metadata?: Record<string, unknown>;
 }
 
