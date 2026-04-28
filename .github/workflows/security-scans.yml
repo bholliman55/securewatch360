@@ -58,6 +58,38 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
 
+  policy-gate:
+    name: Policy Gate (OPA Required)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install OPA CLI
+        run: |
+          curl -L -o /usr/local/bin/opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
+          chmod +x /usr/local/bin/opa
+          opa version
+
+      - name: Start local OPA policy server
+        run: |
+          opa run --server --addr :8181 ./policies/rego > opa.log 2>&1 &
+          sleep 3
+          curl -sSf http://localhost:8181/health || (cat opa.log && exit 1)
+
+      - name: Framework policy gate (OPA required)
+        run: npm run qa:frameworks:opa-required
+
   nightly-dast:
     name: Nightly DAST (OWASP ZAP)
     runs-on: ubuntu-latest

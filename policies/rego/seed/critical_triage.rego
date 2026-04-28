@@ -3,6 +3,6 @@ package securewatch.gating
 
 default allow = false
 
-allow {
+allow if {
   input.severity == "critical"
 }

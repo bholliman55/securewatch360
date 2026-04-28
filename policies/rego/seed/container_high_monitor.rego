@@ -3,7 +3,7 @@ package securewatch.monitoring
 
 default monitor = false
 
-monitor {
+monitor if {
   input.severity == "high"
   input.targetType == "container_image"
 }

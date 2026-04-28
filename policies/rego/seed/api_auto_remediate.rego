@@ -3,7 +3,7 @@ package securewatch.remediation
 
 default auto_remediate = false
 
-auto_remediate {
+auto_remediate if {
   input.targetType == "api"
   input.severity == "high"
 }

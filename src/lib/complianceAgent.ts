@@ -18,6 +18,12 @@ type ComplianceMappingRule = {
   minimumImpact: Exclude<ComplianceImpact, "none">;
 };
 
+type FrameworkKeywordRule = {
+  frameworkCode: string;
+  categoryPatterns: string[];
+  minimumImpact: Exclude<ComplianceImpact, "none">;
+};
+
 export type ComplianceAgentHookInput = {
   tenantId: string;
   scanRunId: string;
@@ -107,6 +113,64 @@ const DEFAULT_COMPLIANCE_MAPPING_RULES: ComplianceMappingRule[] = [
   },
 ];
 
+const FRAMEWORK_KEYWORD_RULES: FrameworkKeywordRule[] = [
+  {
+    frameworkCode: "SOC2",
+    categoryPatterns: ["soc2", "soc 2", "trust services"],
+    minimumImpact: "high",
+  },
+  {
+    frameworkCode: "CMMC",
+    categoryPatterns: ["cmmc", "cui", "defense"],
+    minimumImpact: "high",
+  },
+  {
+    frameworkCode: "HIPAA",
+    categoryPatterns: ["hipaa", "phi", "ephi", "health", "medical"],
+    minimumImpact: "high",
+  },
+  {
+    frameworkCode: "NIST",
+    categoryPatterns: ["nist", "800-53", "800-171", "csf"],
+    minimumImpact: "high",
+  },
+  {
+    frameworkCode: "ISO27001",
+    categoryPatterns: ["iso27001", "iso 27001", "annex a"],
+    minimumImpact: "high",
+  },
+  {
+    frameworkCode: "PCI_DSS",
+    categoryPatterns: ["pci", "pci-dss", "cardholder", "payment"],
+    minimumImpact: "high",
+  },
+  {
+    frameworkCode: "CIS",
+    categoryPatterns: ["cis", "cis controls", "center for internet security"],
+    minimumImpact: "moderate",
+  },
+  {
+    frameworkCode: "GDPR",
+    categoryPatterns: ["gdpr", "personal data", "data subject"],
+    minimumImpact: "high",
+  },
+  {
+    frameworkCode: "FEDRAMP",
+    categoryPatterns: ["fedramp", "fisma", "moderate baseline"],
+    minimumImpact: "high",
+  },
+  {
+    frameworkCode: "CCPA",
+    categoryPatterns: ["ccpa", "california consumer"],
+    minimumImpact: "moderate",
+  },
+  {
+    frameworkCode: "COBIT",
+    categoryPatterns: ["cobit"],
+    minimumImpact: "moderate",
+  },
+];
+
 function getSeverityImpact(severity: ComplianceAgentHookInput["severity"]): ComplianceImpact {
   switch (severity) {
     case "critical":
@@ -143,6 +207,18 @@ function uniqueControls(controls: ComplianceControlRef[]): ComplianceControlRef[
     });
   }
   return results;
+}
+
+function uniqueFrameworkCodes(frameworkCodes: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const code of frameworkCodes) {
+    const normalized = code.toUpperCase();
+    if (seen.has(normalized)) continue;
+    seen.add(normalized);
+    result.push(normalized);
+  }
+  return result;
 }
 
 function inferComplianceImpact(
@@ -218,6 +294,60 @@ async function resolveControlRequirementIds(
   return resolved;
 }
 
+async function resolveFrameworkFallbackControls(
+  tenantId: string,
+  frameworkCodes: string[],
+  alreadyResolved: Array<{ id: string; frameworkCode: string; controlCode: string }>
+): Promise<Array<{ id: string; frameworkCode: string; controlCode: string }>> {
+  if (frameworkCodes.length === 0) return [];
+  const supabase = getSupabaseAdminClient();
+  const existingFrameworks = new Set(alreadyResolved.map((x) => x.frameworkCode.toUpperCase()));
+  const fallbackResolved: Array<{ id: string; frameworkCode: string; controlCode: string }> = [];
+
+  for (const frameworkCode of frameworkCodes) {
+    const normalizedFramework = frameworkCode.toUpperCase();
+    if (existingFrameworks.has(normalizedFramework)) continue;
+    const { data, error } = await supabase
+      .from("control_requirements")
+      .select("id, control_code, framework:control_frameworks!inner(framework_code)")
+      .eq("control_frameworks.framework_code", normalizedFramework)
+      .order("control_code", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (error || !data) {
+      continue;
+    }
+    const framework = data.framework as { framework_code?: string } | { framework_code?: string }[] | null;
+    const resolvedFrameworkCode = Array.isArray(framework)
+      ? framework[0]?.framework_code
+      : framework?.framework_code;
+    if (!resolvedFrameworkCode) continue;
+    fallbackResolved.push({
+      id: data.id as string,
+      frameworkCode: resolvedFrameworkCode,
+      controlCode: data.control_code as string,
+    });
+    existingFrameworks.add(normalizedFramework);
+  }
+
+  if (fallbackResolved.length > 0) {
+    await writeAuditLog({
+      userId: null,
+      tenantId,
+      entityType: "finding",
+      entityId: "framework-fallback-control-resolution",
+      action: "compliance.hook.framework_fallback_controls_resolved",
+      summary: "Resolved framework fallback controls for compliance hook",
+      payload: {
+        frameworkCodes,
+        fallbackResolved,
+      },
+    });
+  }
+
+  return fallbackResolved;
+}
+
 export async function runComplianceAgentHook(
   input: ComplianceAgentHookInput,
   rules: ComplianceMappingRule[] = DEFAULT_COMPLIANCE_MAPPING_RULES
@@ -225,8 +355,29 @@ export async function runComplianceAgentHook(
   const supabase = getSupabaseAdminClient();
   const normalizedText = `${input.findingCategory ?? ""} ${input.findingTitle}`.toLowerCase();
   const matchedRules = rules.filter((rule) => hasAnyPatternMatch(normalizedText, rule.categoryPatterns));
+  const matchedFrameworks = uniqueFrameworkCodes(
+    FRAMEWORK_KEYWORD_RULES.filter((rule) => hasAnyPatternMatch(normalizedText, rule.categoryPatterns)).map(
+      (rule) => rule.frameworkCode
+    )
+  );
   const requestedControls = uniqueControls(matchedRules.flatMap((rule) => rule.controls));
   const resolvedControls = await resolveControlRequirementIds(input.tenantId, requestedControls);
+  const fallbackFrameworkControls = await resolveFrameworkFallbackControls(
+    input.tenantId,
+    matchedFrameworks,
+    resolvedControls
+  );
+  const finalResolvedControls = [
+    ...resolvedControls,
+    ...fallbackFrameworkControls.filter(
+      (fallback) =>
+        !resolvedControls.some(
+          (resolved) =>
+            resolved.frameworkCode.toUpperCase() === fallback.frameworkCode.toUpperCase() &&
+            resolved.controlCode.toUpperCase() === fallback.controlCode.toUpperCase()
+        )
+    ),
+  ];
   const complianceImpact = inferComplianceImpact(input.severity, input.decisionOutput, matchedRules);
   let evidenceSummary = "Generated by compliance hook after policy decision.";
   let controlGapExplanation = "Control gaps were inferred from deterministic finding-to-control mapping rules.";
@@ -294,9 +445,9 @@ export async function runComplianceAgentHook(
       "Control gap explanation fallback: mapped controls and decision reasons indicate remediation evidence is required before closure.";
   }
 
-  if (resolvedControls.length > 0) {
+  if (finalResolvedControls.length > 0) {
     const { error: mappingsError } = await supabase.from("finding_control_mappings").upsert(
-      resolvedControls.map((control) => ({
+      finalResolvedControls.map((control) => ({
         tenant_id: input.tenantId,
         finding_id: input.findingId,
         control_requirement_id: control.id,
@@ -329,6 +480,10 @@ export async function runComplianceAgentHook(
           frameworkCode: control.frameworkCode,
           controlCode: control.controlCode,
         })),
+        mappedFrameworkFallbackControls: fallbackFrameworkControls.map((control) => ({
+          frameworkCode: control.frameworkCode,
+          controlCode: control.controlCode,
+        })),
         decisionAction: input.decisionOutput.action,
         controlGapExplanation,
       },
@@ -341,11 +496,11 @@ export async function runComplianceAgentHook(
   }
 
   let evidenceRecordsCreated = 0;
-  if (resolvedControls.length > 0 && complianceImpact !== "none") {
+  if (finalResolvedControls.length > 0 && complianceImpact !== "none") {
     const { data: evidenceRows, error: evidenceError } = await supabase
       .from("evidence_records")
       .insert(
-        resolvedControls.map((control) => ({
+        finalResolvedControls.map((control) => ({
           tenant_id: input.tenantId,
           scan_run_id: input.scanRunId,
           finding_id: input.findingId,
@@ -364,6 +519,7 @@ export async function runComplianceAgentHook(
             decisionReasons: input.decisionOutput.reasonCodes,
             controlGapExplanation,
             auditorWording,
+            matchedFrameworks,
             generatedAt: new Date().toISOString(),
           },
         }))
@@ -374,7 +530,7 @@ export async function runComplianceAgentHook(
       throw new Error(`Could not create compliance evidence records: ${evidenceError.message}`);
     }
 
-    evidenceRecordsCreated = evidenceRows?.length ?? resolvedControls.length;
+    evidenceRecordsCreated = evidenceRows?.length ?? finalResolvedControls.length;
   }
 
   await writeAuditLog({
@@ -390,7 +546,8 @@ export async function runComplianceAgentHook(
       policyDecisionId: input.policyDecisionId,
       complianceImpact,
       matchedRuleCount: matchedRules.length,
-      mappedControlCount: resolvedControls.length,
+      mappedControlCount: finalResolvedControls.length,
+      matchedFrameworks,
       evidenceRecordsCreated,
     },
   });
@@ -398,7 +555,7 @@ export async function runComplianceAgentHook(
   return {
     findingId: input.findingId,
     complianceImpact,
-    mappedControlsCount: resolvedControls.length,
+    mappedControlsCount: finalResolvedControls.length,
     evidenceRecordsCreated,
   };
 }
