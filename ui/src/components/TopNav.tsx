@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Shield, Sun, Moon, Settings, User, LogOut, RefreshCw, Building2, ChevronDown } from "lucide-react";
+import { Sun, Moon, Settings, User, LogOut, RefreshCw, Building2, ChevronDown } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useTenant } from "../contexts/TenantContext";
+import secureWatchLogo from "../assets/securewatch360-logo.png";
 
 export default function TopNav({ onRefresh }: { onRefresh?: () => void }) {
   const { theme, toggleTheme } = useTheme();
@@ -38,9 +39,11 @@ export default function TopNav({ onRefresh }: { onRefresh?: () => void }) {
     <nav className="bg-[var(--sw-surface)]/96 border-b border-[var(--sw-border)] px-6 py-4 transition-colors duration-200 backdrop-blur supports-[backdrop-filter]:bg-[var(--sw-surface)]/82 shadow-[0_8px_28px_-22px_rgba(17,45,78,0.45)]">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="bg-gradient-to-br from-[#1565c0] to-[#29b6f6] p-2 rounded-lg shadow-lg shadow-[#29b6f6]/20">
-            <Shield className="w-6 h-6 text-white" />
-          </div>
+          <img
+            src={secureWatchLogo}
+            alt="SecureWatch360"
+            className="h-12 w-auto rounded-lg border border-[color:color-mix(in_srgb,var(--sw-accent)_30%,transparent)] shadow-[0_12px_24px_-16px_rgba(17,45,78,0.8)]"
+          />
           <div>
             <h1 className="text-xl font-bold text-[var(--sw-text-primary)] tracking-tight">SecureWatch360</h1>
             <p className="text-xs uppercase tracking-[0.14em] text-[#29b6f6]">Security Operations Center</p>

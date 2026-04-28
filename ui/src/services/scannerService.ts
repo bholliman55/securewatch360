@@ -88,6 +88,15 @@ type ScanRunRow = {
   target_value: string | null;
 };
 
+type ScanTargetRow = {
+  id: string;
+  target_name: string;
+  target_type: string;
+  target_value: string;
+  status: string;
+  created_at: string;
+};
+
 function requireTenant(tenantId: string | null | undefined): string {
   if (!tenantId || tenantId.trim() === "") {
     throw new Error("Select a tenant to load scanner data.");
@@ -164,7 +173,7 @@ function mapScanRun(row: ScanRunRow & { result_summary?: unknown }): Scan {
 class ScannerService {
   async getMetrics(tenantId?: string | null): Promise<ScannerMetrics> {
     const tid = requireTenant(tenantId);
-    const [cc, findingsRes, runsRes] = await Promise.all([
+    const [cc, findingsRes, runsRes, targetsRes] = await Promise.all([
       apiJson<{
         ok: boolean;
         summary?: {
@@ -179,6 +188,9 @@ class ScannerService {
       apiJson<{ ok: boolean; scanRuns?: ScanRunRow[] }>(
         `/api/scan-runs?tenantId=${encodeURIComponent(tid)}`
       ).catch(() => ({ ok: false, scanRuns: [] })),
+      apiJson<{ ok: boolean; scanTargets?: ScanTargetRow[] }>(
+        `/api/scan-targets?tenantId=${encodeURIComponent(tid)}&status=active`
+      ).catch(() => ({ ok: false, scanTargets: [] })),
     ]);
 
     const findings = findingsRes.findings ?? [];
@@ -197,7 +209,7 @@ class ScannerService {
       totalVulnerabilities: cc.summary?.totalFindings ?? findings.length,
       criticalVulnerabilities: criticalCount,
       highVulnerabilities: highCount,
-      assetsMonitored: 0,
+      assetsMonitored: targetsRes.scanTargets?.length ?? 0,
       lastScanTime: lastScan,
     };
   }
@@ -244,12 +256,43 @@ class ScannerService {
     return (res.findings ?? []).map(mapFindingToVulnerability);
   }
 
-  async getAssets(_tenantId?: string | null): Promise<Asset[]> {
-    return [];
+  async getAssets(tenantId?: string | null): Promise<Asset[]> {
+    const tid = requireTenant(tenantId);
+    const [targetsRes, findingsRes] = await Promise.all([
+      apiJson<{ ok: boolean; scanTargets?: ScanTargetRow[] }>(
+        `/api/scan-targets?tenantId=${encodeURIComponent(tid)}`
+      ),
+      apiJson<{ ok: boolean; findings?: FindingRow[] }>(
+        `/api/findings?tenantId=${encodeURIComponent(tid)}&limit=500`
+      ).catch(() => ({ ok: false, findings: [] })),
+    ]);
+
+    const findings = findingsRes.findings ?? [];
+    const targets = targetsRes.scanTargets ?? [];
+
+    return targets.map((target, index) => {
+      const vulnCount = findings.filter((f) => {
+        const haystack = `${f.title ?? ""} ${f.description ?? ""} ${f.exposure ?? ""}`.toLowerCase();
+        return haystack.includes(target.target_value.toLowerCase()) || haystack.includes(target.target_name.toLowerCase());
+      }).length;
+      return {
+        asset_id: index + 1,
+        asset_name: target.target_name,
+        asset_type: target.target_type,
+        asset_identifier: target.target_value,
+        operating_system: null,
+        criticality: "medium",
+        last_scan_date: null,
+        vulnerability_count: vulnCount,
+        environment: null,
+        owner: null,
+      };
+    });
   }
 
-  async getAssetById(_id: number): Promise<Asset | null> {
-    return null;
+  async getAssetById(id: number, tenantId?: string | null): Promise<Asset | null> {
+    const assets = await this.getAssets(tenantId);
+    return assets.find((asset) => asset.asset_id === id) ?? null;
   }
 
   async updateVulnerabilityStatus(id: string, status: string): Promise<void> {

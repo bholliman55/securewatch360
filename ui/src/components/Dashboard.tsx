@@ -80,7 +80,7 @@ export default function Dashboard({
     <div className="flex-1 overflow-auto">
       <div className="p-6 space-y-6">
         <div className="flex items-center space-x-2 text-sm text-[var(--sw-text-muted)]">
-          <span className="hover:text-[#29b6f6] cursor-pointer transition-colors">
+          <span className="hover:text-[var(--sw-accent)] cursor-pointer transition-colors">
             Home
           </span>
           <ChevronRight className="w-4 h-4" />
@@ -90,18 +90,30 @@ export default function Dashboard({
         </div>
 
         {(activeView === 'dashboard' || activeView === 'settings' || activeView === 'analytics') && (
-          <div>
-            <h2 className="text-3xl font-bold text-[var(--sw-text-primary)] mb-2">
-              {getViewTitle()}
-            </h2>
-            <p className="text-[var(--sw-text-muted)]">
-              {activeView === 'dashboard'
-                ? 'Real-time security operations monitoring and analytics'
-                : activeView === 'analytics'
-                ? 'Comprehensive security and compliance metrics'
-                : `Detailed view of ${getViewTitle().toLowerCase()}`}
-            </p>
-          </div>
+          <section className="sw-panel p-6 lg:p-8 overflow-hidden relative">
+            <div className="absolute -right-16 -top-20 w-64 h-64 rounded-full bg-[radial-gradient(circle,_rgba(41,182,246,0.28)_0%,_rgba(41,182,246,0)_72%)] pointer-events-none" />
+            <div className="absolute right-20 -bottom-24 w-72 h-72 rounded-full bg-[radial-gradient(circle,_rgba(15,92,184,0.2)_0%,_rgba(15,92,184,0)_70%)] pointer-events-none" />
+            <div className="relative">
+              <p className="sw-kicker mb-2">Analyst command deck</p>
+              <h2 className="text-4xl lg:text-5xl font-bold text-[var(--sw-text-primary)] leading-[0.9] mb-3">
+                {getViewTitle()}
+              </h2>
+              <p className="text-[var(--sw-text-muted)] max-w-3xl">
+                {activeView === 'dashboard'
+                  ? 'Live SOC telemetry with finding pressure, agent health, and operational narrative in one glance.'
+                  : activeView === 'analytics'
+                  ? 'Executive-grade telemetry for compliance posture, trend velocity, and risk concentration.'
+                  : `Detailed view of ${getViewTitle().toLowerCase()}.`}
+              </p>
+              {activeView === 'dashboard' && (
+                <div className="flex flex-wrap gap-3 mt-5">
+                  <span className="sw-chip">24x7 operations</span>
+                  <span className="sw-chip">Tenant-aware context</span>
+                  <span className="sw-chip">Policy-backed actions</span>
+                </div>
+              )}
+            </div>
+          </section>
         )}
 
         {activeView === 'settings' ? (
@@ -126,7 +138,7 @@ export default function Dashboard({
               <>
                 <HeroMetricsSkeleton />
                 <SystemStatusSkeleton />
-                <div className="bg-[var(--sw-surface)] rounded-lg shadow-lg border border-[var(--sw-border)] p-6">
+                <div className="sw-panel p-6">
                   <div className="h-6 w-48 bg-[var(--sw-surface-elevated)] rounded mb-6 animate-pulse" />
                   <SkeletonChartPlaceholder />
                 </div>

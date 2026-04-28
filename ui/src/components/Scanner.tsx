@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Radar,
   Shield,
@@ -29,6 +29,10 @@ export default function Scanner() {
   const [selectedScan, setSelectedScan] = useState<Scan | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [viewMode, setViewMode] = useState<'vulnerabilities' | 'assets' | 'scans'>('vulnerabilities');
+  const [scanPage, setScanPage] = useState(1);
+  const [vulnerabilityPage, setVulnerabilityPage] = useState(1);
+  const scansPerPage = 5;
+  const vulnerabilitiesPerPage = 5;
 
   const getSeverityColor = (severity: string) => {
     if (!severity) return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
@@ -65,6 +69,33 @@ export default function Scanner() {
     (asset.asset_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (asset.asset_identifier && asset.asset_identifier.includes(searchTerm))
   );
+
+  const totalScanPages = Math.max(1, Math.ceil(scans.length / scansPerPage));
+  const totalVulnerabilityPages = Math.max(1, Math.ceil(filteredVulnerabilities.length / vulnerabilitiesPerPage));
+  const pagedScans = useMemo(() => {
+    const startIndex = (scanPage - 1) * scansPerPage;
+    return scans.slice(startIndex, startIndex + scansPerPage);
+  }, [scanPage, scans]);
+  const pagedVulnerabilities = useMemo(() => {
+    const startIndex = (vulnerabilityPage - 1) * vulnerabilitiesPerPage;
+    return filteredVulnerabilities.slice(startIndex, startIndex + vulnerabilitiesPerPage);
+  }, [filteredVulnerabilities, vulnerabilityPage]);
+
+  useEffect(() => {
+    if (scanPage > totalScanPages) {
+      setScanPage(totalScanPages);
+    }
+  }, [scanPage, totalScanPages]);
+
+  useEffect(() => {
+    if (vulnerabilityPage > totalVulnerabilityPages) {
+      setVulnerabilityPage(totalVulnerabilityPages);
+    }
+  }, [vulnerabilityPage, totalVulnerabilityPages]);
+
+  useEffect(() => {
+    setVulnerabilityPage(1);
+  }, [searchTerm, severityFilter, viewMode]);
 
   if (loading) {
     return (
@@ -256,7 +287,7 @@ export default function Scanner() {
                   </tr>
                 </thead>
                 <tbody>
-                  {scans.map((scan) => (
+                  {pagedScans.map((scan) => (
                     <tr
                       key={scan.scan_results_id}
                       onClick={() => setSelectedScan(scan)}
@@ -307,6 +338,32 @@ export default function Scanner() {
                 </tbody>
               </table>
             </div>
+            <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-200 dark:border-slate-700 pt-4">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                {scans.length > 0
+                  ? `Showing ${(scanPage - 1) * scansPerPage + 1}-${Math.min(scanPage * scansPerPage, scans.length)} of ${scans.length}`
+                  : "No scans to paginate"}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setScanPage((page) => Math.max(1, page - 1))}
+                  disabled={scanPage === 1 || scans.length === 0}
+                  className="px-3 py-1.5 text-sm rounded-md border border-slate-300 dark:border-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700"
+                >
+                  Prev
+                </button>
+                <span className="text-sm text-slate-700 dark:text-slate-200 min-w-16 text-center">
+                  {scanPage} / {totalScanPages}
+                </span>
+                <button
+                  onClick={() => setScanPage((page) => Math.min(totalScanPages, page + 1))}
+                  disabled={scanPage === totalScanPages || scans.length === 0}
+                  className="px-3 py-1.5 text-sm rounded-md border border-slate-300 dark:border-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -341,6 +398,8 @@ export default function Scanner() {
             <div className="flex items-center gap-3">
               {viewMode === 'vulnerabilities' && (
                 <select
+                  aria-label="Filter vulnerabilities by severity"
+                  title="Filter vulnerabilities by severity"
                   value={severityFilter}
                   onChange={(e) => setSeverityFilter(e.target.value)}
                   className="px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -374,7 +433,7 @@ export default function Scanner() {
                   No vulnerabilities found
                 </div>
               ) : (
-                filteredVulnerabilities.map((vuln) => (
+                pagedVulnerabilities.map((vuln) => (
                   <div
                     key={vuln.vulnerability_id}
                     onClick={() => setSelectedVulnerability(vuln)}
@@ -418,6 +477,32 @@ export default function Scanner() {
                   </div>
                 ))
               )}
+              <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-200 dark:border-slate-700 pt-4">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {filteredVulnerabilities.length > 0
+                    ? `Showing ${(vulnerabilityPage - 1) * vulnerabilitiesPerPage + 1}-${Math.min(vulnerabilityPage * vulnerabilitiesPerPage, filteredVulnerabilities.length)} of ${filteredVulnerabilities.length}`
+                    : 'No vulnerabilities to paginate'}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setVulnerabilityPage((page) => Math.max(1, page - 1))}
+                    disabled={vulnerabilityPage === 1 || filteredVulnerabilities.length === 0}
+                    className="px-3 py-1.5 text-sm rounded-md border border-slate-300 dark:border-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700"
+                  >
+                    Prev
+                  </button>
+                  <span className="text-sm text-slate-700 dark:text-slate-200 min-w-16 text-center">
+                    {vulnerabilityPage} / {totalVulnerabilityPages}
+                  </span>
+                  <button
+                    onClick={() => setVulnerabilityPage((page) => Math.min(totalVulnerabilityPages, page + 1))}
+                    disabled={vulnerabilityPage === totalVulnerabilityPages || filteredVulnerabilities.length === 0}
+                    className="px-3 py-1.5 text-sm rounded-md border border-slate-300 dark:border-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

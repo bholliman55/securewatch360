@@ -79,18 +79,17 @@ export default function HeroMetrics({ metrics: data }: HeroMetricsProps) {
           <div
             key={index}
             onClick={() => isClickable && setShowVulnerabilities(true)}
-            className={`bg-[var(--sw-surface)] rounded-lg shadow-lg border border-[var(--sw-border)] border-l-4 ${metric.borderColor} p-6 transition-all duration-500 hover:shadow-xl hover:-translate-y-1 ${
+            className={`sw-panel border-l-4 ${metric.borderColor} p-6 transition-all duration-500 hover:-translate-y-1 ${
               animated ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             } ${isClickable ? 'cursor-pointer' : ''}`}
-            style={{ transitionDelay: `${index * 100}ms` }}
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-[var(--sw-text-muted)] mb-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--sw-text-muted)] mb-2">
                   {metric.label}
                 </p>
                 <div className="flex items-baseline space-x-2">
-                  <h3 className="text-4xl font-bold text-[var(--sw-text-primary)]">
+                  <h3 className="text-5xl font-bold text-[var(--sw-text-primary)] leading-none">
                     {animated ? metric.value : 0}
                     {metric.suffix && <span className="text-2xl">{metric.suffix}</span>}
                   </h3>
@@ -103,7 +102,7 @@ export default function HeroMetrics({ metrics: data }: HeroMetricsProps) {
                   <span className="text-xs text-[var(--sw-text-muted)]">vs last period</span>
                 </div>
               </div>
-              <div className={`${metric.bgColor} p-3 rounded-lg`}>
+              <div className={`${metric.bgColor} p-3 rounded-xl ring-1 ring-black/5 dark:ring-white/10`}>
                 <Icon className={`w-8 h-8 ${metric.iconColor}`} />
               </div>
             </div>

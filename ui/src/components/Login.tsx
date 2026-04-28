@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Shield, Mail, Lock, Eye, EyeOff, AlertCircle, Loader } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import secureWatchLogo from '../assets/securewatch360-logo.png';
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -61,9 +62,11 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-[#07111f] via-[#0d1e33] to-[#07111f] flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#1565c0] to-[#29b6f6] rounded-2xl mb-4">
-            <Shield className="w-10 h-10 text-white" />
-          </div>
+          <img
+            src={secureWatchLogo}
+            alt="SecureWatch360"
+            className="mx-auto mb-4 h-20 w-auto rounded-xl border border-[color:color-mix(in_srgb,#29b6f6_35%,transparent)] shadow-[0_18px_32px_-20px_rgba(41,182,246,0.75)]"
+          />
           <h1 className="text-4xl font-bold text-white mb-2 tracking-wide">SecureWatch360 AI</h1>
           <p className="text-[#b0c4de]">
             {isForgotPassword

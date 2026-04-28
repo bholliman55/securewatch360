@@ -83,7 +83,7 @@ export default function SystemStatus({ agents, alerts }: SystemStatusProps) {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="bg-[var(--sw-surface)] rounded-lg shadow-lg border border-[var(--sw-border)] p-6">
+      <div className="sw-panel p-6">
         <h3 className="text-lg font-bold text-[var(--sw-text-primary)] mb-4">
           Agent Status
         </h3>
@@ -100,10 +100,10 @@ export default function SystemStatus({ agents, alerts }: SystemStatusProps) {
               return (
                 <div
                   key={agent.id}
-                  className="flex items-center justify-between p-4 bg-[var(--sw-surface-elevated)] rounded-lg hover:shadow-md transition-all duration-200 group"
+                  className="flex items-center justify-between p-4 bg-[var(--sw-surface-elevated)] rounded-xl hover:shadow-md transition-all duration-200 group border border-[color:color-mix(in_srgb,var(--sw-border)_85%,transparent)]"
                 >
                   <div className="flex items-center space-x-4 flex-1">
-                    <div className="bg-gradient-to-r from-[#1565c0] to-[#112d4e] p-2 rounded-lg group-hover:scale-110 transition-transform">
+                    <div className="bg-[image:var(--sw-nav-active-bg)] p-2 rounded-lg group-hover:scale-110 transition-transform shadow-sm">
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1">
@@ -137,7 +137,7 @@ export default function SystemStatus({ agents, alerts }: SystemStatusProps) {
         </div>
       </div>
 
-      <div className="bg-[var(--sw-surface)] rounded-lg shadow-lg border border-[var(--sw-border)] p-6">
+      <div className="sw-panel p-6">
         <h3 className="text-lg font-bold text-[var(--sw-text-primary)] mb-4">
           Recent Alerts
         </h3>
@@ -146,7 +146,7 @@ export default function SystemStatus({ agents, alerts }: SystemStatusProps) {
             alerts.map((alert) => (
               <div
                 key={alert.id}
-                className="p-4 bg-[var(--sw-surface-elevated)] rounded-lg hover:shadow-md transition-all duration-200 group"
+                className="p-4 bg-[var(--sw-surface-elevated)] rounded-xl hover:shadow-md transition-all duration-200 group border border-[color:color-mix(in_srgb,var(--sw-border)_85%,transparent)]"
               >
                 <div className="flex items-start justify-between mb-2">
                   <span
@@ -158,7 +158,7 @@ export default function SystemStatus({ agents, alerts }: SystemStatusProps) {
                     onClick={() => setSelectedAlert(alert)}
                     aria-label={`Open details for ${alert.title}`}
                     title="View alert details"
-                    className="text-[#29b6f6] hover:text-[#00e5ff] transition-colors"
+                    className="text-[var(--sw-accent-bright)] hover:text-[var(--sw-accent)] transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
                   </button>

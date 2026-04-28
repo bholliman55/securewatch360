@@ -1,0 +1,43 @@
+{
+  "runId": "qa-v4-agents-2026-04-26T02-36-14-298Z",
+  "context": {
+    "tenantId": "8c2b980c-9fc8-4b71-9b5f-2e90a5c3a001",
+    "maxAttempts": 60,
+    "pollIntervalMs": 3000,
+    "scanTargetId": "f8dec828-a292-4b2e-82a8-3abbad155665"
+  },
+  "results": [
+    {
+      "id": "T00",
+      "title": "Preflight environment validation",
+      "status": "passed",
+      "durationMs": 0,
+      "details": [
+        "Environment values required for E2E execution are present.",
+        "tenantId source=TEST_TENANT_ID",
+        "inngest event key source=env",
+        "tenantId=8c2b980c-9fc8-4b71-9b5f-2e90a5c3a001",
+        "maxAttempts=60",
+        "pollIntervalMs=3000"
+      ]
+    },
+    {
+      "id": "T01",
+      "title": "Create QA scan target",
+      "status": "passed",
+      "durationMs": 1122,
+      "details": [
+        "scanTargetId=f8dec828-a292-4b2e-82a8-3abbad155665",
+        "targetName=qa-v4-agents-target-2026-04-26T02-36-14-367Z"
+      ]
+    },
+    {
+      "id": "T02",
+      "title": "Trigger scan workflow and wait for completion",
+      "status": "failed",
+      "durationMs": 184116,
+      "details": [],
+      "error": "Timed out waiting for completed scan run. Last seen status=not_found"
+    }
+  ]
+}

@@ -1,14 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --sw-bg: #eef3f9;
+    --sw-bg: #ebf1f8;
     --sw-surface: #ffffff;
-    --sw-surface-elevated: #f7faff;
-    --sw-border: #d4deeb;
+    --sw-surface-elevated: #f4f8fe;
+    --sw-border: #d2deec;
     --sw-text-primary: #0f2745;
     --sw-text-muted: #4e6784;
     --sw-accent: #0f5cb8;
@@ -18,6 +18,7 @@
     --sw-nav-active-text: #ffffff;
     --sw-card-shadow: 0 10px 30px -18px rgba(17, 45, 78, 0.35);
     --sw-card-shadow-hover: 0 16px 34px -18px rgba(17, 45, 78, 0.45);
+    --sw-focus-ring: 0 0 0 3px rgba(41, 182, 246, 0.2);
   }
 
   .dark {
@@ -34,6 +35,7 @@
     --sw-nav-active-text: #ffffff;
     --sw-card-shadow: 0 14px 34px -20px rgba(0, 0, 0, 0.55);
     --sw-card-shadow-hover: 0 20px 40px -18px rgba(0, 0, 0, 0.65);
+    --sw-focus-ring: 0 0 0 3px rgba(41, 182, 246, 0.35);
   }
 
   html,
@@ -43,7 +45,7 @@
   }
 
   body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Manrope', sans-serif;
     background: radial-gradient(circle at top right, #f8fbff 0%, var(--sw-bg) 45%);
     color: var(--sw-text-primary);
   }
@@ -53,12 +55,52 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Rajdhani', sans-serif;
-    letter-spacing: 0.01em;
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 0.02em;
   }
 
   * {
     @apply transition-colors duration-200;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+    box-shadow: var(--sw-focus-ring);
+  }
+}
+
+@layer components {
+  .sw-panel {
+    background: linear-gradient(175deg, var(--sw-surface) 0%, var(--sw-surface-elevated) 100%);
+    border: 1px solid var(--sw-border);
+    border-radius: 16px;
+    box-shadow: var(--sw-card-shadow);
+  }
+
+  .sw-panel:hover {
+    box-shadow: var(--sw-card-shadow-hover);
+  }
+
+  .sw-kicker {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--sw-accent-bright);
+    font-weight: 700;
+  }
+
+  .sw-chip {
+    border: 1px solid var(--sw-border);
+    border-radius: 9999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    background: color-mix(in srgb, var(--sw-surface-elevated) 82%, white);
+    color: var(--sw-text-muted);
   }
 }
 
