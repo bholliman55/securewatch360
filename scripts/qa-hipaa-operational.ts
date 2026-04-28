@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { getSupabaseAdminClient } from "../src/lib/supabase";
 import { evaluateDecision } from "../src/lib/decisionEngine";
+import { evaluateDecisionWithRules } from "../src/lib/decisionEngine";
+import { evaluateDecisionWithOpa } from "../src/lib/opaClient";
 import { runComplianceAgentHook } from "../src/lib/complianceAgent";
 import type { DecisionOutput } from "../src/types/policy";
 
@@ -91,12 +93,34 @@ async function main() {
       metadata: { regulatedFrameworks: ["hipaa"] },
     };
 
+    const rulesDecision = await evaluateDecisionWithRules(decisionInput);
+    assert(rulesDecision.requiresApproval, "Expected rules requiresApproval=true for HIPAA signal");
+    assert(
+      Boolean(rulesDecision.metadata?.hipaaStrictReview),
+      "Expected rules metadata.hipaaStrictReview=true for HIPAA signal"
+    );
+
     const decisionOutput = await evaluateDecision(decisionInput);
     assert(decisionOutput.requiresApproval, "Expected requiresApproval=true for HIPAA signal");
     assert(
       Boolean(decisionOutput.metadata?.hipaaStrictReview),
       "Expected metadata.hipaaStrictReview=true for HIPAA signal"
     );
+
+    let opaDecision: DecisionOutput | null = null;
+    try {
+      opaDecision = await evaluateDecisionWithOpa({ input: decisionInput });
+      assert(opaDecision.requiresApproval, "Expected OPA requiresApproval=true for HIPAA signal");
+      assert(
+        Boolean(opaDecision.metadata?.hipaaStrictReview),
+        "Expected OPA metadata.hipaaStrictReview=true for HIPAA signal"
+      );
+    } catch (error) {
+      console.warn(
+        "[qa-hipaa-operational] OPA check skipped:",
+        error instanceof Error ? error.message : String(error)
+      );
+    }
 
     const { data: policyDecision, error: policyError } = await supabase
       .from("policy_decisions")
@@ -170,6 +194,18 @@ async function main() {
             hipaaStrictReview: decisionOutput.metadata?.hipaaStrictReview ?? false,
             reasonCodes: decisionOutput.reasonCodes,
           },
+          rulesDecision: {
+            action: rulesDecision.action,
+            requiresApproval: rulesDecision.requiresApproval,
+            hipaaStrictReview: rulesDecision.metadata?.hipaaStrictReview ?? false,
+          },
+          opaDecision: opaDecision
+            ? {
+                action: opaDecision.action,
+                requiresApproval: opaDecision.requiresApproval,
+                hipaaStrictReview: opaDecision.metadata?.hipaaStrictReview ?? false,
+              }
+            : null,
           hook: hookResult,
           mappedHipaaControls: hipaaMappings.length,
           hipaaEvidenceRecords: hipaaEvidence.length,
