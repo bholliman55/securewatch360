@@ -41,6 +41,15 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         { status: 400 }
       );
     }
+    if (actionStatus === "completed" || actionStatus === "failed") {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "actionStatus completed/failed must be set by the execution worker endpoint",
+        },
+        { status: 400 }
+      );
+    }
 
     const assignedToUserId =
       typeof body.assignedToUserId === "string" ? body.assignedToUserId.trim() : undefined;

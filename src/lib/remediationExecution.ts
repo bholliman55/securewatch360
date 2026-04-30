@@ -14,6 +14,7 @@ type ExecutionStep = {
 // Strict allowlist for template variable values to prevent command injection.
 // Values must only contain safe filesystem/identifier characters.
 const SAFE_VALUE_RE = /^[a-zA-Z0-9._\-:/]{1,256}$/;
+const SUPPORTED_ADAPTERS = new Set(["script_runner", "ansible", "cloud_api", "ticketing"]);
 
 function sanitizeTemplateValue(value: string): string {
   if (!SAFE_VALUE_RE.test(value)) {
@@ -266,12 +267,18 @@ export async function executeRemediationActionById(input: {
     updated_at: startedAt,
   };
 
-  const { error: runningError } = await supabase
+  const allowedStartStates = force ? ["approved", "queued", "pending"] : ["approved", "queued"];
+  const { data: runningRow, error: runningError } = await supabase
     .from("remediation_actions")
     .update(runningUpdates)
-    .eq("id", input.remediationActionId);
-  if (runningError) {
-    throw new Error(`Failed to mark remediation action running: ${runningError.message}`);
+    .eq("id", input.remediationActionId)
+    .in("execution_status", allowedStartStates)
+    .select("id")
+    .maybeSingle();
+  if (runningError || !runningRow) {
+    throw new Error(
+      `Failed to mark remediation action running (stale state or concurrent execution): ${runningError?.message ?? "state transition rejected"}`
+    );
   }
 
   const payload = (remediation.execution_payload ?? {}) as Record<string, unknown>;
@@ -282,6 +289,9 @@ export async function executeRemediationActionById(input: {
     typeof integration?.adapterKey === "string" && integration.adapterKey.trim().length > 0
       ? integration.adapterKey.trim()
       : undefined;
+  if (adapterKey && !SUPPORTED_ADAPTERS.has(adapterKey)) {
+    throw new Error(`Unsupported remediation adapter: ${adapterKey}`);
+  }
   const connector =
     typeof integration?.connector === "string" && integration.connector.trim().length > 0
       ? integration.connector.trim()
@@ -291,18 +301,7 @@ export async function executeRemediationActionById(input: {
       ? execution.targetValue
       : remediation.finding_id) || "unknown-target";
 
-  let executionSteps: ExecutionStep[];
-  try {
-    executionSteps = await buildExecutionSteps({
-      actionType: remediation.action_type,
-      dryRun,
-      containment,
-      tenantId: remediation.tenant_id,
-      findingId: remediation.finding_id,
-      target,
-      adapterKey,
-    });
-  } catch (error) {
+  const markFailed = async (error: unknown) => {
     const failedAt = new Date().toISOString();
     await supabase
       .from("remediation_actions")
@@ -321,6 +320,37 @@ export async function executeRemediationActionById(input: {
         updated_at: failedAt,
       })
       .eq("id", input.remediationActionId);
+    await writeAuditLog({
+      userId: input.actorUserId,
+      tenantId: remediation.tenant_id,
+      entityType: "remediation_action",
+      entityId: input.remediationActionId,
+      action: "remediation.execution.failed",
+      summary: `Remediation execution failed for action ${input.remediationActionId}`,
+      payload: {
+        remediationActionId: input.remediationActionId,
+        findingId: remediation.finding_id,
+        actionType: remediation.action_type,
+        executionMode: remediation.execution_mode,
+        source: input.executionSource,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    });
+  };
+
+  let executionSteps: ExecutionStep[];
+  try {
+    executionSteps = await buildExecutionSteps({
+      actionType: remediation.action_type,
+      dryRun,
+      containment,
+      tenantId: remediation.tenant_id,
+      findingId: remediation.finding_id,
+      target,
+      adapterKey,
+    });
+  } catch (error) {
+    await markFailed(error);
     throw error;
   }
 
@@ -347,9 +377,12 @@ export async function executeRemediationActionById(input: {
   };
 
   const completedAt = new Date().toISOString();
+  const allStepsSkipped = executionSteps.every((step) => step.status === "skipped");
+  const terminalExecutionStatus = allStepsSkipped && !dryRun ? "cancelled" : "completed";
+  const terminalActionStatus = allStepsSkipped && !dryRun ? "approved" : "completed";
   const completedUpdates: Record<string, unknown> = {
-    execution_status: "completed",
-    action_status: "completed",
+    execution_status: terminalExecutionStatus,
+    action_status: terminalActionStatus,
     execution_result: executionResult,
     executed_at: completedAt,
     updated_at: completedAt,
@@ -369,7 +402,9 @@ export async function executeRemediationActionById(input: {
     )
     .single();
   if (completeError || !updated) {
-    throw new Error(completeError?.message ?? "Failed to finalize remediation execution");
+    const err = new Error(completeError?.message ?? "Failed to finalize remediation execution");
+    await markFailed(err);
+    throw err;
   }
 
   await writeAuditLog({
@@ -387,18 +422,22 @@ export async function executeRemediationActionById(input: {
       source: input.executionSource,
       dryRun,
       force,
+      terminalExecutionStatus,
+      allStepsSkipped,
     },
   });
 
-  await inngest.send({
-    name: "securewatch/remediation.execution.completed",
-    data: {
-      tenantId: remediation.tenant_id,
-      remediationActionId: input.remediationActionId,
-      findingId: remediation.finding_id,
-      triggerType: remediation.execution_mode,
-    },
-  });
+  if (terminalExecutionStatus === "completed") {
+    await inngest.send({
+      name: "securewatch/remediation.execution.completed",
+      data: {
+        tenantId: remediation.tenant_id,
+        remediationActionId: input.remediationActionId,
+        findingId: remediation.finding_id,
+        triggerType: remediation.execution_mode,
+      },
+    });
+  }
 
   return {
     remediationAction: (updated ?? {}) as Record<string, unknown>,
