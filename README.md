@@ -513,6 +513,7 @@ The external intelligence layer adds two passive, non-intrusive collection agent
 ### Why Bright Data
 
 Bright Data provides a managed proxy and browser automation infrastructure that enables:
+
 - Reliable public web fetching behind bot-detection layers
 - SERP API access for search-driven OSINT
 - Certificate Transparency log queries
@@ -578,10 +579,18 @@ BRIGHTDATA_BROWSER_ZONE=
 
 ### Running a scan
 
+**Via Console UI (`/console`)**
+- Tenant context is auto-selected from the authenticated user's highest role (`owner > admin > analyst > viewer`).
+- If a user has no explicit tenant memberships in local demo mode, UI falls back to `VITE_TEST_TENANT_ID` (or the default seeded test tenant ID).
+- `New scan` now supports:
+  - **External intelligence workflow**: domain/URL/IP input that triggers Agent 1 + Agent 2 through `/api/security/external-intelligence/run`
+  - **Standard workflow**: scan target creation + `/api/scans/request` dispatch
+
 **Via API:**
 ```bash
 POST /api/security/external-intelligence/run
 {
+  "tenantId": "<tenant-uuid>",
   "domain": "example.com",
   "companyName": "Example Corp",
   "runAgent1": true,

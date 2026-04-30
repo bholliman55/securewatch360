@@ -12,7 +12,7 @@ export const SUPPORTED_INTENTS = [
 
 export type SupportedIntent = (typeof SUPPORTED_INTENTS)[number];
 
-export const SUPPORTED_AGENTS = ["agent1", "agent2", "agent3", "agent4", "agent5"] as const;
+export const SUPPORTED_AGENTS = ["agent1", "agent2", "agent3", "agent4", "agent5", "multi_agent"] as const;
 export type SupportedAgent = (typeof SUPPORTED_AGENTS)[number];
 
 export const ParsedCommandSchema = z.object({
@@ -21,6 +21,7 @@ export const ParsedCommandSchema = z.object({
   confidence: z.number().min(0).max(1),
   parameters: z.record(z.string(), z.unknown()),
   requiresApproval: z.boolean(),
+  reason: z.string().min(1),
 });
 
 export type ParsedCommand = z.infer<typeof ParsedCommandSchema>;

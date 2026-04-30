@@ -1,8 +1,8 @@
-import type { ParsedCommand } from "./intentSchema";
+import type { ParsedNLCommand } from "./nlTypes";
 import type { RoutedResult } from "./commandRouter";
 
 interface FormatOptions {
-  command: ParsedCommand;
+  command: ParsedNLCommand;
   routed?: RoutedResult;
   requiresApproval?: boolean;
   guardReason?: string;
