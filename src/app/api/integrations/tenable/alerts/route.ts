@@ -75,29 +75,29 @@ export async function POST(request: Request) {
   }
 
   const supabase = getSupabaseAdminClient();
-  const { data: existingRun, error: lookupError } = await supabase
-    .from("scan_runs")
+  const { data: dedupeInsert, error: dedupeError } = await supabase
+    .from("integration_event_dedupes")
+    .insert({
+      tenant_id: tenantId,
+      source: "tenable",
+      external_event_id: eventId,
+    })
     .select("id")
-    .eq("tenant_id", tenantId)
-    .eq("scanner_type", "monitoring")
-    .contains("target_snapshot", { sourceEventId: eventId })
-    .limit(1)
     .maybeSingle();
 
-  if (lookupError) {
+  if (dedupeError && dedupeError.code !== "23505") {
     return NextResponse.json(
-      { ok: false, error: "Could not check dedupe state", message: lookupError.message },
+      { ok: false, error: "Could not check dedupe state", message: dedupeError.message },
       { status: 500 }
     );
   }
 
-  if (existingRun?.id) {
+  if (!dedupeInsert?.id) {
     return NextResponse.json(
       {
         ok: true,
         deduped: true,
         reason: "event already ingested",
-        existingScanRunId: existingRun.id,
       },
       { status: 200 }
     );

@@ -70,13 +70,16 @@ export const monitoringAlertReceived = inngest.createFunction(
 
     try {
       await step.run("mark-alert-run-running", async () => {
-        await supabase
+        const { error } = await supabase
           .from("scan_runs")
           .update({
             status: SCAN_RUN_STATUSES[1], // running
             started_at: new Date().toISOString(),
           })
           .eq("id", scanRunId);
+        if (error) {
+          throw new Error(`Could not mark alert run running: ${error.message}`);
+        }
       });
 
       const enriched = await step.run("enrich-alert", async () => {
@@ -166,7 +169,7 @@ export const monitoringAlertReceived = inngest.createFunction(
       }
 
       await step.run("mark-alert-run-completed", async () => {
-        await supabase
+        const { error } = await supabase
           .from("scan_runs")
           .update({
             status: SCAN_RUN_STATUSES[2], // completed
@@ -182,6 +185,9 @@ export const monitoringAlertReceived = inngest.createFunction(
             },
           })
           .eq("id", scanRunId);
+        if (error) {
+          throw new Error(`Could not mark alert run completed: ${error.message}`);
+        }
       });
 
       return {
@@ -197,7 +203,7 @@ export const monitoringAlertReceived = inngest.createFunction(
       const message = error instanceof Error ? error.message : "Unknown alert workflow failure";
 
       await step.run("mark-alert-run-failed", async () => {
-        await supabase
+        const { error } = await supabase
           .from("scan_runs")
           .update({
             status: SCAN_RUN_STATUSES[3], // failed
@@ -205,6 +211,9 @@ export const monitoringAlertReceived = inngest.createFunction(
             error_message: message,
           })
           .eq("id", scanRunId);
+        if (error) {
+          throw new Error(`Could not mark alert run failed: ${error.message}`);
+        }
       });
 
       throw new Error(`securewatch monitoring alert workflow failed: ${message}`);
