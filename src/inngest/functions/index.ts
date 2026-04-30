@@ -14,6 +14,9 @@ import { runRiskQueryFunction } from "./runRiskQuery";
 import { runAlertSummaryFunction } from "./runAlertSummary";
 import { runVendorRiskAssessmentFunction } from "./runVendorRiskAssessment";
 import { generateRemediationPlaybookFunction } from "./generateRemediationPlaybook";
+import { generateThreatDigestFunction } from "./generateThreatDigest";
+import { slaBreachSweepFunction } from "./slaBreachSweep";
+import { runScheduledReportsFunction } from "./runScheduledReports";
 
 export const inngestFunctions = [
   scanTenantRequested,
@@ -33,4 +36,7 @@ export const inngestFunctions = [
   runAlertSummaryFunction,
   runVendorRiskAssessmentFunction,
   generateRemediationPlaybookFunction,
+  generateThreatDigestFunction,
+  slaBreachSweepFunction,
+  runScheduledReportsFunction,
 ];
