@@ -1,7 +1,7 @@
 import { inngest } from "@/inngest/client";
 import { writeAuditLog } from "@/lib/audit";
 import { getSupabaseAdminClient } from "@/lib/supabase";
-import { exec as execShell } from "node:child_process";
+import { execFile as execFileShell } from "node:child_process";
 
 type ExecutionStep = {
   name: string;
@@ -11,28 +11,42 @@ type ExecutionStep = {
   stderr?: string;
 };
 
-function runShellCommand(command: string, timeoutMs = 120_000): Promise<{ stdout: string; stderr: string }> {
-  return new Promise((resolve, reject) => {
-    execShell(command, { timeout: timeoutMs, windowsHide: true }, (error, stdout, stderr) => {
-      if (error) {
-        reject(new Error(`Command failed: ${command}\n${stderr || stdout || error.message}`));
-        return;
-      }
-      resolve({ stdout: stdout.trim(), stderr: stderr.trim() });
-    });
-  });
+// Strict allowlist for template variable values to prevent command injection.
+// Values must only contain safe filesystem/identifier characters.
+const SAFE_VALUE_RE = /^[a-zA-Z0-9._\-:/]{1,256}$/;
+
+function sanitizeTemplateValue(value: string): string {
+  if (!SAFE_VALUE_RE.test(value)) {
+    throw new Error(`Unsafe value in command template: "${value.slice(0, 32)}…"`);
+  }
+  return value;
 }
 
-function fillCommandTemplate(
+// Splits a pre-configured admin command template into [executable, ...args] and
+// substitutes {{variable}} placeholders with sanitized values. Uses execFile()
+// so the shell never interprets the arguments, eliminating command injection risk.
+function parseCommandTemplate(
   template: string,
   context: { target: string; tenantId: string; findingId: string; actionType: string }
-): string {
-  return template
-    .replaceAll("{{target}}", context.target)
-    .replaceAll("{{tenantId}}", context.tenantId)
-    .replaceAll("{{findingId}}", context.findingId)
-    .replaceAll("{{actionType}}", context.actionType);
+): [string, string[]] {
+  const safeContext = {
+    target: sanitizeTemplateValue(context.target),
+    tenantId: sanitizeTemplateValue(context.tenantId),
+    findingId: sanitizeTemplateValue(context.findingId),
+    actionType: sanitizeTemplateValue(context.actionType),
+  };
+  const filled = template
+    .replaceAll("{{target}}", safeContext.target)
+    .replaceAll("{{tenantId}}", safeContext.tenantId)
+    .replaceAll("{{findingId}}", safeContext.findingId)
+    .replaceAll("{{actionType}}", safeContext.actionType);
+
+  // Shell-split the filled template into argv (no shell execution).
+  const parts = filled.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) throw new Error("Empty command after template substitution");
+  return [parts[0], parts.slice(1)];
 }
+
 
 function adapterEnvSegment(adapterKey: string | undefined): string {
   if (!adapterKey || typeof adapterKey !== "string" || adapterKey.trim().length === 0) {
@@ -103,12 +117,21 @@ async function buildExecutionSteps(args: {
         detail: "No command configured; mark simulated completion.",
       };
     }
-    const command = fillCommandTemplate(commandTemplate, context);
-    const output = await runShellCommand(command);
+    // Use execFile via parseCommandTemplate — no shell interpretation, no injection risk.
+    const [file, argv] = parseCommandTemplate(commandTemplate, context);
+    const output = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
+      execFileShell(file, argv, { timeout: 120_000, windowsHide: true }, (error, stdout, stderr) => {
+        if (error) {
+          reject(new Error(`Command failed: ${file}\n${stderr || stdout || error.message}`));
+          return;
+        }
+        resolve({ stdout: stdout.trim(), stderr: stderr.trim() });
+      });
+    });
     return {
       name: stepName,
       status: "completed",
-      detail: `Executed command: ${command}`,
+      detail: `Executed: ${file}`,
       stdout: output.stdout || undefined,
       stderr: output.stderr || undefined,
     };
