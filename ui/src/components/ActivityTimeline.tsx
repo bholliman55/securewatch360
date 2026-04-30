@@ -73,7 +73,7 @@ export default function ActivityTimeline({ activities }: ActivityTimelineProps) 
             <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-[var(--sw-border)]" />
 
             <div className="space-y-6">
-              {activities.map((activity) => {
+              {activities.map((activity, index) => {
               const AgentIcon = iconMap[activity.agentIcon] || Activity;
               const StatusIcon = getStatusIcon(activity.status);
               const statusColor = getStatusColor(activity.status);
