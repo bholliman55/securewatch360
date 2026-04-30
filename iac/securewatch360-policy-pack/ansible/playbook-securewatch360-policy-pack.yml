@@ -1,11 +1,45 @@
 ---
+# SecureWatch360 Policy Pack — all 11 frameworks
 # Reference roles for GET /api/policy/export/ansible — names match policy_framework_controls.ansible_role
-# Example: roles/policy_nist_gv_po_01
+# Run: ansible-playbook playbook-securewatch360-policy-pack.yml [-e enforcement_mode=enforced]
 - name: SecureWatch360 policy pack (reference)
   hosts: localhost
   connection: local
   gather_facts: false
+  vars:
+    enforcement_mode: advisory  # Override: enforced
   roles:
+    # NIST CSF 2.0
     - role: policy_nist_gv_po_01
     - role: policy_nist_id_am_01
     - role: policy_nist_pr_ds_01
+    # HIPAA
+    - role: policy_hipaa_164_308_a_1
+    - role: policy_hipaa_164_308_a_5
+    # PCI-DSS
+    - role: policy_pci_dss_req_1
+    - role: policy_pci_dss_req_6
+    # ISO 27001
+    - role: policy_iso27001_a_5_1
+    - role: policy_iso27001_a_8_1
+    # SOC 2
+    - role: policy_soc2_cc6_1
+    - role: policy_soc2_cc7_1
+    # CIS Controls
+    - role: policy_cis_csc_1
+    - role: policy_cis_csc_3
+    # GDPR
+    - role: policy_gdpr_art_32
+    - role: policy_gdpr_art_33
+    # FedRAMP
+    - role: policy_fedramp_ac_2
+    - role: policy_fedramp_au_2
+    # CMMC
+    - role: policy_cmmc_ac_l2_3
+    - role: policy_cmmc_ir_l2_3
+    # COBIT
+    - role: policy_cobit_apo12
+    - role: policy_cobit_dss05
+    # CCPA
+    - role: policy_ccpa_s1798_100
+    - role: policy_ccpa_s1798_105
