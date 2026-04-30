@@ -41,7 +41,10 @@
       "Bash(git push *)",
       "Bash(gh pr create --title 'feat\\(nl\\): Natural Language Operating Layer with voice pipeline' --head feature/nl-operating-layer --base main --body ' *)",
       "Bash(gh pr *)",
-      "Bash(git fetch *)"
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
