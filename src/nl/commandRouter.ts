@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { inngest } from "@/inngest/client";
-import type { ParsedCommand, SupportedIntent } from "./intentSchema";
+import type { SupportedIntent } from "./intentSchema";
+import type { ParsedNLCommand } from "./nlTypes";
 
 export interface RoutedResult {
   scanId: string;
@@ -15,7 +16,7 @@ type RouteContext = { tenantId: string; actorUserId: string };
 // endpoint are otherwise unaware of agent details.
 const INTENT_ROUTES: Record<
   SupportedIntent,
-  (command: ParsedCommand, scanId: string, context: RouteContext) => InngestEvent[]
+  (command: ParsedNLCommand, scanId: string, context: RouteContext) => InngestEvent[]
 > = {
   run_scan: (cmd, scanId, context) => [
     {
@@ -87,7 +88,7 @@ const INTENT_ROUTES: Record<
   },
 };
 
-export async function routeCommand(command: ParsedCommand, context: RouteContext): Promise<RoutedResult> {
+export async function routeCommand(command: ParsedNLCommand, context: RouteContext): Promise<RoutedResult> {
   const scanId = randomUUID();
   const buildEvents = INTENT_ROUTES[command.intent];
 
