@@ -10,6 +10,7 @@ import { buildAwarenessTrainingPlan } from "@/lib/securityAwareness";
 import { getLatestAwarenessSignals } from "@/lib/awarenessSignals";
 import { createIncidentResponseIfNeeded } from "@/lib/incidentResponse";
 import { calculatePriorityScore, inferExposure } from "@/lib/prioritization";
+import { buildApprovalSlaFields } from "@/lib/sla";
 import { normalizeFindings } from "@/scanner/analyzer";
 import { runScanForTarget } from "@/scanner";
 import type { DecisionInput, DecisionOutput, DecisionResult } from "@/types/policy";
@@ -714,6 +715,8 @@ export const scanTenantRequested = inngest.createFunction(
           if (item.approvalStatus !== "pending") continue;
 
           pendingApprovalActions += 1;
+          const now = new Date().toISOString();
+          const slaFields = buildApprovalSlaFields(now);
           const { error: approvalError } = await supabase.from("approval_requests").insert({
             tenant_id: payload.tenantId,
             finding_id: item.findingId,
@@ -728,7 +731,10 @@ export const scanTenantRequested = inngest.createFunction(
               decisionOutput: item.decisionOutput,
             },
             response_payload: {},
-            updated_at: new Date().toISOString(),
+            updated_at: now,
+            sla_due_at: slaFields.slaDueAt,
+            sla_first_reminder_at: slaFields.slaFirstReminderAt,
+            escalation_level: slaFields.escalationLevel,
           });
 
           if (approvalError) {
