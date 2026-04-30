@@ -12,6 +12,8 @@ import { runOsintCollectionFunction } from "./runOsintCollection";
 import { runComplianceStatusFunction } from "./runComplianceStatus";
 import { runRiskQueryFunction } from "./runRiskQuery";
 import { runAlertSummaryFunction } from "./runAlertSummary";
+import { runVendorRiskAssessmentFunction } from "./runVendorRiskAssessment";
+import { generateRemediationPlaybookFunction } from "./generateRemediationPlaybook";
 
 export const inngestFunctions = [
   scanTenantRequested,
@@ -29,4 +31,6 @@ export const inngestFunctions = [
   runComplianceStatusFunction,
   runRiskQueryFunction,
   runAlertSummaryFunction,
+  runVendorRiskAssessmentFunction,
+  generateRemediationPlaybookFunction,
 ];
