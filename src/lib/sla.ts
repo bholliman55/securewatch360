@@ -27,3 +27,17 @@ export function addHoursIsoString(fromIso: string, hours: number): string {
   d.setTime(d.getTime() + hours * 60 * 60 * 1000);
   return d.toISOString();
 }
+
+export function buildApprovalSlaFields(nowIso: string): {
+  slaDueAt: string;
+  slaFirstReminderAt: string;
+  escalationLevel: number;
+} {
+  const approvalSlaH = getApprovalSlaHours();
+  const reminderH = getReminderOffsetHours(approvalSlaH);
+  return {
+    slaDueAt: addHoursIsoString(nowIso, approvalSlaH),
+    slaFirstReminderAt: addHoursIsoString(nowIso, reminderH),
+    escalationLevel: 0,
+  };
+}
