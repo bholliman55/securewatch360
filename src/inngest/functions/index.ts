@@ -9,6 +9,9 @@ import { compliancePostureDaily } from "./compliance-posture-daily";
 import { notificationDigest } from "./notification-digest";
 import { runExternalDiscovery } from "./runExternalDiscovery";
 import { runOsintCollectionFunction } from "./runOsintCollection";
+import { runComplianceStatusFunction } from "./runComplianceStatus";
+import { runRiskQueryFunction } from "./runRiskQuery";
+import { runAlertSummaryFunction } from "./runAlertSummary";
 
 export const inngestFunctions = [
   scanTenantRequested,
@@ -23,4 +26,7 @@ export const inngestFunctions = [
   notificationDigest,
   runExternalDiscovery,
   runOsintCollectionFunction,
+  runComplianceStatusFunction,
+  runRiskQueryFunction,
+  runAlertSummaryFunction,
 ];
