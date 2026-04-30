@@ -82,6 +82,8 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">New scan</h3>
             <button
               onClick={onClose}
+              aria-label="Close modal"
+              title="Close modal"
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
             >
               <X className="w-5 h-5" />
@@ -107,8 +109,9 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Target type</label>
+              <label htmlFor="scan-target-type" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Target type</label>
               <select
+                id="scan-target-type"
                 value={targetType}
                 onChange={(e) => setTargetType(e.target.value)}
                 className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"

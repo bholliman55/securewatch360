@@ -70,6 +70,8 @@ export default function CreateIncidentModal({ isOpen, onClose, onIncidentCreated
           <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Create New Incident</h2>
           <button
             onClick={onClose}
+            aria-label="Close modal"
+            title="Close modal"
             className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           >
             <X className="w-5 h-5" />
@@ -84,8 +86,9 @@ export default function CreateIncidentModal({ isOpen, onClose, onIncidentCreated
           )}
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Title</label>
+            <label htmlFor="new-incident-title" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Title</label>
             <input
+              id="new-incident-title"
               type="text"
               value={formData.title}
               onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
@@ -95,8 +98,9 @@ export default function CreateIncidentModal({ isOpen, onClose, onIncidentCreated
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Description</label>
+            <label htmlFor="incident-description" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Description</label>
             <textarea
+              id="incident-description"
               value={formData.description}
               onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
               className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100"
@@ -105,8 +109,9 @@ export default function CreateIncidentModal({ isOpen, onClose, onIncidentCreated
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Assigned to</label>
+            <label htmlFor="new-incident-assigned-to" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Assigned to</label>
             <input
+              id="new-incident-assigned-to"
               type="text"
               value={formData.assigned_to}
               onChange={(e) => setFormData((prev) => ({ ...prev, assigned_to: e.target.value }))}
