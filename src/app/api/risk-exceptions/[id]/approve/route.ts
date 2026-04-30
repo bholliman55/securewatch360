@@ -71,7 +71,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         exception_status: "approved",
         updated_at: now,
       })
-      .eq("id", existing.finding_id);
+      .eq("id", existing.finding_id)
+      .eq("tenant_id", existing.tenant_id);
 
     if (findingError) {
       throw new Error(`Risk exception approved but finding update failed: ${findingError.message}`);

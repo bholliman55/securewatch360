@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getSupabaseAdminClient } from "@/lib/supabase";
+import { requireTenantAccess } from "@/lib/tenant-guard";
+import { API_TENANT_ROLES } from "@/lib/apiRoleMatrix";
 
 export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
@@ -52,6 +54,11 @@ export async function POST(req: NextRequest) {
   if (!tenantUser?.tenant_id) return NextResponse.json({ error: "Tenant not found" }, { status: 403 });
 
   const tenantId = tenantUser.tenant_id as string;
+  const guard = await requireTenantAccess({
+    tenantId,
+    allowedRoles: [...API_TENANT_ROLES.mutate],
+  });
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
 
   // Rebuild inventory from findings
   const { data: findings } = await supabase
