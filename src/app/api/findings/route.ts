@@ -3,6 +3,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase";
 import { FINDING_STATUSES } from "@/lib/statuses";
 import { API_TENANT_ROLES } from "@/lib/apiRoleMatrix";
 import { requireTenantAccess } from "@/lib/tenant-guard";
+import { parsePagination } from "@/lib/apiPagination";
 
 const allowedSeverities = ["info", "low", "medium", "high", "critical"] as const;
 
@@ -20,8 +21,12 @@ export async function GET(request: Request) {
     const severity = searchParams.get("severity")?.trim().toLowerCase() ?? "";
     const status = searchParams.get("status")?.trim().toLowerCase() ?? "";
     const category = searchParams.get("category")?.trim() ?? "";
-    const limitParam = searchParams.get("limit")?.trim() ?? "";
-    const limit = limitParam.length > 0 ? Number(limitParam) : 200;
+    const pagination = parsePagination({
+      rawLimit: searchParams.get("limit"),
+      rawOffset: searchParams.get("offset"),
+      defaultLimit: 200,
+      maxLimit: 500,
+    });
 
     if (!tenantId) {
       return NextResponse.json({ ok: false, error: "tenantId is required" }, { status: 400 });
@@ -62,11 +67,8 @@ export async function GET(request: Request) {
       );
     }
 
-    if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
-      return NextResponse.json(
-        { ok: false, error: "limit must be an integer between 1 and 500" },
-        { status: 400 }
-      );
+    if (!pagination.ok) {
+      return NextResponse.json({ ok: false, error: pagination.error }, { status: 400 });
     }
 
     const guard = await requireTenantAccess({
@@ -85,7 +87,7 @@ export async function GET(request: Request) {
       )
       .order("priority_score", { ascending: false })
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .range(pagination.offset, pagination.offset + pagination.limit - 1);
 
     query = query.eq("tenant_id", tenantId);
     if (scanRunId.length > 0) {
@@ -111,6 +113,10 @@ export async function GET(request: Request) {
         ok: true,
         findings: data ?? [],
         count: data?.length ?? 0,
+        pagination: {
+          limit: pagination.limit,
+          offset: pagination.offset,
+        },
       },
       { status: 200 }
     );
