@@ -17,6 +17,36 @@ interface TenantContextType {
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
 const STORAGE_KEY = "sw360.selectedTenantId";
+const DEFAULT_TEST_TENANT_ID = "8c2b980c-9fc8-4b71-9b5f-2e90a5c3a001";
+
+function roleRank(role: string): number {
+  switch (role) {
+    case "owner":
+      return 4;
+    case "admin":
+      return 3;
+    case "analyst":
+      return 2;
+    case "viewer":
+      return 1;
+    default:
+      return 0;
+  }
+}
+
+export function getPreferredTenantId(tenants: TenantOption[]): string | null {
+  if (tenants.length === 0) return null;
+  const preferred = [...tenants].sort((a, b) => {
+    const rankDiff = roleRank(b.role) - roleRank(a.role);
+    if (rankDiff !== 0) return rankDiff;
+    return a.name.localeCompare(b.name);
+  })[0];
+  return preferred?.id ?? null;
+}
+
+function getFallbackTenantId(): string {
+  return import.meta.env.VITE_TEST_TENANT_ID || DEFAULT_TEST_TENANT_ID;
+}
 
 export function TenantProvider({
   children,
@@ -30,7 +60,11 @@ export function TenantProvider({
   const [selectedTenantId, setSelectedTenantIdState] = useState<string | null>(null);
 
   useEffect(() => {
-    if (loading || tenants.length === 0) {
+    if (loading) {
+      return;
+    }
+    if (tenants.length === 0) {
+      setSelectedTenantIdState(getFallbackTenantId());
       return;
     }
     const stored = typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
@@ -39,7 +73,11 @@ export function TenantProvider({
       setSelectedTenantIdState(stored);
       return;
     }
-    setSelectedTenantIdState(tenants[0].id);
+    const preferredTenantId = getPreferredTenantId(tenants);
+    setSelectedTenantIdState(preferredTenantId);
+    if (preferredTenantId && typeof localStorage !== "undefined") {
+      localStorage.setItem(STORAGE_KEY, preferredTenantId);
+    }
   }, [loading, tenants]);
 
   const setSelectedTenantId = (id: string | null) => {

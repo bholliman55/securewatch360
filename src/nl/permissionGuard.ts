@@ -1,4 +1,4 @@
-import type { ParsedCommand } from "./intentSchema";
+import type { ParsedNLCommand } from "./nlTypes";
 
 // Intents that always require human approval before being routed to Inngest
 const APPROVAL_REQUIRED_INTENTS = new Set(["trigger_remediation"]);
@@ -8,7 +8,7 @@ export interface GuardResult {
   reason?: string;
 }
 
-export function checkPermission(command: ParsedCommand): GuardResult {
+export function checkPermission(command: ParsedNLCommand): GuardResult {
   if (APPROVAL_REQUIRED_INTENTS.has(command.intent) || command.requiresApproval) {
     return {
       allowed: false,
