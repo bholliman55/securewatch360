@@ -597,6 +597,158 @@ npm run qa:external-intel -- example.com --persist
 
 ---
 
+## Feature Layer (v5+)
+
+These capabilities were added on top of the v4 platform. Each is independently usable.
+
+### Feature 2 — SSE Live Findings Feed
+Real-time browser push when findings land or change. Bridges Supabase Realtime to `EventSource`.
+- **API:** `GET /api/events/findings` — SSE stream, 25s heartbeat
+- **Hook:** `src/hooks/useLiveFindings.ts` — exponential backoff reconnect
+- **Component:** `src/components/LiveFindingsFeed.tsx`
+
+### Feature 3 — Vendor Risk Assessment
+Third-party vendor risk scoring using external intelligence signals.
+- **API:** `GET /api/security/vendor-risk` · `POST /api/security/vendor-risk` (triggers scan)
+- **Inngest:** `securewatch/vendor_risk.assessment.requested`
+- **Tables:** `vendor_assessments`, `vendor_risk_signals`
+- **Component:** `src/components/vendor-risk/VendorRiskCard.tsx`
+
+### Feature 4 — AI-Generated Remediation Playbooks
+Claude Haiku generates step-by-step remediation playbooks on demand and stores them on the remediation action.
+- **API:** `GET /api/remediation-actions/:id/playbook` · `POST` (triggers Inngest)
+- **Inngest:** `securewatch/remediation.playbook.requested`
+- **Component:** `src/components/remediation/PlaybookPanel.tsx` — polls until ready
+
+### Feature 5 — Compliance Evidence Package Export
+One-click export of a compliance evidence package (HTML report or JSON) covering posture, findings, evidence records, and audit log.
+- **API:** `GET /api/compliance/evidence-export?framework=NIST&format=html|json`
+- **API:** `GET /api/compliance/evidence-export/manifest` — active frameworks for tenant
+- **Component:** `src/components/compliance/EvidenceExportButton.tsx`
+
+### Feature 6 — Risk Acceptance Workflow UI
+Full review/approve/reject UI for risk exception requests with SLA-aware queue.
+- **Page:** `/risk-exceptions`
+- **Components:** `RiskExceptionForm`, `RiskExceptionCard`, `RiskExceptionQueue`
+- Approve/reject inline; rejection requires reason text
+
+### Feature 7 — Multi-Framework Gap Analysis
+Side-by-side compliance score heatmap across all 11 frameworks.
+- **API:** `GET /api/compliance/gap-analysis`
+- **Page:** `/compliance/gap-analysis`
+- **Component:** `src/components/compliance/GapAnalysisHeatmap.tsx`
+
+### Feature 8 — AI Threat Digest
+Claude Haiku generates a weekly AI security briefing: top findings, vendor risk changes, recommended action.
+- **API:** `GET /api/threat-digest` · `POST` (on-demand trigger)
+- **Inngest:** cron Monday 08:00 UTC + `securewatch/threat.digest.requested`
+- **Table:** `tenant_threat_digests`
+- **Component:** `src/components/ThreatDigestCard.tsx`
+
+### Feature 9 — Asset Inventory
+Asset catalog built from findings, grouped by asset type with finding severity counts.
+- **API:** `GET /api/assets?type=...` · `POST /api/assets` (rebuild from findings)
+- **Page:** `/assets`
+- **Table:** `asset_inventory`
+- **Component:** `src/components/assets/AssetInventoryTable.tsx`
+
+### Feature 10 — SLA Breach Alerting
+Hourly Inngest sweep that emits `securewatch/sla.breach.warning` (4h before) and `securewatch/sla.breach.violated` for pending approvals and risk exceptions past SLA.
+- **Inngest:** `sla-breach-sweep` (hourly cron)
+- Writes `sla_breached_at` on first violation
+
+### Feature 11 — Incident War Room
+Collaborative incident response view: status transitions, scrollable audit timeline, and analyst note posting.
+- **API:** `GET /api/incidents/:id/timeline` · `POST` (add note)
+- **Component:** `src/components/incidents/IncidentWarRoom.tsx`
+- Transitions: `open → contained → remediated → validated → rejoined`
+
+### Feature 12 — Policy Simulation Mode
+Test policy rule changes against up to 100 historical decisions before applying them. Read-only — nothing is written.
+- **API:** `POST /api/policy/simulate` — body: `{ overrides: {...}, sampleSize: 30 }`
+- Returns `changeRate`, `actionFlips` breakdown
+- **Component:** `src/components/policy/PolicySimulator.tsx`
+- Restricted to `owner` / `admin` roles
+
+### Feature 13 — Scheduled Report Builder
+Automated evidence package exports on configurable cron schedules.
+- **API:** `GET /api/scheduled-reports` · `POST` (create schedule)
+- **Inngest:** `run-scheduled-reports` (hourly check, runs due reports)
+- **Table:** `scheduled_reports`
+- **Component:** `src/components/reports/ScheduledReportBuilder.tsx`
+
+### Feature 14 — Integration Hub (Jira / ServiceNow)
+Bidirectional sync: push remediation actions to Jira or ServiceNow; store external ticket references.
+- **API:** `GET/POST /api/integrations/configs` — configure connector credentials
+- **API:** `POST /api/integrations/sync` — push a remediation action to external ticketing
+- **Tables:** `integration_configs`, `integration_sync_records`
+- **Lib:** `src/lib/integrationHub.ts`
+
+### Feature 15 — Tenant Onboarding Wizard
+5-step guided setup: scan targets → compliance frameworks → team invite → first scan → done.
+- **Page:** `/onboarding`
+- **Component:** `src/components/onboarding/OnboardingWizard.tsx`
+
+---
+
+## Infrastructure as Code
+
+### Application Deployment (Terraform)
+
+Full Terraform modules for provisioning SecureWatch360 in production or staging.
+
+```
+iac/terraform/
+  modules/
+    securewatch360-app/   # Vercel project + env vars
+    supabase-project/     # Supabase project + auth config
+    secrets/              # AWS Secrets Manager (secrets source-of-truth)
+  environments/
+    production/main.tf    # Production wiring
+    staging/main.tf       # Staging wiring
+```
+
+**Apply production:**
+```bash
+terraform -chdir=iac/terraform/environments/production init
+terraform -chdir=iac/terraform/environments/production plan
+terraform -chdir=iac/terraform/environments/production apply
+```
+
+Required Terraform variables: `supabase_organization_id`, `supabase_db_password`, `supabase_jwt_secret`, `git_repository`, `anthropic_api_key`, `inngest_event_key`, `inngest_signing_key`.
+
+### Policy Pack (multi-framework)
+
+The reference policy pack at `iac/securewatch360-policy-pack/` now covers all 11 compliance frameworks:
+
+| Framework | Modules |
+|-----------|---------|
+| NIST CSF 2.0 | `nist_gv_po_01`, `nist_id_am_01`, `nist_pr_ds_01` |
+| HIPAA | `hipaa_164_308_a_1`, `hipaa_164_308_a_5` |
+| PCI-DSS | `pci_dss_req_1`, `pci_dss_req_6` |
+| ISO 27001 | `iso27001_a_5_1`, `iso27001_a_8_1` |
+| SOC 2 | `soc2_cc6_1`, `soc2_cc7_1` |
+| CIS Controls | `cis_csc_1`, `cis_csc_3` |
+| GDPR | `gdpr_art_32`, `gdpr_art_33` |
+| FedRAMP | `fedramp_ac_2`, `fedramp_au_2` |
+| CMMC | `cmmc_ac_l2_3`, `cmmc_ir_l2_3` |
+| COBIT | `cobit_apo12`, `cobit_dss05` |
+| CCPA | `ccpa_s1798_100`, `ccpa_s1798_105` |
+
+**Apply all policy controls:**
+```bash
+cd iac/securewatch360-policy-pack/terraform
+terraform init && terraform apply -var="enforcement_mode=enforced"
+```
+
+**Run all policy controls via Ansible:**
+```bash
+cd iac/securewatch360-policy-pack/ansible
+ansible-playbook playbook-securewatch360-policy-pack.yml -e enforcement_mode=enforced
+```
+
+---
+
 1. Finalize RLS and tenant isolation policies across all exposed tables.
 2. Add a first-class OPA adapter endpoint for `OPA_POLICY_EVAL_URL` contract parity.
 3. Add execution workers that consume remediation `execution_payload`.
