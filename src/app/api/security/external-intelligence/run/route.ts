@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getCurrentUser } from "@/lib/auth";
 import { inngest } from "@/inngest/client";
+import { requireTenantAccess } from "@/lib/tenant-guard";
+import { API_TENANT_ROLES } from "@/lib/apiRoleMatrix";
 
 const PRIVATE_DOMAIN_RE =
   /^(localhost|.*\.local|.*\.internal|.*\.test|.*\.example)(:\d+)?$|^(\d{1,3}\.){3}\d{1,3}(:\d+)?$/;
@@ -36,6 +38,7 @@ export async function POST(req: NextRequest) {
 
   const {
     scanId: rawScanId,
+    tenantId,
     clientId,
     domain: rawDomain,
     companyName,
@@ -44,6 +47,7 @@ export async function POST(req: NextRequest) {
     runAgent2 = true,
   } = body as {
     scanId?: string;
+    tenantId?: string;
     clientId?: string;
     domain?: string;
     companyName?: string;
@@ -54,6 +58,17 @@ export async function POST(req: NextRequest) {
 
   if (!rawDomain || typeof rawDomain !== "string") {
     return NextResponse.json({ error: "domain is required" }, { status: 400 });
+  }
+  if (!tenantId || typeof tenantId !== "string") {
+    return NextResponse.json({ error: "tenantId is required" }, { status: 400 });
+  }
+
+  const guard = await requireTenantAccess({
+    tenantId: tenantId.trim(),
+    allowedRoles: [...API_TENANT_ROLES.remediationAndScan],
+  });
+  if (!guard.ok) {
+    return NextResponse.json({ error: guard.error }, { status: guard.status });
   }
 
   const domain = normalizeDomain(rawDomain);
@@ -76,7 +91,7 @@ export async function POST(req: NextRequest) {
   if (runAgent1) {
     events.push({
       name: "securewatch/agent1.external_discovery.requested" as const,
-      data: { scanId, clientId, domain },
+      data: { scanId, tenantId: tenantId.trim(), actorUserId: guard.userId, clientId, domain },
     });
     triggered.push("agent1");
   }
@@ -84,7 +99,15 @@ export async function POST(req: NextRequest) {
   if (runAgent2) {
     events.push({
       name: "securewatch/agent2.osint_collection.requested" as const,
-      data: { scanId, clientId, domain, companyName, knownEmails },
+      data: {
+        scanId,
+        tenantId: tenantId.trim(),
+        actorUserId: guard.userId,
+        clientId,
+        domain,
+        companyName,
+        knownEmails,
+      },
     });
     triggered.push("agent2");
   }

@@ -44,12 +44,22 @@ export async function GET(req: NextRequest) {
         )
         .on(
           "postgres_changes",
-          { event: "INSERT", schema: "public", table: "external_intelligence_events" },
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "external_intelligence_events",
+            filter: `tenant_id=eq.${tenantId}`,
+          },
           (payload) => send({ type: "intel_event", payload: payload.new })
         )
         .on(
           "postgres_changes",
-          { event: "INSERT", schema: "public", table: "external_assets" },
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "external_assets",
+            filter: `tenant_id=eq.${tenantId}`,
+          },
           (payload) => send({ type: "asset", payload: payload.new })
         )
         .subscribe();

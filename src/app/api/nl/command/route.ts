@@ -4,6 +4,8 @@ import { parseCommand } from "@/nl/commandParser";
 import { checkPermission } from "@/nl/permissionGuard";
 import { routeCommand } from "@/nl/commandRouter";
 import { formatResponse } from "@/nl/responseFormatter";
+import { requireTenantAccess } from "@/lib/tenant-guard";
+import { API_TENANT_ROLES } from "@/lib/apiRoleMatrix";
 
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
@@ -18,10 +20,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { userId, input } = body as { userId?: string; input?: string };
+  const { tenantId, input } = body as { tenantId?: string; input?: string };
 
   if (!input || typeof input !== "string" || input.trim().length === 0) {
     return NextResponse.json({ error: "input is required" }, { status: 400 });
+  }
+  if (!tenantId || typeof tenantId !== "string") {
+    return NextResponse.json({ error: "tenantId is required" }, { status: 400 });
+  }
+
+  const tenantGuard = await requireTenantAccess({
+    tenantId: tenantId.trim(),
+    allowedRoles: [...API_TENANT_ROLES.remediationAndScan],
+  });
+  if (!tenantGuard.ok) {
+    return NextResponse.json({ error: tenantGuard.error }, { status: tenantGuard.status });
   }
 
   // Parse natural language → structured command
@@ -37,19 +50,26 @@ export async function POST(req: NextRequest) {
   }
 
   // Permission check
-  const guard = checkPermission(parsedCommand);
-  if (!guard.allowed) {
+  const permissionGuard = checkPermission(parsedCommand);
+  if (!permissionGuard.allowed) {
     return NextResponse.json({
       parsedCommand,
       status: "requires_approval",
-      message: formatResponse({ command: parsedCommand, requiresApproval: true, guardReason: guard.reason }),
+      message: formatResponse({
+        command: parsedCommand,
+        requiresApproval: true,
+        guardReason: permissionGuard.reason,
+      }),
     });
   }
 
   // Route to Inngest
   let routed;
   try {
-    routed = await routeCommand(parsedCommand);
+    routed = await routeCommand(parsedCommand, {
+      tenantId: tenantId.trim(),
+      actorUserId: tenantGuard.userId,
+    });
   } catch (err) {
     const message = formatResponse({ command: parsedCommand, error: (err as Error).message });
     return NextResponse.json(
@@ -64,6 +84,6 @@ export async function POST(req: NextRequest) {
     message: formatResponse({ command: parsedCommand, routed }),
     scanId: routed.scanId,
     triggeredEvents: routed.triggeredEvents,
-    userId,
+    userId: tenantGuard.userId,
   });
 }

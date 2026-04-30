@@ -1,25 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { syncRemediationToJira, syncRemediationToServiceNow } from "@/lib/integrationHub";
+import { requireTenantAccess } from "@/lib/tenant-guard";
+import { API_TENANT_ROLES } from "@/lib/apiRoleMatrix";
 
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const supabase = getSupabaseAdminClient();
-  const { data: tenantUser } = await supabase
-    .from("tenant_users").select("tenant_id").eq("user_id", user.id).single();
-  if (!tenantUser?.tenant_id) return NextResponse.json({ error: "Tenant not found" }, { status: 403 });
-
   const body = (await req.json()) as {
     remediationActionId?: string;
     integration?: string;
+    tenantId?: string;
   };
 
   if (!body.remediationActionId) return NextResponse.json({ error: "remediationActionId required" }, { status: 400 });
+  if (!body.tenantId) return NextResponse.json({ error: "tenantId required" }, { status: 400 });
 
-  const tenantId = tenantUser.tenant_id as string;
+  const guard = await requireTenantAccess({
+    tenantId: body.tenantId,
+    allowedRoles: [...API_TENANT_ROLES.mutate],
+  });
+  if (!guard.ok) {
+    return NextResponse.json({ error: guard.error }, { status: guard.status });
+  }
+
+  const tenantId = body.tenantId;
+  const supabase = getSupabaseAdminClient();
 
   const { data: action } = await supabase
     .from("remediation_actions")

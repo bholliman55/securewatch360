@@ -128,7 +128,8 @@ export async function POST(request: Request) {
         exception_status: "requested",
         updated_at: now,
       })
-      .eq("id", findingId);
+      .eq("id", findingId)
+      .eq("tenant_id", guard.tenantId);
 
     if (findingUpdateError) {
       throw new Error(`Risk exception created but finding update failed: ${findingUpdateError.message}`);
