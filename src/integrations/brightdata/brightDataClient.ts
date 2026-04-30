@@ -75,7 +75,8 @@ export class BrightDataClient {
       });
 
       if (!response.ok) {
-        throw classifyBrightDataError(response.status, `HTTP ${response.status} for ${url}`);
+        // Do not include the URL in the error — it may contain proxy auth context.
+        throw classifyBrightDataError(response.status, `HTTP ${response.status}`);
       }
 
       const body = await response.text();
@@ -83,7 +84,7 @@ export class BrightDataClient {
       response.headers.forEach((v, k) => { headers[k] = v; });
       return { url, statusCode: response.status, body, headers };
     } catch (err) {
-      if ((err as Error).name === "AbortError") throw new BrightDataTimeoutError(url);
+      if ((err as Error).name === "AbortError") throw new BrightDataTimeoutError("web-unlocker");
       throw err;
     } finally {
       clearTimeout(timer);
@@ -115,7 +116,7 @@ export class BrightDataClient {
       });
 
       if (!response.ok) {
-        throw classifyBrightDataError(response.status, `SERP error: HTTP ${response.status}`);
+        throw classifyBrightDataError(response.status, `SERP HTTP ${response.status}`);
       }
 
       // Wire: parse actual Bright Data SERP JSON response format here.
@@ -130,7 +131,7 @@ export class BrightDataClient {
         })),
       };
     } catch (err) {
-      if ((err as Error).name === "AbortError") throw new BrightDataTimeoutError(searchUrl);
+      if ((err as Error).name === "AbortError") throw new BrightDataTimeoutError("serp");
       throw err;
     } finally {
       clearTimeout(timer);

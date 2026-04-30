@@ -54,6 +54,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         updated_at: now,
       })
       .eq("id", id)
+      .eq("tenant_id", existing.tenant_id)
       .select(
         "id, tenant_id, finding_id, requested_by_user_id, approved_by_user_id, status, justification, expires_at, created_at, updated_at"
       )
