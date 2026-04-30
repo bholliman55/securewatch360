@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { requireTenantAccess } from "@/lib/tenant-guard";
+import { parsePagination } from "@/lib/apiPagination";
 
 type CreateScanTargetBody = {
   tenantId?: unknown;
@@ -63,9 +64,18 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get("tenantId")?.trim() ?? "";
     const status = searchParams.get("status")?.trim().toLowerCase() ?? "";
+    const pagination = parsePagination({
+      rawLimit: searchParams.get("limit"),
+      rawOffset: searchParams.get("offset"),
+      defaultLimit: 200,
+      maxLimit: 500,
+    });
 
     if (!tenantId || !isUuid(tenantId)) {
       return NextResponse.json({ ok: false, error: "tenantId must be a valid UUID" }, { status: 400 });
+    }
+    if (!pagination.ok) {
+      return NextResponse.json({ ok: false, error: pagination.error }, { status: 400 });
     }
 
     const guard = await requireTenantAccess({
@@ -82,7 +92,7 @@ export async function GET(request: Request) {
       .select(SCAN_TARGET_BASE_SELECT)
       .eq("tenant_id", tenantId)
       .order("created_at", { ascending: false })
-      .limit(500);
+      .range(pagination.offset, pagination.offset + pagination.limit - 1);
 
     if (status.length > 0) {
       query = query.eq("status", status);
@@ -98,7 +108,18 @@ export async function GET(request: Request) {
       owner_email: null,
       business_criticality: null,
     }));
-    return NextResponse.json({ ok: true, scanTargets, count: scanTargets.length }, { status: 200 });
+    return NextResponse.json(
+      {
+        ok: true,
+        scanTargets,
+        count: scanTargets.length,
+        pagination: {
+          limit: pagination.limit,
+          offset: pagination.offset,
+        },
+      },
+      { status: 200 }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
