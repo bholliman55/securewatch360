@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/brent/source//**)",
+      "Read(//c/Users/brent/source/**)",
+      "Bash(npx tsc *)",
+      "Bash(cmd /c \"cd C:\\\\Users\\\\brent\\\\source\\\\sober_solutions_nashville && npx tsc --noEmit 2>&1\")",
+      "Bash(node \"C:/Users/brent/source/sober_solutions_nashville/node_modules/.bin/tsc\" --project \"C:/Users/brent/source/sober_solutions_nashville/tsconfig.json\" --noEmit)",
+      "Bash(\"C:/Users/brent/source/sober_solutions_nashville/node_modules/.bin/tsc.cmd\" --project \"C:/Users/brent/source/sober_solutions_nashville/tsconfig.json\" --noEmit)",
+      "Bash(Start-Process -FilePath \"cmd.exe\" -ArgumentList \"/c\", \"cd /d C:\\\\Users\\\\brent\\\\source\\\\sober_solutions_nashville && npx vite\" -WindowStyle Normal)",
+      "PowerShell(Start-Process -FilePath \"cmd.exe\" -ArgumentList \"/k\", \"cd /d C:\\\\Users\\\\brent\\\\source\\\\sober_solutions_nashville && npx vite\" -WindowStyle Normal)",
+      "Bash(xargs ls *)",
+      "Bash(awk '{print $2}')",
+      "Bash(cat)",
+      "Bash(python /tmp/extract_tools.py)",
+      "Bash(python3 /tmp/extract_tools.py)",
+      "Bash(python3 -m json.tool)",
+      "Bash(python3 /tmp/extract.py)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\)\")",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(xargs cat *)",
+      "Bash(find /c/Users/brent/source/securewatch360/src/components* -type f)",
+      "Bash(git fsck *)",
+      "Bash(git verify-pack *)",
+      "Bash(rm -rf .git/logs/)",
+      "Bash(git reflog *)",
+      "Bash(rm -rf .git)",
+      "Bash(cp -r /tmp/sw360-bare .git)",
+      "Bash(git config *)",
+      "Bash(git checkout *)",
+      "Bash(git reset *)",
+      "Bash(\"C:/Users/brent/source/securewatch360/node_modules/.bin/tsc.cmd\" --noEmit)",
+      "Skill(code-review:code-review)",
+      "Skill(code-review:code-review:*)",
+      "Bash(read f *)",
+      "Bash(python3 -c ' *)",
+      "Bash(jq --version)",
+      "Bash(git add *)"
+    ]
+  }
+}

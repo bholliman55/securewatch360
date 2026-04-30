@@ -24,6 +24,7 @@
     "qa:opa-optional": "npx tsx scripts/qa-opa-optional.ts",
     "qa:token-optimization": "npx tsx scripts/qa-token-optimization.ts",
     "qa:token-estimator": "npx tsx scripts/qa-token-estimator-examples.ts",
+    "qa:external-intel": "npx tsx scripts/qa-external-intelligence.ts",
     "qa:prompt-hash": "npx tsx scripts/qa-prompt-hash-examples.ts",
     "qa:context-sanitizer": "npx tsx scripts/qa-context-sanitizer-examples.ts",
     "qa:context-compressor": "npx tsx scripts/qa-context-compressor-examples.ts",

@@ -498,6 +498,105 @@ Required repository secrets for scheduled/manual scans:
 
 ## Next recommended steps
 
+---
+
+## Bright Data External Intelligence Layer
+
+> **Agentless external intelligence + low-friction internal visibility.**
+
+Bright Data helps SecureWatch360 collect external, web-accessible intelligence at scale. It does not replace authenticated internal telemetry, endpoint data, private network scanning, or customer-authorized API integrations.
+
+### What it does
+
+The external intelligence layer adds two passive, non-intrusive collection agents that run asynchronously via Inngest, persist findings to Supabase, and surface results through a clean UI. Only public, web-accessible signals are collected — no active port scanning, no authenticated probing, no credential retrieval.
+
+### Why Bright Data
+
+Bright Data provides a managed proxy and browser automation infrastructure that enables:
+- Reliable public web fetching behind bot-detection layers
+- SERP API access for search-driven OSINT
+- Certificate Transparency log queries
+- Browser automation for JS-heavy pages (wired, ready to activate)
+
+### Agent 1 — External Attack Surface Discovery
+
+Discovers what an attacker can see about a target domain from the public internet:
+
+| Signal | Source |
+|--------|--------|
+| Subdomains | SERP search operators, CT log search |
+| Certificate entries | crt.sh JSON API |
+| Login pages & admin portals | SERP endpoint enumeration |
+| Public URLs | robots.txt, sitemap.xml, SERP |
+| Technology fingerprints | HTTP headers (wired placeholder) |
+
+Trigger: `securewatch/agent1.external_discovery.requested`
+Results: persisted to `external_assets` table
+
+### Agent 2 — OSINT & Threat Intelligence Collection
+
+Collects external threat signals without retrieving or storing raw credentials:
+
+| Signal | Source |
+|--------|--------|
+| Credential exposure metadata | Paste sites, breach indexes |
+| Breach references | HIBP-style sources, SERP |
+| Exploit chatter | Exploit-DB, NVD, SERP |
+| Vulnerability mentions | Security advisories, SERP |
+| Vendor security signals | GitHub advisories, NVD |
+
+**Compliance:** raw passwords are never fetched or stored. Only metadata (email/domain involved, source category, exposure type, confidence, redacted preview) is persisted.
+
+Scoring: `LOW → MEDIUM → HIGH → CRITICAL` based on event type, confidence, and keywords (admin/executive credential exposure or active exploit = CRITICAL).
+
+Trigger: `securewatch/agent2.osint_collection.requested`
+Results: persisted to `external_intelligence_events` table
+
+### What it does NOT do
+
+- Does not scan internal networks, private IPs, or `.local` / `.internal` domains
+- Does not perform active port scanning or service fingerprinting
+- Does not retrieve, store, or display raw passwords or secrets
+- Does not replace endpoint agents, SIEM integrations, or authenticated API connectors
+
+### Internal visibility options
+
+For internal network visibility, SecureWatch360 supports:
+- **Tenable integration** — authenticated vulnerability scan ingestion via `/api/integrations/tenable`
+- **Semgrep SAST** — code-level security findings via CI/CD
+- **Custom scan targets** — add assets at `/api/scan-targets` and run scheduled scans via Inngest
+- **Optional SecureWatch360 runner** — a lightweight agent installable on internal infrastructure for authenticated telemetry (roadmap)
+
+### Required environment variables
+
+```
+BRIGHTDATA_API_KEY=
+BRIGHTDATA_WEB_UNLOCKER_ZONE=
+BRIGHTDATA_SERP_ZONE=
+BRIGHTDATA_BROWSER_ZONE=
+```
+
+### Running a scan
+
+**Via API:**
+```bash
+POST /api/security/external-intelligence/run
+{
+  "domain": "example.com",
+  "companyName": "Example Corp",
+  "runAgent1": true,
+  "runAgent2": true
+}
+```
+
+**Via QA script (dry-run):**
+```bash
+npm run qa:external-intel -- example.com
+npm run qa:external-intel -- example.com --persist
+```
+
+---
+
 1. Finalize RLS and tenant isolation policies across all exposed tables.
 2. Add a first-class OPA adapter endpoint for `OPA_POLICY_EVAL_URL` contract parity.
 3. Add execution workers that consume remediation `execution_payload`.
