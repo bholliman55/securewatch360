@@ -327,6 +327,13 @@ AWARENESS_REAL_WORLD_SIGNALS_URL=
 AWARENESS_COMPANY_SIGNALS_URL=
 ```
 
+Proton Pass option (recommended for local secret handling on shared machines):
+
+- keep placeholders in `.env.local.example`
+- create `.env.protonrefs.local` from `.env.protonrefs.local.example`
+- run `pwsh ./scripts/dev-with-proton-pass.ps1`
+- see `docs/SECRETS-PROTON-PASS.md`
+
 1. Apply migrations
 
 ```bash
