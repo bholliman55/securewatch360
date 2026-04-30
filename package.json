@@ -42,7 +42,8 @@
     "security:dast:local": "scripts\\zap-baseline.cmd -t http://host.docker.internal:3000 -m 2",
     "security:baseline": "npm run security:audit && npm run security:sast && npm run security:infra",
     "ui:dev": "npm run dev --prefix ui",
-    "ui:build": "npm run build:console --prefix ui && node scripts/sync-ui.mjs"
+    "ui:build": "npm run build:console --prefix ui && node scripts/sync-ui.mjs",
+    "dev:proton-pass": "pwsh ./scripts/dev-with-proton-pass.ps1"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
