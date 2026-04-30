@@ -35,7 +35,13 @@
       "Bash(read f *)",
       "Bash(python3 -c ' *)",
       "Bash(jq --version)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(npm install *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(git push *)",
+      "Bash(gh pr create --title 'feat\\(nl\\): Natural Language Operating Layer with voice pipeline' --head feature/nl-operating-layer --base main --body ' *)",
+      "Bash(gh pr *)",
+      "Bash(git fetch *)"
     ]
   }
 }
