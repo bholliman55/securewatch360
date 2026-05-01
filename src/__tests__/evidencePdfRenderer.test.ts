@@ -9,8 +9,25 @@ function makePackage(overrides: Partial<EvidencePackage> = {}): EvidencePackage 
     tenantId: "tenant-test",
     summary: { totalControls: 3, passing: 2, failing: 1, notApplicable: 0, evidenceCount: 5 },
     controls: [
-      { controlId: "PR.DS-01", controlName: "Data-at-Rest Protection", status: "passing", findingCount: 0 },
-      { controlId: "ID.AM-01", controlName: "Asset Inventory", status: "failing", findingCount: 2 },
+      {
+        controlId: "PR.DS-01",
+        controlName: "Data-at-Rest Protection",
+        framework: "nist",
+        status: "passing",
+        findingCount: 0,
+        findings: [],
+      },
+      {
+        controlId: "ID.AM-01",
+        controlName: "Asset Inventory",
+        framework: "nist",
+        status: "failing",
+        findingCount: 2,
+        findings: [
+          { id: "f-1", title: "Unencrypted S3 Bucket", severity: "critical" },
+          { id: "f-2", title: "Stale IAM Key", severity: "high" },
+        ],
+      },
     ],
     findings: [
       { id: "f-1", title: "Unencrypted S3 Bucket", severity: "critical", status: "open" },
@@ -88,7 +105,16 @@ describe("renderEvidenceHtml", () => {
   });
 
   it("escapes HTML in control names", () => {
-    const controls = [{ controlId: "X.01", controlName: '<img src=x onerror="evil()">', status: "passing" as const, findingCount: 0 }];
+    const controls = [
+      {
+        controlId: "X.01",
+        controlName: '<img src=x onerror="evil()">',
+        framework: "nist",
+        status: "passing" as const,
+        findingCount: 0,
+        findings: [],
+      },
+    ];
     const html = renderEvidenceHtml(makePackage({ controls }));
     expect(html).not.toContain('<img src=x onerror="evil()">');
     expect(html).toContain("&lt;img");
