@@ -53,8 +53,8 @@ Core components:
 
 - **Data:** `notification_subscription_rules` (tenant-wide when `user_id` is null, per-user when set); RLS policies align with `tenant_users` membership.
 - **APIs:** `GET` / `POST` `/api/notification-subscriptions?tenantId=…` (optional `scope=all|tenant|user` on GET); `PATCH` `/api/notification-subscriptions/{id}` (body includes `tenantId`). Fields: `minSeverity` (`info`–`critical`), `channel` (`email` | `slack` | `in_app`), `digestInterval` (`off` | `hourly` | `daily` | `weekly`), `scope` on create (`tenant` | `user`).
-- **Inngest:** `notification-digest` (hourly cron) writes audit + a stub `evidence_records` row per eligible rule when a digest would be sent; email/Slack are optional follow-ups.
-- **Env:** no additional variables for the stub path.
+- **Inngest:** `notification-digest` (hourly cron) writes audit + a stub `evidence_records` row per eligible rule when a digest would be sent; set `NOTIFICATION_DELIVERY_ENABLED=true` with Resend/Slack env (see `docs/NOTIFICATION-DELIVERY.md`) for real delivery.
+- **Env:** optional — stub path needs no extra vars; outbound delivery needs provider keys (documented in `docs/NOTIFICATION-DELIVERY.md`).
 
 Primary v4 workflow:
 

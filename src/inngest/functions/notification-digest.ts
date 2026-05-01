@@ -2,6 +2,7 @@ import { inngest } from "@/inngest/client";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { writeAuditLog } from "@/lib/audit";
 import type { NotificationSubscriptionRuleRow } from "@/lib/notificationSubscriptionRules";
+import { deliverNotificationDigest, isNotificationDeliveryEnabled } from "@/lib/notificationDelivery";
 
 type DigestCheck = { shouldRun: boolean; reason: string };
 
@@ -66,7 +67,15 @@ export const notificationDigest = inngest.createFunction(
         continue;
       }
 
-      const summary = `Notification digest stub: would send for channel=${rule.channel} (min_severity >= ${rule.min_severity}, ${check.reason}).`;
+      const summary = `Notification digest: channel=${rule.channel} (min_severity >= ${rule.min_severity}, ${check.reason}).`;
+      const deliveryAttempts = isNotificationDeliveryEnabled()
+        ? await deliverNotificationDigest({
+            rule,
+            summaryLine: summary,
+            digestReason: check.reason,
+          })
+        : [];
+
       await writeAuditLog({
         userId: null,
         tenantId: rule.tenant_id,
@@ -81,7 +90,8 @@ export const notificationDigest = inngest.createFunction(
           digestInterval: rule.digest_interval,
           label: rule.label,
           targetUserId: rule.user_id,
-          proof: "stub_no_external_delivery",
+          deliveryEnabled: isNotificationDeliveryEnabled(),
+          deliveryAttempts,
         },
       });
 
@@ -92,15 +102,19 @@ export const notificationDigest = inngest.createFunction(
         control_framework: "internal",
         control_id: "NOTIFICATION-001",
         evidence_type: "notification_digest",
-        title: "Notification digest (stub delivery record)",
-        description:
-          "Placeholder evidence that the digest job ran; real email/Slack delivery requires integration env.",
+        title: isNotificationDeliveryEnabled()
+          ? "Notification digest (delivery attempted)"
+          : "Notification digest (stub delivery record)",
+        description: isNotificationDeliveryEnabled()
+          ? "Digest job ran; outbound delivery attempted when NOTIFICATION_DELIVERY_ENABLED and provider env are set."
+          : "Placeholder evidence that the digest job ran; enable NOTIFICATION_DELIVERY_ENABLED and provider env for email/Slack.",
         payload: {
           subscriptionRuleId: rule.id,
           channel: rule.channel,
           minSeverity: rule.min_severity,
           digestInterval: rule.digest_interval,
           stubbedAt: nowIso,
+          deliveryAttempts,
         },
       });
       if (evError) {
