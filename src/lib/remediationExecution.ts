@@ -1,6 +1,7 @@
 import { inngest } from "@/inngest/client";
 import { writeAuditLog } from "@/lib/audit";
 import { getSupabaseAdminClient } from "@/lib/supabase";
+import { pushTicketingAfterRemediationComplete } from "@/lib/remediationConnectors/ticketingOutbound";
 import { execFile as execFileShell } from "node:child_process";
 
 type ExecutionStep = {
@@ -241,7 +242,7 @@ export async function executeRemediationActionById(input: {
   const { data: remediation, error: remediationError } = await supabase
     .from("remediation_actions")
     .select(
-      "id, tenant_id, finding_id, action_type, action_status, execution_status, execution_mode, execution_payload, notes"
+      "id, tenant_id, finding_id, title, description, action_type, action_status, execution_status, execution_mode, execution_payload, notes"
     )
     .eq("id", input.remediationActionId)
     .single();
@@ -426,6 +427,32 @@ export async function executeRemediationActionById(input: {
       allStepsSkipped,
     },
   });
+
+  if (!dryRun && terminalExecutionStatus === "completed") {
+    const ticketing = await pushTicketingAfterRemediationComplete({
+      tenantId: remediation.tenant_id,
+      remediationActionId: input.remediationActionId,
+      title: String(remediation.title ?? "Remediation action"),
+      description: String(remediation.description ?? ""),
+      adapterKey,
+    });
+    if (ticketing.detail !== "skipped_not_configured") {
+      await writeAuditLog({
+        userId: input.actorUserId,
+        tenantId: remediation.tenant_id,
+        entityType: "remediation_action",
+        entityId: input.remediationActionId,
+        action: ticketing.ok ? "remediation.ticketing.outbound" : "remediation.ticketing.outbound_failed",
+        summary: ticketing.ok
+          ? `Ticketing connector push: ${ticketing.detail}`
+          : `Ticketing connector push failed: ${ticketing.detail}`,
+        payload: {
+          remediationActionId: input.remediationActionId,
+          detail: ticketing.detail,
+        },
+      });
+    }
+  }
 
   if (terminalExecutionStatus === "completed") {
     await inngest.send({
