@@ -1,0 +1,16 @@
+# Reference layout for colocating an OPA binary next to a reverse proxy.
+# Replace `command` with your SecureWatch360-compatible JSON evaluator or
+# front OPA with an adapter that maps /v1/data to the app's expected contract.
+#
+# The Next.js app posts to OPA_POLICY_EVAL_URL — not necessarily stock OPA HTTP.
+
+services:
+  opa:
+    image: openpolicyagent/opa:0.68.0-rootless
+    command:
+      - "run"
+      - "--server"
+      - "--addr=:8181"
+      - "--log-level=error"
+    ports:
+      - "8181:8181"
