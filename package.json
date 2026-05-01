@@ -13,6 +13,7 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "runner:dev": "node scripts/sw360-runner.mjs",
+    "verify:compliance-templates": "node scripts/verify-compliance-framework-templates.mjs",
     "seed:v4": "npx tsx scripts/seed-v4.ts",
     "seed:cve-catalog": "node scripts/seed-cve-catalog.mjs",
     "generate:compliance-templates": "node scripts/generate-framework-org-template-stubs.mjs",
