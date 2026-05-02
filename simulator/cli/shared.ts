@@ -34,6 +34,16 @@ export function defaultScenariosDir(cwd: string = process.cwd()): string {
   return path.join(cwd, "simulator", "scenarios");
 }
 
+/**
+ * Scenario directory for simulator CLIs (`sim:list` continues to default; use env for tooling/tests).
+ * `SIMULATION_SCENARIOS_DIR` — absolute or relative to cwd.
+ */
+export function cliScenariosDir(cwd: string = process.cwd()): string {
+  const raw = process.env.SIMULATION_SCENARIOS_DIR?.trim();
+  if (!raw) return defaultScenariosDir(cwd);
+  return path.isAbsolute(raw) ? raw : path.join(cwd, raw);
+}
+
 export function defaultSimulationResultsDir(cwd: string = process.cwd()): string {
   const fromEnv = process.env.SIMULATION_RESULTS_DIR?.trim();
   if (fromEnv) return path.isAbsolute(fromEnv) ? fromEnv : path.join(cwd, fromEnv);

@@ -5,7 +5,7 @@
 import { executeScenarioSimulation } from "../engines/simulationRunner";
 import {
   parseCliArgs,
-  defaultScenariosDir,
+  cliScenariosDir,
   resolveScenarioFromSpecifier,
   defaultSimulationResultsDir,
 } from "./shared";
@@ -23,7 +23,7 @@ async function main() {
     return;
   }
 
-  const scenariosDir = defaultScenariosDir(cwd);
+  const scenariosDir = cliScenariosDir(cwd);
   const resolved = await resolveScenarioFromSpecifier(specArg, scenariosDir);
   if (!resolved) {
     console.error(`Scenario not found: "${specArg}"`);

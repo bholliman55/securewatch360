@@ -2,11 +2,11 @@
  * CLI: npm run sim:list
  */
 
-import { defaultScenariosDir, loadScenarioListing } from "./shared";
+import { cliScenariosDir, loadScenarioListing } from "./shared";
 
 async function main() {
   const cwd = process.cwd();
-  const scenariosDir = defaultScenariosDir(cwd);
+  const scenariosDir = cliScenariosDir(cwd);
   const rows = await loadScenarioListing(scenariosDir);
   if (rows.length === 0) {
     console.log(`No scenario JSON fixtures found under ${scenariosDir}`);
