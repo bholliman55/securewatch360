@@ -6,6 +6,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { ScenarioDefinition } from "../schema";
+import type { SimulationAuditRow, CollectedSignals } from "../engineSignals.types";
 import type { SimulationRun, SimulationResult, ValidationResult } from "../types";
 import {
   getSupabaseProjectUrlFromEnv,
@@ -15,22 +16,7 @@ import {
   type SimulationMode,
 } from "./eventEmitter";
 
-export type SimulationAuditRow = {
-  id: string;
-  action: string;
-  payload: Record<string, unknown>;
-  created_at: string;
-};
-
-export type CollectedSignals = {
-  observationWindowStartIso: string;
-  observationWindowEndIso: string;
-  pollIterations: number;
-  /** Audit rows correlated to this run (filtered client-side by simulation_run_id). */
-  auditRowsForRun: SimulationAuditRow[];
-  /** Adjacent timeline rows captured while polling (for fuzzy agent matching). */
-  auditRowsNearTimeline: SimulationAuditRow[];
-};
+export type { SimulationAuditRow, CollectedSignals } from "../engineSignals.types";
 
 let mockCollectorClient: SupabaseClient | undefined;
 

@@ -24,7 +24,11 @@ export type {
   CollectedSignals,
   RunScenarioOptions,
 } from "./engines";
-export type { AgentResponseValidator } from "./validators";
+export type {
+  AgentResponseValidator,
+  AgentValidatorContext,
+  AgentValidatorResult,
+} from "./validators";
 export type { SimulationLabReport } from "./reports";
 
 export { minimalSyntheticFindingScenario } from "./fixtures/minimalSyntheticFinding.fixture";
@@ -59,3 +63,17 @@ export {
   executeAllScenarioSimulations,
   buildStructuredSimulationReport,
 } from "./engines";
+
+export {
+  AGENT_1_ID,
+  AGENT_2_ID,
+  AGENT_3_ID,
+  AGENT_4_ID,
+  AGENT_5_ID,
+  runAllSecureWatchAgentValidators,
+  validateAgent1Response,
+  validateAgent2Response,
+  validateAgent3Response,
+  validateAgent4Response,
+  validateAgent5Response,
+} from "./validators";

@@ -12,7 +12,8 @@ export {
   emitSimulatedEvents,
 } from "./eventEmitter";
 
-export type { CollectedSignals, SimulationAuditRow, StoredSimulationArtifacts } from "./resultCollector";
+export type { CollectedSignals, SimulationAuditRow } from "../engineSignals.types";
+export type { StoredSimulationArtifacts } from "./resultCollector";
 export {
   parseWaitEnv,
   observeAgentSignals,

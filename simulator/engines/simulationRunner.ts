@@ -14,12 +14,13 @@ import {
   type EmitCorrelation,
   type SimulationMode,
 } from "./eventEmitter";
+import type { CollectedSignals } from "../engineSignals.types";
 import {
   observeAgentSignals,
   evaluateScenarioExpectations,
   persistSimulationArtifacts,
-  type CollectedSignals,
 } from "./resultCollector";
+import { runAllSecureWatchAgentValidators } from "../validators";
 
 export function defaultScenariosDirectory(cwd?: string): string {
   const base = cwd ?? process.cwd();
@@ -157,7 +158,15 @@ export async function executeScenarioSimulation(
     result: simulationResult,
   };
 
-  const structuredReport = buildStructuredSimulationReport(report, signals, emissions, scenario);
+  const structuredReport = {
+    ...buildStructuredSimulationReport(report, signals, emissions, scenario),
+    securewatch_agents: runAllSecureWatchAgentValidators({
+      scenario,
+      runId,
+      signals,
+      stampedEvents: stamped,
+    }),
+  };
 
   const persisted = await persistSimulationArtifacts({
     run,
