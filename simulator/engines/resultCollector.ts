@@ -15,6 +15,7 @@ import {
   resolveSimulationMode,
   type SimulationMode,
 } from "./eventEmitter";
+import { aggregateSimulationPassFromValidations } from "./simulationOutcome";
 
 export type { SimulationAuditRow, CollectedSignals } from "../engineSignals.types";
 
@@ -269,14 +270,7 @@ export function evaluateScenarioExpectations(params: {
     });
   }
 
-  const requireAgents = scenario.pass_fail_rules.require_all_agent_steps === true;
-  const agentPasses = agentOnly;
-  let passed = requireAgents ? agentPasses.every((v) => v.passed) : agentPasses.some((v) => v.passed);
-
-  const orderGate = validations.find((v) => v.expectationId === "rule-order-check");
-  if (orderGate && !orderGate.passed) passed = false;
-
-  passed = passed && controlsOutcome.passed;
+  const passed = aggregateSimulationPassFromValidations(scenario, validations);
 
   return {
     runId: params.runId,

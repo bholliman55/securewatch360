@@ -7,6 +7,10 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { Inngest } from "inngest";
 import type { SimulatedEvent } from "../types";
 import type { ScenarioDefinition } from "../schema";
+import {
+  shouldSimulateDatabaseInsertFailure,
+  shouldSimulateInngestSendFailure,
+} from "./failureInjector";
 
 export type SimulationMode = "local" | "supabase" | "inngest";
 
@@ -195,6 +199,17 @@ export type EmitCorrelation = {
   mode: SimulationMode;
   ingest?: unknown;
   auditLogId?: string;
+  inject_error?: {
+    type: string;
+    message: string;
+    skipped_audit?: boolean;
+    skipped_inngest?: boolean;
+  };
+};
+
+export type EmitSimulatedEventOptions = {
+  /** Zero-based index among emissions in this run (for `database_failure` / `inngest_failure`). */
+  sequenceIndex?: number;
 };
 
 /** Emit one simulated event according to SIMULATION_MODE. */
@@ -202,8 +217,10 @@ export async function emitSimulatedEvent(
   scenario: ScenarioDefinition,
   event: SimulatedEvent,
   mode?: SimulationMode,
+  options?: EmitSimulatedEventOptions,
 ): Promise<EmitCorrelation> {
   const m = mode ?? resolveSimulationMode();
+  const sequenceIndex = options?.sequenceIndex ?? 0;
 
   await emitConsoleLine({
     phase: "emit_start",
@@ -217,6 +234,13 @@ export async function emitSimulatedEvent(
   if (m === "local") {
     const pseudoTenant =
       process.env.SIMULATION_TENANT_ID?.trim() ?? "11111111-1111-1111-1111-111111111111";
+    if (shouldSimulateDatabaseInsertFailure(scenario, m, sequenceIndex)) {
+      await emitConsoleLine({
+        phase: "emit_local_metadata",
+        note:
+          "failure_injection=database_failure skipped (local mode has no Supabase insert); use supabase/inngest mode to exercise audit insert faults.",
+      });
+    }
     await emitConsoleLine({
       phase: "emit_complete",
       mode: m,
@@ -230,6 +254,25 @@ export async function emitSimulatedEvent(
   const tenantId = requireSimulationTenantId();
   const payloadEnvelope = buildAuditEnvelope(scenario, event, m);
   let auditLogId: string | undefined;
+
+  if (shouldSimulateDatabaseInsertFailure(scenario, m, sequenceIndex)) {
+    await emitConsoleLine({
+      phase: "audit_write_injected_skip",
+      sequenceIndex,
+      failure_injection: "database_failure",
+      runId: event.runId,
+      eventId: event.id,
+    });
+    return {
+      mode: m,
+      auditLogId: undefined,
+      inject_error: {
+        type: "database_failure",
+        message: "Synthetic Supabase audit_logs insert failure (simulator failure injection).",
+        skipped_audit: true,
+      },
+    };
+  }
 
   const supabase = createSimulationSupabaseAdmin();
   auditLogId = await auditSimulationEmit({
@@ -246,22 +289,45 @@ export async function emitSimulatedEvent(
   let ingest: unknown;
 
   if (m === "inngest") {
-    const monitoring = simulatedEventToMonitoringPayload(event, scenario, tenantId);
-    const ng = createSimulationInngest();
-    ingest = await ng.send({
-      name: MONITORING_EVENT,
-      data: monitoring,
-    });
-    await emitConsoleLine({
-      phase: "inngest_send_complete",
-      ingestSummary: sanitizeIngestAck(ingest),
-    });
+    if (shouldSimulateInngestSendFailure(scenario, m, sequenceIndex)) {
+      ingest = {
+        failure_injection: true,
+        injected_error: "inngest_send_failed",
+        sequenceIndex,
+      };
+      await emitConsoleLine({
+        phase: "inngest_send_injected_failure",
+        sequenceIndex,
+        failure_injection: "inngest_failure",
+        ingestSummary: ingest,
+      });
+    } else {
+      const monitoring = simulatedEventToMonitoringPayload(event, scenario, tenantId);
+      const ng = createSimulationInngest();
+      ingest = await ng.send({
+        name: MONITORING_EVENT,
+        data: monitoring,
+      });
+      await emitConsoleLine({
+        phase: "inngest_send_complete",
+        ingestSummary: sanitizeIngestAck(ingest),
+      });
+    }
   }
+
+  const inject_error = shouldSimulateInngestSendFailure(scenario, m, sequenceIndex)
+    ? {
+        type: "inngest_failure",
+        message: "Synthetic Inngest send failure (simulator failure injection).",
+        skipped_inngest: true,
+      }
+    : undefined;
 
   return {
     mode: m,
     ingest,
     auditLogId,
+    ...(inject_error ? { inject_error } : {}),
   };
 }
 
@@ -316,7 +382,7 @@ export async function emitSimulatedEvents(
   const out: EmitCorrelation[] = [];
   for (let i = 0; i < events.length; i += 1) {
     if (i > 0 && staggerMs > 0) await sleep(staggerMs);
-    out.push(await emitSimulatedEvent(scenario, events[i], m));
+    out.push(await emitSimulatedEvent(scenario, events[i], m, { sequenceIndex: i }));
   }
   return out;
 }

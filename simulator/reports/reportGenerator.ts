@@ -529,6 +529,11 @@ export function defaultSimulationReportOutputDir(cwd: string = process.cwd()): s
 export interface WriteSimulationRunReportsResult {
   jsonPath: string;
   markdownPath: string;
+  /** Present when report files were not written (e.g. simulator failure injection). */
+  skipped?: {
+    reason: string;
+    injection_type: string;
+  };
 }
 
 /** Writes JSON + Markdown siblings for one run. */

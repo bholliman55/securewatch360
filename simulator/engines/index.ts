@@ -22,6 +22,17 @@ export {
   __setResultCollectorMockClient,
 } from "./resultCollector";
 
+export type { EmitSimulatedEventOptions } from "./eventEmitter";
+export type { FailureInjectionType, FailureInjection } from "../schema";
+export {
+  resolveSimulationTargetAgentId,
+  mergeFailureInjectionIntoSimulationResult,
+  injectAgentValidatorFailures,
+  applyDuplicateEventInjection,
+  failureInjectionTelemetry,
+} from "./failureInjector";
+export { aggregateSimulationPassFromValidations } from "./simulationOutcome";
+
 export type { RunScenarioOptions } from "./simulationRunner";
 export {
   defaultScenariosDirectory,

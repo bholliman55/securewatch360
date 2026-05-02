@@ -95,6 +95,38 @@ export const passFailRulesSchema = z
   })
   .strict();
 
+/** Scenario-driven fault injection for lab / CI drills (never mutates prod behavior outside simulator). */
+export const failureInjectionTypeSchema = z.enum([
+  "agent_timeout",
+  "agent_no_response",
+  "agent_late_response",
+  "malformed_agent_response",
+  "database_failure",
+  "inngest_failure",
+  "remediation_failure",
+  "report_generation_failure",
+  "policy_validation_failure",
+  "human_approval_missing",
+  "duplicate_event",
+]);
+
+export type FailureInjectionType = z.infer<typeof failureInjectionTypeSchema>;
+
+export const failureInjectionSchema = z
+  .object({
+    enabled: z.boolean(),
+    type: failureInjectionTypeSchema,
+    /** e.g. `agent_1` or full id `agent-1-scanner-external-recon` */
+    target_agent: z.string().min(1).optional(),
+    /** Used by `agent_late_response` (observation delay before polling signals). */
+    delay_ms: z.number().int().nonnegative().optional(),
+    /** 0-based index of `simulated_events` emission tripping `database_failure` / `inngest_failure`. */
+    event_index: z.number().int().nonnegative().optional(),
+  })
+  .strict();
+
+export type FailureInjection = z.infer<typeof failureInjectionSchema>;
+
 /**
  * Full scenario document (e.g. JSON fixture under `simulator/fixtures/samples/`).
  * Field names use snake_case to match compliance-style exports and static analysis tools.
@@ -114,6 +146,7 @@ export const scenarioDefinitionSchema = z
     expected_remediation: expectedRemediationSchema,
     expected_report_sections: z.array(z.string().min(1)),
     pass_fail_rules: passFailRulesSchema,
+    failure_injection: failureInjectionSchema.optional(),
     /** Lab safety marker — must remain synthetic metadata only. */
     assurance: z
       .enum(["synthetic_metadata_only", "fixture_replay", "mock_orchestration"])

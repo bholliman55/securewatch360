@@ -22,6 +22,14 @@ import {
   evaluateScenarioExpectations,
   persistSimulationArtifacts,
 } from "./resultCollector";
+import {
+  applyDuplicateEventInjection,
+  failureInjectionTelemetry,
+  injectAgentValidatorFailures,
+  isReportGenerationFailureInjected,
+  mergeFailureInjectionIntoSimulationResult,
+  observeDelayForFailureInjection,
+} from "./failureInjector";
 import { runAllSecureWatchAgentValidators } from "../validators";
 
 export function defaultScenariosDirectory(cwd?: string): string {
@@ -124,10 +132,13 @@ export async function executeScenarioSimulation(
 > {
   const runId = randomUUID();
   const mode = options?.mode ?? resolveSimulationMode();
-  const stamped = stampSimulatedEvents(
+  const stamped = applyDuplicateEventInjection(
     scenario,
-    runId,
-    process.env.SIMULATION_TENANT_ID?.trim() ?? undefined,
+    stampSimulatedEvents(
+      scenario,
+      runId,
+      process.env.SIMULATION_TENANT_ID?.trim() ?? undefined,
+    ),
   );
 
   const startedAt = new Date().toISOString();
@@ -142,6 +153,7 @@ export async function executeScenarioSimulation(
     .slice(0, 50);
 
   const windowStartIso = stamped[0]?.simulatedAt ?? startedAt;
+  await observeDelayForFailureInjection(scenario);
   const signals = await observeAgentSignals({
     runId,
     mode,
@@ -159,7 +171,8 @@ export async function executeScenarioSimulation(
       correlationAccumulator.length > 0 ? correlationAccumulator : undefined,
   };
 
-  const simulationResult = evaluateScenarioExpectations({ scenario, signals, runId });
+  let simulationResult = evaluateScenarioExpectations({ scenario, signals, runId });
+  simulationResult = mergeFailureInjectionIntoSimulationResult(scenario, simulationResult);
 
   const report: SimulationLabReport = {
     generatedAt: simulationResult.finishedAt,
@@ -173,12 +186,15 @@ export async function executeScenarioSimulation(
     result: simulationResult,
   };
 
-  const securewatchAgents = runAllSecureWatchAgentValidators({
+  const securewatchAgents = injectAgentValidatorFailures(
     scenario,
-    runId,
-    signals,
-    stampedEvents: stamped,
-  });
+    runAllSecureWatchAgentValidators({
+      scenario,
+      runId,
+      signals,
+      stampedEvents: stamped,
+    }),
+  );
 
   const autonomyScorecard = computeAutonomyScorecard({
     scenario,
@@ -188,10 +204,39 @@ export async function executeScenarioSimulation(
     securewatchAgents,
   });
 
+  const humanReports = isReportGenerationFailureInjected(scenario)
+    ? {
+        jsonPath: "",
+        markdownPath: "",
+        skipped: {
+          reason: "Synthetic report write failure (failure_injection: report_generation_failure).",
+          injection_type: "report_generation_failure",
+        },
+      }
+    : await writeSimulationRunReports({
+        scenario,
+        run,
+        result: simulationResult,
+        signals,
+        emissions,
+        autonomyScorecard,
+        securewatchAgents,
+        ...(options?.reportOutputDir !== undefined ? { outputDirectory: options.reportOutputDir } : {}),
+      });
+
   const structuredReport = {
     ...buildStructuredSimulationReport(report, signals, emissions, scenario),
     securewatch_agents: securewatchAgents,
     autonomy_scorecard: autonomyScorecard,
+    ...(humanReports.skipped
+      ? {
+          report_generation: {
+            skipped: true as const,
+            reason: humanReports.skipped.reason,
+            injection_type: humanReports.skipped.injection_type,
+          },
+        }
+      : {}),
   };
 
   const persistedBase = await persistSimulationArtifacts({
@@ -199,17 +244,6 @@ export async function executeScenarioSimulation(
     result: simulationResult,
     report: structuredReport as unknown as Record<string, unknown>,
     baseDir: options?.persistenceBaseDir,
-  });
-
-  const humanReports = await writeSimulationRunReports({
-    scenario,
-    run,
-    result: simulationResult,
-    signals,
-    emissions,
-    autonomyScorecard,
-    securewatchAgents,
-    ...(options?.reportOutputDir !== undefined ? { outputDirectory: options.reportOutputDir } : {}),
   });
 
   const persisted = {
@@ -254,14 +288,17 @@ export function buildStructuredSimulationReport(
   emissions: EmitCorrelation[],
   scenario: ScenarioDefinition,
 ): Record<string, unknown> {
+  const inj = failureInjectionTelemetry(scenario);
   return {
     lab,
+    ...(inj ? { failure_injection: inj } : {}),
     telemetry: {
       simulation_mode_used: emissions[0]?.mode ?? resolveSimulationMode(),
       emissions: emissions.map((e) => ({
         mode: e.mode,
         auditLogId: e.auditLogId,
         ingest: e.ingest,
+        inject_error: e.inject_error,
       })),
       observation: {
         polls: signals.pollIterations,

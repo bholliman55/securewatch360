@@ -8,6 +8,8 @@ export {
   expectedControlRefSchema,
   expectedRemediationSchema,
   passFailRulesSchema,
+  failureInjectionTypeSchema,
+  failureInjectionSchema,
   scenarioDefinitionSchema,
   parseScenarioDefinition,
   safeParseScenarioDefinition,
@@ -30,6 +32,8 @@ export {
   type ScenarioDefinition,
   type PlaybookLabAgentId,
   type AttackPlaybookDefinition,
+  type FailureInjectionType,
+  type FailureInjection,
 } from "./scenario.schema";
 
 export {
