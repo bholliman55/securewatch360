@@ -8,7 +8,8 @@ import {
   BarChart3,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FlaskConical,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -22,6 +23,7 @@ export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'simulation-lab', label: 'Simulation Lab', icon: FlaskConical },
     { id: 'scanner', label: 'Scanner', icon: Radar },
     { id: 'monitoring', label: 'Monitoring', icon: Activity },
     { id: 'compliance', label: 'Compliance', icon: ClipboardCheck },

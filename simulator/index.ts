@@ -29,7 +29,13 @@ export type {
   AgentValidatorContext,
   AgentValidatorResult,
 } from "./validators";
-export type { SimulationLabReport } from "./reports";
+export type {
+  SimulationLabReport,
+  SimulationDashboardSummary,
+  SimulationDashboardSummaryStatus,
+  SimulationDashboardTimelineEvent,
+} from "./reports";
+export { buildSimulationDashboardSummary, deriveDashboardSummaryStatus } from "./reports";
 
 export { minimalSyntheticFindingScenario } from "./fixtures/minimalSyntheticFinding.fixture";
 

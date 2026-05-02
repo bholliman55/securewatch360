@@ -1,6 +1,14 @@
 export type { SimulationLabReport } from "./report-types";
 
 export {
+  buildSimulationDashboardSummary,
+  deriveDashboardSummaryStatus,
+  type SimulationDashboardSummary,
+  type SimulationDashboardSummaryStatus,
+  type SimulationDashboardTimelineEvent,
+} from "./dashboardSummary";
+
+export {
   computeAutonomyScorecard,
   describeAutonomyReadiness,
   autonomyReadinessLabel,

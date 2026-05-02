@@ -7,6 +7,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { parseSimulationScenarioDocument, type ScenarioDefinition } from "../schema";
 import { computeAutonomyScorecard } from "../reports/autonomyScorecard";
+import { buildSimulationDashboardSummary, type SimulationDashboardSummary } from "../reports/dashboardSummary";
 import { writeSimulationRunReports } from "../reports/reportGenerator";
 import type { SimulationLabReport } from "../reports/report-types";
 import type { Scenario, SimulatedEvent, SimulationRun } from "../types";
@@ -150,6 +151,7 @@ export async function executeScenarioSimulation(
   },
 ): Promise<
   SimulationLabReport & {
+    dashboardSummary: SimulationDashboardSummary;
     persisted?: {
       resultPath?: string;
       reportPath?: string;
@@ -232,6 +234,17 @@ export async function executeScenarioSimulation(
     securewatchAgents,
   });
 
+  const dashboardSummary = buildSimulationDashboardSummary({
+    scenario,
+    run,
+    result: simulationResult,
+    autonomyScorecard,
+    securewatchAgents,
+    signals,
+    emissions,
+    simulationMode: mode,
+  });
+
   const humanReports = isReportGenerationFailureInjected(scenario)
     ? {
         jsonPath: "",
@@ -256,6 +269,7 @@ export async function executeScenarioSimulation(
     ...buildStructuredSimulationReport(report, signals, emissions, scenario),
     securewatch_agents: securewatchAgents,
     autonomy_scorecard: autonomyScorecard,
+    dashboard_summary: dashboardSummary,
     ...(humanReports.skipped
       ? {
           report_generation: {
@@ -282,6 +296,7 @@ export async function executeScenarioSimulation(
 
   return {
     ...report,
+    dashboardSummary,
     persisted,
   };
 }

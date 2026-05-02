@@ -53,6 +53,12 @@ describe("Simulation runner (local sink)", () => {
 
     expect(report.persisted?.humanReportJsonPath).toBeDefined();
     expect(report.persisted?.humanReportMarkdownPath).toBeDefined();
+    expect(report.dashboardSummary.runId).toBe(report.result.runId);
+    expect(report.dashboardSummary.scenarioName).toBeTruthy();
+
+    const structured = JSON.parse(await fs.readFile(report.persisted!.reportPath!, "utf8"));
+    expect(structured.dashboard_summary?.runId).toBe(report.result.runId);
+
     const jr = JSON.parse(await fs.readFile(report.persisted!.humanReportJsonPath!, "utf8"));
     expect(jr.scenario_name).toBeTruthy();
     expect(jr.timeline.length).toBeGreaterThanOrEqual(1);
