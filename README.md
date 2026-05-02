@@ -590,8 +590,9 @@ BRIGHTDATA_BROWSER_ZONE=
 - Tenant context is auto-selected from the authenticated user's highest role (`owner > admin > analyst > viewer`).
 - If a user has no explicit tenant memberships in local demo mode, UI falls back to `VITE_TEST_TENANT_ID` (or the default seeded test tenant ID).
 - `New scan` now supports:
-  - **External intelligence workflow**: domain/URL/IP input that triggers Agent 1 + Agent 2 through `/api/security/external-intelligence/run`
+  - **External intelligence workflow**: domain/URL/public-IP input that triggers Agent 1 + Agent 2 through `/api/security/external-intelligence/run`
   - **Standard workflow**: scan target creation + `/api/scans/request` dispatch
+  - External target validation blocks localhost, private/internal domains, and private/reserved IPv4 ranges while permitting public IPv4 targets
 
 **Via API:**
 ```bash
