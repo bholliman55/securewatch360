@@ -4,14 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { inngest } from "@/inngest/client";
 import { requireTenantAccess } from "@/lib/tenant-guard";
 import { API_TENANT_ROLES } from "@/lib/apiRoleMatrix";
-
-const PRIVATE_DOMAIN_RE =
-  /^(localhost|.*\.local|.*\.internal|.*\.test|.*\.example)(:\d+)?$|^(\d{1,3}\.){3}\d{1,3}(:\d+)?$/;
-
-function isPrivateDomain(domain: string): boolean {
-  // Reject localhost, .local, .internal, .test, .example, and bare IPv4 addresses
-  return PRIVATE_DOMAIN_RE.test(domain.toLowerCase().trim());
-}
+import { isBlockedExternalTarget } from "@/lib/externalTargetSafety";
 
 function normalizeDomain(raw: string): string {
   try {
@@ -77,7 +70,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid domain" }, { status: 400 });
   }
 
-  if (isPrivateDomain(domain)) {
+  if (isBlockedExternalTarget(domain)) {
     return NextResponse.json(
       { error: "Private/internal domains are not permitted as external intelligence targets" },
       { status: 400 }
