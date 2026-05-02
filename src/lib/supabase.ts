@@ -1,6 +1,8 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+type SupabaseBrowserClient = ReturnType<typeof createBrowserClient>;
+
 // --- shared env (fail fast in dev when misconfigured) -----------------------------------------
 
 function getPublicUrl(): string {
@@ -17,12 +19,12 @@ function getAnonKey(): string {
 
 // --- browser: anon key only, RLS applies ------------------------------------------------------
 
-let browserClient: SupabaseClient | undefined;
+let browserClient: SupabaseBrowserClient | undefined;
 
 /**
  * For Client Components in the browser. Never use the service role here.
  */
-export function getSupabaseBrowserClient(): SupabaseClient {
+export function getSupabaseBrowserClient(): SupabaseBrowserClient {
   if (browserClient) return browserClient;
   browserClient = createBrowserClient(getPublicUrl(), getAnonKey());
   return browserClient;
