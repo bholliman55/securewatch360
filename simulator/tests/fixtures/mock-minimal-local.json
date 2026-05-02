@@ -1,0 +1,39 @@
+{
+  "id": "mock-lab-min-local-001",
+  "name": "Mock minimal local scenario (Vitest only)",
+  "description": "Synthetic fixture for simulator lab tests. No live systems.",
+  "assurance": "synthetic_metadata_only",
+  "severity": "low",
+  "attack_category": "suspicious_login",
+  "mitre_attack_techniques": [],
+  "target_type": "user_identity",
+  "simulated_events": [
+    {
+      "ref": "evt-mock-01",
+      "kind": "monitoring.alert.synthetic",
+      "payload": {
+        "alert_type": "lab.mock",
+        "severity": "low"
+      }
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "mock-step-1",
+      "agent_key": "decision-engine",
+      "capability": "noop_stub",
+      "match": {}
+    }
+  ],
+  "expected_controls_triggered": [],
+  "expected_remediation": {
+    "summary": "Mock remediation summary for tests."
+  },
+  "expected_report_sections": ["executive_summary"],
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  }
+}

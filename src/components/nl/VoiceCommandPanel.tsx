@@ -223,7 +223,7 @@ export function VoiceCommandPanel({ userId }: { userId: string }) {
       )}
 
       <p className="text-center text-xs text-gray-400">
-        Say something like "Run a scan on example.com" or "Show me critical risks"
+        Say something like &quot;Run a scan on example.com&quot; or &quot;Show me critical risks&quot;
       </p>
     </div>
   );

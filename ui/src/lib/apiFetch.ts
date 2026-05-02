@@ -1,3 +1,5 @@
+import { supabase } from "../services/supabaseClient";
+
 type ApiErrorBody = {
   ok?: boolean;
   error?: string;
@@ -8,6 +10,13 @@ export async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
     ...(init?.headers as Record<string, string> | undefined),
   };
+  if (!headers.Authorization) {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
   if (init?.body !== undefined && !headers["Content-Type"]) {
     headers["Content-Type"] = "application/json";
   }

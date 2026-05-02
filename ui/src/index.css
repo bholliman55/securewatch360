@@ -1,24 +1,26 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --sw-bg: #ebf1f8;
-    --sw-surface: #ffffff;
-    --sw-surface-elevated: #f4f8fe;
-    --sw-border: #d2deec;
-    --sw-text-primary: #0f2745;
-    --sw-text-muted: #4e6784;
-    --sw-accent: #0f5cb8;
-    --sw-accent-hover: #0d4e9f;
+    --sw-bg: #07111f;
+    --sw-surface: #0d1e33;
+    --sw-surface-elevated: #112d4e;
+    --sw-border: rgba(176, 196, 222, 0.24);
+    --sw-text-primary: #ffffff;
+    --sw-text-muted: #b0c4de;
+    --sw-accent: #1565c0;
+    --sw-accent-hover: #1e88e5;
     --sw-accent-bright: #29b6f6;
-    --sw-nav-active-bg: linear-gradient(135deg, #0f5cb8 0%, #0d3f84 100%);
+    --sw-pulse: #00e5ff;
+    --sw-success: #22c55e;
+    --sw-nav-active-bg: linear-gradient(135deg, #1565c0 0%, #112d4e 100%);
     --sw-nav-active-text: #ffffff;
-    --sw-card-shadow: 0 10px 30px -18px rgba(17, 45, 78, 0.35);
-    --sw-card-shadow-hover: 0 16px 34px -18px rgba(17, 45, 78, 0.45);
-    --sw-focus-ring: 0 0 0 3px rgba(41, 182, 246, 0.2);
+    --sw-card-shadow: 0 14px 34px -20px rgba(0, 0, 0, 0.55);
+    --sw-card-shadow-hover: 0 20px 40px -18px rgba(0, 0, 0, 0.65);
+    --sw-focus-ring: 0 0 0 3px rgba(41, 182, 246, 0.35);
   }
 
   .dark {
@@ -45,8 +47,11 @@
   }
 
   body {
-    font-family: 'Manrope', sans-serif;
-    background: radial-gradient(circle at top right, #f8fbff 0%, var(--sw-bg) 45%);
+    font-family: 'Inter', sans-serif;
+    background:
+      radial-gradient(circle at 18% 14%, rgba(0, 229, 255, 0.08) 0%, transparent 42%),
+      radial-gradient(circle at 84% 10%, rgba(41, 182, 246, 0.11) 0%, transparent 35%),
+      var(--sw-bg);
     color: var(--sw-text-primary);
   }
 
@@ -55,8 +60,8 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Barlow Condensed', sans-serif;
-    letter-spacing: 0.02em;
+    font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 0.015em;
   }
 
   * {
@@ -99,7 +104,7 @@
     padding: 6px 12px;
     font-size: 12px;
     font-weight: 600;
-    background: color-mix(in srgb, var(--sw-surface-elevated) 82%, white);
+    background: color-mix(in srgb, var(--sw-surface-elevated) 84%, transparent);
     color: var(--sw-text-muted);
   }
 }

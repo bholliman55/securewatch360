@@ -1,0 +1,137 @@
+{
+  "id": "pb-lab-08-cmmc-control-drift",
+  "name": "Safe synthetic playbook: CMMC control drift detection",
+  "description": "Compliance posture simulation where assessed practices diverge from a CMMC-aligned control baseline on lab systems. Describes evidence gaps—no Controlled Unclassified Information content, no export-controlled material.",
+  "severity": "medium",
+  "attack_category": "compliance_drift",
+  "mitre_attack_techniques": [],
+  "target_type": "governance_boundary",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["playbook", "cmmc", "grc", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "evidence_collect",
+      "synthetic_narrative": "GRC ingest compares lab asset inventory snapshots to CMMC practice expectations (fixture)."
+    },
+    {
+      "t_offset_seconds": 7200,
+      "phase": "gap_identified",
+      "synthetic_narrative": "Missing artifact: multifactor enforcement evidence for LAB boundary users."
+    },
+    {
+      "t_offset_seconds": 10800,
+      "phase": "remediation_tracking",
+      "synthetic_narrative": "POA&M stub opened with synthetic due date."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "pb08-evt-01",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: CMMC-aligned control drift (synthetic)",
+        "severity": "medium",
+        "category": "compliance_gap",
+        "asset_type": "organizational_boundary",
+        "target_value": "boundary:LAB-CMMC-SCOPE-01"
+      }
+    },
+    {
+      "ref": "pb08-evt-02",
+      "kind": "custom.synthetic",
+      "payload": {
+        "telemetry_type": "grc.evidence_review.synthetic",
+        "framework": "CMMC_MODEL_LAB_STUB",
+        "practice_id_fixture": "AC.L2-3.1.1_stub",
+        "gap_summary": "MFA attestations stale beyond policy window."
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "pb08-evt-01",
+      "headline": "Compliance finding raised",
+      "synthetic_detail": "Formal mapping ties drift to modeled CMMC practices only."
+    },
+    {
+      "ref": "pb08-evt-02",
+      "headline": "Evidence review artifact",
+      "synthetic_detail": "Auditors receive checklist payload without regulated data payloads."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "pb08-seq-01",
+      "agent_key": "compliance-assessor",
+      "capability": "mapping_stub",
+      "match": {}
+    },
+    {
+      "id": "pb08-seq-02",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": {}
+    },
+    {
+      "id": "pb08-seq-03",
+      "agent_key": "incident-coordinator",
+      "capability": "poam_tracking_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-3-compliance-policy",
+      "triggered_reason_synthetic": "Framework mappings and corrective plans generated from drift signal."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "cmmc",
+      "control_id": "AC.L2-3.1.1_stub",
+      "control_label": "LAB placeholder — authorized access enforcement evidence"
+    },
+    {
+      "framework": "nist_csf",
+      "control_id": "GV.RM-3",
+      "control_label": "Risk responses are prioritized"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Refresh MFA evidence artifacts, reconcile IdP configs with policy snapshots, attach auditor-friendly export (stub).",
+    "expected_action_types": ["evidence_refresh_request", "config_rebaseline_simulation"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Generate POA&M row with synthetic owner and due clock.",
+      "automation_boundary": "lab_stub_only"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "ssp_update",
+      "synthetic_rationale": "Human authorizes updates to lab system security plan narrative."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "control_baselines",
+    "evidence_gaps",
+    "recommended_controls",
+    "remediation_timeline"
+  ],
+  "expected_final_report": {
+    "title": "CMMC control drift — synthetic playbook outcome",
+    "synthetic_executive_summary": "Modeled CMMC-aligned practices fell out of sync with collected evidence; output is a corrective plan, not authorization to operate.",
+    "sections": ["practices_affected", "evidence_index", "poam_summary", "residual_posture_estimate"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  }
+}

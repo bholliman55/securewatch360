@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  isBlockedExternalTarget,
-  normalizeDomain,
-} from "@/app/api/security/external-intelligence/run/route";
+import { isBlockedExternalTarget, normalizeDomain } from "@/lib/externalTargetSafety";
 
 describe("external intelligence target validation", () => {
   it("normalizes hostname from full URL", () => {

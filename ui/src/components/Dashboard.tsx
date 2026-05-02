@@ -10,6 +10,7 @@ import Compliance from './Compliance';
 import Training from './Training';
 import Incidents from './Incidents';
 import Analytics from './Analytics';
+import SimulationDashboard from './SimulationDashboard';
 import { ErrorMessage } from './ErrorBoundary';
 import {
   HeroMetricsSkeleton,
@@ -55,6 +56,8 @@ export default function Dashboard({
         return 'Incidents Agent';
       case 'analytics':
         return 'Analytics';
+      case 'simulation-lab':
+        return 'Simulation Lab';
       case 'settings':
         return 'Settings';
       default:
@@ -89,7 +92,10 @@ export default function Dashboard({
           </span>
         </div>
 
-        {(activeView === 'dashboard' || activeView === 'settings' || activeView === 'analytics') && (
+        {(activeView === 'dashboard' ||
+          activeView === 'settings' ||
+          activeView === 'analytics' ||
+          activeView === 'simulation-lab') && (
           <section className="sw-panel p-6 lg:p-8 overflow-hidden relative">
             <div className="absolute -right-16 -top-20 w-64 h-64 rounded-full bg-[radial-gradient(circle,_rgba(41,182,246,0.28)_0%,_rgba(41,182,246,0)_72%)] pointer-events-none" />
             <div className="absolute right-20 -bottom-24 w-72 h-72 rounded-full bg-[radial-gradient(circle,_rgba(15,92,184,0.2)_0%,_rgba(15,92,184,0)_70%)] pointer-events-none" />
@@ -103,6 +109,8 @@ export default function Dashboard({
                   ? 'Live SOC telemetry with finding pressure, agent health, and operational narrative in one glance.'
                   : activeView === 'analytics'
                   ? 'Executive-grade telemetry for compliance posture, trend velocity, and risk concentration.'
+                  : activeView === 'simulation-lab'
+                  ? 'Deterministic autonomy lab summaries — calibrated for SOC command decks & investor rehearsals.'
                   : `Detailed view of ${getViewTitle().toLowerCase()}.`}
               </p>
               {activeView === 'dashboard' && (
@@ -110,6 +118,13 @@ export default function Dashboard({
                   <span className="sw-chip">24x7 operations</span>
                   <span className="sw-chip">Tenant-aware context</span>
                   <span className="sw-chip">Policy-backed actions</span>
+                </div>
+              )}
+              {activeView === 'simulation-lab' && (
+                <div className="flex flex-wrap gap-3 mt-5">
+                  <span className="sw-chip">dashboard_summary</span>
+                  <span className="sw-chip">Autonomy scorecard</span>
+                  <span className="sw-chip">Audit-grade narrative</span>
                 </div>
               )}
             </div>
@@ -130,6 +145,8 @@ export default function Dashboard({
           <Incidents />
         ) : activeView === 'analytics' ? (
           <Analytics />
+        ) : activeView === 'simulation-lab' ? (
+          <SimulationDashboard />
         ) : activeView === 'dashboard' ? (
           <>
             {error && <ErrorMessage message={error} />}

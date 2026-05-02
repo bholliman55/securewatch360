@@ -1,0 +1,142 @@
+{
+  "id": "pb-lab-13-edr-alert",
+  "name": "Safe synthetic playbook: EDR alert ingestion",
+  "description": "Generic endpoint detection stub where the platform receives a benignly labeled suspicion from a lab EDR integration. Describes categories and severity only—no shellcode, no memory dumps with secrets.",
+  "severity": "high",
+  "attack_category": "endpoint_compromise_signal",
+  "mitre_attack_techniques": ["T1059"],
+  "target_type": "endpoint",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["playbook", "edr", "endpoint", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "alert_ingest",
+      "synthetic_narrative": "EDR connector posts synthetic alert LAB-SCRIPT-RUNNING to queue."
+    },
+    {
+      "t_offset_seconds": 300,
+      "phase": "analyst_preview",
+      "synthetic_narrative": "Analyst workspace loads metadata card (process lineage fixture labels)."
+    },
+    {
+      "t_offset_seconds": 900,
+      "phase": "response_bridge",
+      "synthetic_narrative": "IR bridge schedules containment decision checkpoint."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "pb13-evt-01",
+      "kind": "monitoring.alert.synthetic",
+      "payload": {
+        "alert_type": "edr.generic_threat_alert_synthetic",
+        "hostname": "lab-desktop-falcon-41.example.invalid",
+        "rule_name_fixture": "LAB_SUSPICIOUS_SCRIPT_PARENT",
+        "vendor_severity": "high",
+        "severity": "high"
+      }
+    },
+    {
+      "ref": "pb13-evt-02",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: EDR-alert-backed endpoint suspicion (synthetic)",
+        "severity": "high",
+        "category": "endpoint_detection",
+        "asset_type": "endpoint",
+        "target_value": "host:lab-desktop-falcon-41.example.invalid"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "pb13-evt-01",
+      "headline": "EDR webhook accepted",
+      "synthetic_detail": "Vendor correlation IDs are placeholders; no executable artifacts shipped."
+    },
+    {
+      "ref": "pb13-evt-02",
+      "headline": "Normalized finding created",
+      "synthetic_detail": "Feeds SecureWatch prioritization matrices in lab mode."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "pb13-seq-01",
+      "agent_key": "incident-coordinator",
+      "capability": "edr_escalation_stub",
+      "match": {}
+    },
+    {
+      "id": "pb13-seq-02",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": {}
+    },
+    {
+      "id": "pb13-seq-03",
+      "agent_key": "scanner-external-recon",
+      "capability": "threat_intel_correlation_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "EDR-grade alert inherits IR orchestration defaults."
+    },
+    {
+      "agent_id": "agent-2-osint-vuln-intel",
+      "triggered_reason_synthetic": "Optional IOC reputation enrichment path (fixture)."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "DE.AE-3",
+      "control_label": "Event data aggregated"
+    },
+    {
+      "framework": "iso27001",
+      "control_id": "A.16.1.7",
+      "control_label": "Collection of evidence"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Host isolation recommendation, forensic preservation request simulation, eradication checklist placeholder.",
+    "expected_action_types": ["isolate_host_simulation", "forensic_handoff_stub", "vendor_case_link"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Auto-enrich alert with asset owner lookup (lab directory stub).",
+      "automation_boundary": "lab_stub_only"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "containment_confirmation",
+      "synthetic_rationale": "SOC lead validates alert is not benign dev tooling noise."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "edr_alert_digest",
+    "host_context_fixture",
+    "recommended_controls",
+    "remediation_timeline"
+  ],
+  "expected_final_report": {
+    "title": "EDR alert — synthetic playbook outcome",
+    "synthetic_executive_summary": "Vendor alert bridged into platform workflows; playbook ends with containment checklist and enrichment evidence stubs.",
+    "sections": ["raw_alert_metadata_fixture", "triage_notes", "containment_steps", "follow_up_scan_placeholder"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  }
+}

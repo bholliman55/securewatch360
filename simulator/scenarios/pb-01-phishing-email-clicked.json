@@ -1,0 +1,155 @@
+{
+  "id": "pb-lab-01-phishing-clicked",
+  "name": "Safe synthetic playbook: Phishing message interaction (lab)",
+  "description": "Structured lab simulation of a user acknowledging a suspicious message and a benign redirect to a lab-designated host. No mail APIs, no harvested credentials, no weaponized content.",
+  "severity": "medium",
+  "attack_category": "phishing",
+  "mitre_attack_techniques": ["T1566", "T1204"],
+  "target_type": "user_identity",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["playbook", "email", "awareness", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "user_report",
+      "synthetic_narrative": "User reports a suspicious external message using the lab reporting control."
+    },
+    {
+      "t_offset_seconds": 120,
+      "phase": "correlation",
+      "synthetic_narrative": "Simulator correlates the report to a benign lab landing page hostname (non-routable example domain)."
+    },
+    {
+      "t_offset_seconds": 300,
+      "phase": "response_planning",
+      "synthetic_narrative": "Awareness and decision-engine stubs queue nudges and a low-severity case tag without blocking production mail."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "pb01-evt-01",
+      "kind": "monitoring.alert.synthetic",
+      "payload": {
+        "alert_type": "security_awareness.report",
+        "subject": "LAB: Reported external message (playbook)",
+        "reporter_user_id": "lab-user-sim-01",
+        "claimed_url_host": "landing.example.invalid",
+        "claimed_url_path": "/promo-lab-index",
+        "threat_category": "credential_phishing_signal_synthetic",
+        "severity": "medium"
+      },
+      "metadata": { "simulator": true, "data_classification": "lab_synthetic" }
+    },
+    {
+      "ref": "pb01-evt-02",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: Phishing engagement signal (synthetic)",
+        "severity": "medium",
+        "category": "social_engineering_signal",
+        "asset_type": "user_session",
+        "target_value": "user:lab-user-sim-01"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "pb01-evt-01",
+      "headline": "Awareness/reporting alert recorded",
+      "synthetic_detail": "Synthetic SOC envelope for a voluntary user report; no mailbox compromise assumed."
+    },
+    {
+      "ref": "pb01-evt-02",
+      "headline": "Synthetic finding correlated to identity",
+      "synthetic_detail": "Classifier tags the engagement as simulated social-engineering context for policy evaluation."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "pb01-seq-01",
+      "agent_key": "awareness-workflow",
+      "capability": "training_nudge_or_ticket_opened",
+      "match": { "channels": ["slack_or_email_stub"] }
+    },
+    {
+      "id": "pb01-seq-02",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": { "severity": "medium" }
+    },
+    {
+      "id": "pb01-seq-03",
+      "agent_key": "incident-coordinator",
+      "capability": "low_fidelity_case_opened_or_tagged",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-4-awareness-phishing-training",
+      "triggered_reason_synthetic": "User-reported phishing context requires awareness routing in the lab."
+    },
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "Synthetic alert opens a low-severity incident track for metrics only."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "PR.AT-1",
+      "control_label": "Users understand roles and responsibilities"
+    },
+    {
+      "framework": "soc2",
+      "control_id": "CC2.2",
+      "control_label": "Communication of information"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Simulated nudge to training, policy blocklist update for lab host, optional case tag; no production quarantine in lab mode.",
+    "expected_action_types": ["user_notification", "policy_update_simulation", "case_tagging"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Attach lab training module and record decision-engine evaluation row (stub).",
+      "automation_boundary": "lab_stub_only"
+    },
+    {
+      "synthetic_action": "Append hostname to denylist in policy simulation namespace only.",
+      "automation_boundary": "conditional_operator_confirm"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "awareness_content_and_quarantine_policy",
+      "synthetic_rationale": "Operator confirms whether production-style quarantine rules should be mirrored in the tenant."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "user_and_message_context",
+    "mitre_mapping",
+    "recommended_controls",
+    "remediation_timeline"
+  ],
+  "expected_final_report": {
+    "title": "Phishing acknowledgment — synthetic playbook outcome",
+    "synthetic_executive_summary": "User-driven report was correlated to a benign lab URL; residual risk tracked as awareness and policy posture, not inbox compromise.",
+    "sections": [
+      "timeline",
+      "signals_reviewed",
+      "controls_touchpoints",
+      "remediation_stub_log",
+      "next_steps_human"
+    ]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  }
+}

@@ -4,46 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { inngest } from "@/inngest/client";
 import { requireTenantAccess } from "@/lib/tenant-guard";
 import { API_TENANT_ROLES } from "@/lib/apiRoleMatrix";
-
-const PRIVATE_DOMAIN_RE = /^(localhost|.*\.local|.*\.internal|.*\.test|.*\.example)(:\d+)?$/;
-const IPV4_RE = /^(\d{1,3}\.){3}\d{1,3}$/;
-
-function isIpv4(host: string): boolean {
-  return IPV4_RE.test(host.trim());
-}
-
-function isPrivateOrReservedIpv4(host: string): boolean {
-  if (!isIpv4(host)) return false;
-  const octets = host.split(".").map((n) => Number(n));
-  if (octets.some((n) => Number.isNaN(n) || n < 0 || n > 255)) return true;
-
-  const [a, b] = octets;
-  if (a === 10) return true;
-  if (a === 127) return true;
-  if (a === 0) return true;
-  if (a === 169 && b === 254) return true;
-  if (a === 172 && b >= 16 && b <= 31) return true;
-  if (a === 192 && b === 168) return true;
-  if (a >= 224) return true; // multicast + reserved
-  return false;
-}
-
-export function isBlockedExternalTarget(host: string): boolean {
-  const value = host.toLowerCase().trim();
-  if (PRIVATE_DOMAIN_RE.test(value)) return true;
-  if (isPrivateOrReservedIpv4(value)) return true;
-  return false;
-}
-
-export function normalizeDomain(raw: string): string {
-  try {
-    // Accept bare domains or full URLs
-    const withScheme = raw.startsWith("http") ? raw : `https://${raw}`;
-    return new URL(withScheme).hostname.toLowerCase().trim();
-  } catch {
-    return raw.toLowerCase().trim();
-  }
-}
+import { isBlockedExternalTarget, normalizeDomain } from "@/lib/externalTargetSafety";
 
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
@@ -102,7 +63,7 @@ export async function POST(req: NextRequest) {
   if (isBlockedExternalTarget(domain)) {
     return NextResponse.json(
       { error: "Private/internal domains are not permitted as external intelligence targets" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -141,7 +102,6 @@ export async function POST(req: NextRequest) {
   try {
     await inngest.send(events);
   } catch (err) {
-    // Don't expose provider internals to the frontend
     console.error("[external-intelligence/run] Inngest send failed:", err);
     return NextResponse.json({ error: "Failed to trigger intelligence scan" }, { status: 500 });
   }

@@ -28,6 +28,13 @@ yarn-error.log*
 .DS_Store
 *.tsbuildinfo
 
+# simulator local run artifacts (regenerate with npm run sim:run)
+.simulation-results/
+
+# ephemeral human report outputs (keep README only)
+simulator/reports/output/*
+!simulator/reports/output/README.md
+
 # local terraform plugin cache (reference policy pack)
 iac/**/.terraform/
 iac/**/terraform.tfstate

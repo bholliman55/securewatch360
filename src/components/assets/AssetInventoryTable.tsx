@@ -82,7 +82,9 @@ export function AssetInventoryTable() {
         </div>
       ) : !data?.assets.length ? (
         <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center">
-          <p className="text-sm text-gray-400">No assets indexed. Click "Rebuild Inventory" to scan from findings.</p>
+          <p className="text-sm text-gray-400">
+            No assets indexed. Click &quot;Rebuild Inventory&quot; to scan from findings.
+          </p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-200">
