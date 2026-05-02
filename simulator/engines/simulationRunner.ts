@@ -7,6 +7,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { parseSimulationScenarioDocument, type ScenarioDefinition } from "../schema";
 import { computeAutonomyScorecard } from "../reports/autonomyScorecard";
+import { writeSimulationRunReports } from "../reports/reportGenerator";
 import type { SimulationLabReport } from "../reports/report-types";
 import type { Scenario, SimulatedEvent, SimulationRun } from "../types";
 import {
@@ -89,6 +90,8 @@ export interface RunScenarioOptions {
   scenarioPath?: string;
   mode?: SimulationMode;
   persistenceBaseDir?: string;
+  /** Human JSON/Markdown reports; defaults to `simulator/reports/output` (or `SIMULATION_REPORT_OUTPUT_DIR`). */
+  reportOutputDir?: string;
 }
 
 function pickEnvironment(mode: SimulationMode): SimulationRun["environment"] {
@@ -104,8 +107,21 @@ function pickEnvironment(mode: SimulationMode): SimulationRun["environment"] {
  */
 export async function executeScenarioSimulation(
   scenario: ScenarioDefinition,
-  options?: { mode?: SimulationMode; persistenceBaseDir?: string },
-): Promise<SimulationLabReport & { persisted?: { resultPath?: string; reportPath?: string } }> {
+  options?: {
+    mode?: SimulationMode;
+    persistenceBaseDir?: string;
+    reportOutputDir?: string;
+  },
+): Promise<
+  SimulationLabReport & {
+    persisted?: {
+      resultPath?: string;
+      reportPath?: string;
+      humanReportJsonPath?: string;
+      humanReportMarkdownPath?: string;
+    };
+  }
+> {
   const runId = randomUUID();
   const mode = options?.mode ?? resolveSimulationMode();
   const stamped = stampSimulatedEvents(
@@ -164,24 +180,43 @@ export async function executeScenarioSimulation(
     stampedEvents: stamped,
   });
 
+  const autonomyScorecard = computeAutonomyScorecard({
+    scenario,
+    result: simulationResult,
+    run,
+    signals,
+    securewatchAgents,
+  });
+
   const structuredReport = {
     ...buildStructuredSimulationReport(report, signals, emissions, scenario),
     securewatch_agents: securewatchAgents,
-    autonomy_scorecard: computeAutonomyScorecard({
-      scenario,
-      result: simulationResult,
-      run,
-      signals,
-      securewatchAgents,
-    }),
+    autonomy_scorecard: autonomyScorecard,
   };
 
-  const persisted = await persistSimulationArtifacts({
+  const persistedBase = await persistSimulationArtifacts({
     run,
     result: simulationResult,
     report: structuredReport as unknown as Record<string, unknown>,
     baseDir: options?.persistenceBaseDir,
   });
+
+  const humanReports = await writeSimulationRunReports({
+    scenario,
+    run,
+    result: simulationResult,
+    signals,
+    emissions,
+    autonomyScorecard,
+    securewatchAgents,
+    ...(options?.reportOutputDir !== undefined ? { outputDirectory: options.reportOutputDir } : {}),
+  });
+
+  const persisted = {
+    ...persistedBase,
+    humanReportJsonPath: humanReports.jsonPath,
+    humanReportMarkdownPath: humanReports.markdownPath,
+  };
 
   return {
     ...report,
@@ -205,6 +240,7 @@ export async function executeAllScenarioSimulations(opts?: RunScenarioOptions) {
       await executeScenarioSimulation(scenario, {
         mode,
         persistenceBaseDir: opts?.persistenceBaseDir,
+        reportOutputDir: opts?.reportOutputDir,
       }),
     );
   }

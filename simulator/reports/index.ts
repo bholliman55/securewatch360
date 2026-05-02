@@ -8,3 +8,14 @@ export {
   type AutonomyScorecardInput,
   type AutonomyReadinessBand,
 } from "./autonomyScorecard";
+
+export {
+  SIMULATION_RUN_REPORT_SCHEMA_VERSION,
+  buildSimulationRunHumanReport,
+  renderSimulationRunReportMarkdown,
+  defaultSimulationReportOutputDir,
+  writeSimulationRunReports,
+  type SimulationRunHumanReport,
+  type SimulationRunReportBuildInput,
+  type WriteSimulationRunReportsResult,
+} from "./reportGenerator";

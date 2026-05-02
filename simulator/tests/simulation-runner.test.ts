@@ -29,6 +29,7 @@ describe("Simulation runner (local sink)", () => {
 
   it("persists artifact JSON for minimal local execution", async () => {
     const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "sw360-sim-"));
+    const humanTmp = await fs.mkdtemp(path.join(os.tmpdir(), "sw360-sim-human-"));
     const defs = await loadScenarioDefinitionsFromDirectory(path.join(__dirname, "../scenarios"));
     const scenario = defs.find((d) => d.id === "lab-phish-001");
     expect(scenario).toBeDefined();
@@ -36,6 +37,7 @@ describe("Simulation runner (local sink)", () => {
     const report = await executeScenarioSimulation(scenario!, {
       mode: "local",
       persistenceBaseDir: tmp,
+      reportOutputDir: humanTmp,
     });
 
     expect(report.result.runId).toMatch(
@@ -47,6 +49,13 @@ describe("Simulation runner (local sink)", () => {
     const stat = await fs.stat(report.persisted!.resultPath!);
     expect(stat.isFile()).toBe(true);
 
+    expect(report.persisted?.humanReportJsonPath).toBeDefined();
+    expect(report.persisted?.humanReportMarkdownPath).toBeDefined();
+    const jr = JSON.parse(await fs.readFile(report.persisted!.humanReportJsonPath!, "utf8"));
+    expect(jr.scenario_name).toBeTruthy();
+    expect(jr.timeline.length).toBeGreaterThanOrEqual(1);
+
     await fs.rm(tmp, { recursive: true, force: true });
+    await fs.rm(humanTmp, { recursive: true, force: true });
   });
 });

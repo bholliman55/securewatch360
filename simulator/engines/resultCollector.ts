@@ -304,6 +304,8 @@ function summarizeRun(
 export interface StoredSimulationArtifacts {
   resultPath?: string;
   reportPath?: string;
+  humanReportJsonPath?: string;
+  humanReportMarkdownPath?: string;
 }
 
 /** Writes JSON payloads for CI/local inspection. */
