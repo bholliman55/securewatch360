@@ -6,6 +6,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { parseSimulationScenarioDocument, type ScenarioDefinition } from "../schema";
+import { computeAutonomyScorecard } from "../reports/autonomyScorecard";
 import type { SimulationLabReport } from "../reports/report-types";
 import type { Scenario, SimulatedEvent, SimulationRun } from "../types";
 import {
@@ -156,13 +157,22 @@ export async function executeScenarioSimulation(
     result: simulationResult,
   };
 
+  const securewatchAgents = runAllSecureWatchAgentValidators({
+    scenario,
+    runId,
+    signals,
+    stampedEvents: stamped,
+  });
+
   const structuredReport = {
     ...buildStructuredSimulationReport(report, signals, emissions, scenario),
-    securewatch_agents: runAllSecureWatchAgentValidators({
+    securewatch_agents: securewatchAgents,
+    autonomy_scorecard: computeAutonomyScorecard({
       scenario,
-      runId,
+      result: simulationResult,
+      run,
       signals,
-      stampedEvents: stamped,
+      securewatchAgents,
     }),
   };
 
