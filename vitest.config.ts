@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["src/__tests__/**/*.test.ts", "src/**/*.test.ts"],
+    include: ["src/__tests__/**/*.test.ts", "src/**/*.test.ts", "simulator/**/*.test.ts"],
     exclude: ["src/agents/agent6-quantum-readiness/tests/**"],
     coverage: {
       provider: "v8",

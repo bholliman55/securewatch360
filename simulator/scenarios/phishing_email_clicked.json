@@ -1,0 +1,94 @@
+{
+  "id": "lab-phish-001",
+  "name": "LAB: Synthetic phishing link acknowledged (no mailbox access)",
+  "description": "Synthetic metadata simulating a user-reported suspicious message and a benign redirect to a lab-designated domain. No phishing kit, no credential harvesting, no live mail APIs.",
+  "severity": "medium",
+  "attack_category": "phishing",
+  "mitre_attack_techniques": ["T1566", "T1204"],
+  "target_type": "user_identity",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["email", "awareness", "safelink"],
+  "simulated_events": [
+    {
+      "ref": "evt-01",
+      "kind": "monitoring.alert.synthetic",
+      "payload": {
+        "alert_type": "security_awareness.report",
+        "subject": "LAB: Reported external message (fixture)",
+        "reporter_user_id": "lab-user-aurora-019",
+        "claimed_url_host": "landing.example.invalid",
+        "claimed_url_path": "/promo-lab-index",
+        "threat_category": "credential_phishing_signal_synthetic"
+      },
+      "metadata": {
+        "simulator": true,
+        "data_classification": "lab_synthetic"
+      }
+    },
+    {
+      "ref": "evt-02",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: Potential phishing engagement (synthetic)",
+        "severity": "medium",
+        "category": "social_engineering_signal",
+        "asset_type": "user_session",
+        "target_value": "user:lab-user-aurora-019"
+      }
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "seq-01",
+      "agent_key": "awareness-workflow",
+      "capability": "training_nudge_or_ticket_opened",
+      "match": {
+        "channels": ["slack_or_email_stub"]
+      }
+    },
+    {
+      "id": "seq-02",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": {
+        "severity": "medium"
+      }
+    },
+    {
+      "id": "seq-03",
+      "agent_key": "incident-coordinator",
+      "capability": "low_fidelity_case_opened_or_tagged",
+      "match": {}
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "PR.AT-1",
+      "control_label": "Users understand roles and responsibilities"
+    },
+    {
+      "framework": "soc2",
+      "control_id": "CC2.2",
+      "control_label": "Communication of information"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "LAB expectation: blocklist host in policy simulation, schedule awareness module, optionally open low-severity case.",
+    "expected_action_types": ["user_notification", "policy_update_simulation", "case_tagging"],
+    "human_in_the_loop": true
+  },
+  "expected_report_sections": [
+    "executive_summary",
+    "user_and_message_context",
+    "mitre_mapping",
+    "recommended_controls",
+    "remediation_timeline"
+  ],
+  "pass_fail_rules": {
+    "agent_sequence_order_required": true,
+    "all_report_sections_required": true,
+    "min_controls_matched": 1,
+    "require_all_agent_steps": true
+  }
+}
