@@ -1,13 +1,8 @@
 {
   "compilerOptions": {
     "jsx": "react-jsx",
-    "types": ["react", "react-dom"]
+    "types": ["react", "react-dom"],
+    "forceConsistentCasingInFileNames": true
   },
-  "include": ["src"],
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" },
-    { "path": "./supabase/functions/tsconfig.json" }
-  ]
+  "include": ["src"]
 }

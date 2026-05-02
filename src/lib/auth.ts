@@ -1,6 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import type { User } from "@supabase/supabase-js";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 function getAuthEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -41,6 +41,20 @@ export async function getSupabaseServerAuthClient() {
  * Simple helper for server components/routes that need current auth context.
  */
 export async function getCurrentUser(): Promise<User | null> {
+  const headerStore = await headers();
+  const authorization = headerStore.get("authorization");
+  const bearerToken = authorization?.toLowerCase().startsWith("bearer ")
+    ? authorization.slice("bearer ".length).trim()
+    : null;
+
+  if (bearerToken) {
+    const supabase = await getSupabaseServerAuthClient();
+    const { data, error } = await supabase.auth.getUser(bearerToken);
+    if (!error && data.user) {
+      return data.user;
+    }
+  }
+
   const supabase = await getSupabaseServerAuthClient();
   const { data, error } = await supabase.auth.getUser();
   if (error) return null;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sun, Moon, Settings, User, LogOut, RefreshCw, Building2, ChevronDown } from "lucide-react";
+import { Sun, Moon, Settings, User, LogOut, RefreshCw, Building2, ShieldCheck } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useTenant } from "../contexts/TenantContext";
@@ -8,7 +8,7 @@ import secureWatchLogo from "../assets/securewatch360-logo.png";
 export default function TopNav({ onRefresh }: { onRefresh?: () => void }) {
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
-  const { selectedTenantId, setSelectedTenantId, tenants, selectedTenantName } = useTenant();
+  const { selectedTenantId, tenants, selectedTenantName } = useTenant();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -46,33 +46,18 @@ export default function TopNav({ onRefresh }: { onRefresh?: () => void }) {
           />
           <div>
             <h1 className="text-xl font-bold text-[var(--sw-text-primary)] tracking-tight">SecureWatch360</h1>
-            <p className="text-xs uppercase tracking-[0.14em] text-[#29b6f6]">Security Operations Center</p>
+            <p className="text-xs uppercase tracking-[0.14em] text-[var(--sw-accent-bright)]">
+              One Platform. Total Protection. Continuous Compliance.
+            </p>
           </div>
         </div>
 
         <div className="flex items-center space-x-4">
-          {tenants.length > 1 ? (
-            <div className="relative flex items-center gap-2 px-3 py-2 bg-[var(--sw-surface-elevated)] border border-[var(--sw-border)] rounded-lg hover:border-[var(--sw-accent)] transition-colors group">
-              <Building2 className="w-4 h-4 text-[var(--sw-text-muted)] group-hover:text-[var(--sw-accent)] transition-colors shrink-0" />
-              <select
-                value={selectedTenantId ?? ""}
-                onChange={(e) => setSelectedTenantId(e.target.value || null)}
-                aria-label="Select organization"
-                title="Select organization"
-                className="bg-transparent text-sm font-medium text-[var(--sw-text-primary)] focus:outline-none cursor-pointer pr-5 appearance-none"
-              >
-                {tenants.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-[var(--sw-text-muted)] pointer-events-none absolute right-2.5" />
-            </div>
-          ) : selectedTenantName ? (
+          {selectedTenantName ? (
             <div className="flex items-center gap-2 px-3 py-2 bg-[color:color-mix(in_srgb,var(--sw-accent)_10%,transparent)] border border-[color:color-mix(in_srgb,var(--sw-accent)_35%,transparent)] rounded-lg">
               <Building2 className="w-4 h-4 text-[var(--sw-accent)] shrink-0" />
               <span className="text-sm font-semibold text-[var(--sw-accent)]">{selectedTenantName}</span>
+              <ShieldCheck className="w-4 h-4 text-[var(--sw-pulse)] shrink-0" />
             </div>
           ) : null}
 

@@ -56,22 +56,44 @@ export interface ListedScenarioRow {
   definition: ScenarioDefinition;
 }
 
-/** List validated scenario JSON fixtures (sorted by stem). */
+/** List validated scenario JSON fixtures (recursive; sorted by stem). */
 export async function loadScenarioListing(scenariosDir: string): Promise<ListedScenarioRow[]> {
-  const entries = await fs.readdir(scenariosDir, { withFileTypes: true });
   const out: ListedScenarioRow[] = [];
-  for (const dent of entries) {
-    if (!dent.isFile() || !dent.name.endsWith(".json")) continue;
-    if (dent.name.startsWith(".")) continue;
-    const full = path.join(scenariosDir, dent.name);
+
+  async function walk(dir: string, relPrefix: string): Promise<void> {
+    let entries;
     try {
-      const raw = JSON.parse(await fs.readFile(full, "utf8"));
-      const definition = parseSimulationScenarioDocument(raw);
-      out.push({ file: dent.name, stem: dent.name.replace(/\.json$/i, ""), definition });
+      entries = await fs.readdir(dir, { withFileTypes: true });
     } catch {
-      /* skip malformed */
+      return;
+    }
+
+    for (const dent of entries) {
+      if (dent.name.startsWith(".") || dent.name === "node_modules") continue;
+      const full = path.join(dir, dent.name);
+      const rel = relPrefix ? `${relPrefix}/${dent.name}` : dent.name;
+
+      if (dent.isDirectory()) {
+        await walk(full, rel);
+        continue;
+      }
+      if (!dent.isFile() || !dent.name.endsWith(".json")) continue;
+
+      try {
+        const raw = JSON.parse(await fs.readFile(full, "utf8"));
+        const definition = parseSimulationScenarioDocument(raw);
+        out.push({
+          file: rel.replace(/\\/g, "/"),
+          stem: path.basename(rel, ".json"),
+          definition,
+        });
+      } catch {
+        /* skip malformed */
+      }
     }
   }
+
+  await walk(scenariosDir, "");
   out.sort((a, b) => a.stem.localeCompare(b.stem));
   return out;
 }

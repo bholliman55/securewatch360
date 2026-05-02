@@ -60,6 +60,8 @@ Wire production usage with **`SIMULATION_MODE`** — never commit keys.
 | `SIMULATION_TENANT_ID` | Tenant UUID scoped to emits + polling (required for `supabase` / `inngest`) |
 | `SIMULATION_AGENT_WAIT_MS`, `SIMULATION_POLL_INTERVAL_MS`, `SIMULATION_MAX_POLL_ITERATIONS` | Observation window tuning |
 | `SIMULATION_RESULTS_DIR` | Overrides JSON artifact folder (defaults to `.simulation-results/`) |
+| `SIMULATION_REPORT_OUTPUT_DIR` | Human JSON/Markdown reports (defaults to `simulator/reports/output`) |
+| `SIMULATION_DEMO_MODE` | When `true`, coerces orchestration to `local`, stamps fictitious MSSP fixtures, blocks live remediation hooks |
 | `SIMULATION_EMIT_STAGGER_MS` | Delay between emits (default `250`) |
 
 ## Safety rules
@@ -74,8 +76,10 @@ Wire production usage with **`SIMULATION_MODE`** — never commit keys.
 From the repo root:
 
 ```bash
-npm run test -- simulator/tests
+npm run test:sim
 ```
+
+Golden-path fixtures live under `simulator/scenarios/golden-path/`; resolve them by **`id`/stem substring** (`golden-phishing-training-monitoring`) or pass a **path** ending in `.json`.
 
 ## Importing from application code
 

@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 export interface ExecuteScanRequest {
   scanId: number;
@@ -57,7 +58,7 @@ class ScanExecutionService {
           table: 'scans',
           filter: `id=eq.${scanId}`
         },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<{ [key: string]: unknown }>) => {
           callback(payload.new);
         }
       )
@@ -75,7 +76,7 @@ class ScanExecutionService {
           table: 'vulnerabilities',
           filter: `scan_id=eq.${scanId}`
         },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<{ [key: string]: unknown }>) => {
           callback(payload.new);
         }
       )
