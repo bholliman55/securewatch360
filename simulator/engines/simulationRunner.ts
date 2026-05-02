@@ -37,25 +37,53 @@ export function defaultScenariosDirectory(cwd?: string): string {
   return path.join(base, "simulator", "scenarios");
 }
 
+/** Recursively collect `*.json` scenario fixtures (excludes dot-directories and node_modules). */
+async function discoverScenarioJsonFiles(root: string): Promise<string[]> {
+  const paths: string[] = [];
+
+  async function walk(dir: string): Promise<void> {
+    let entries;
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code === "ENOENT") return;
+      throw e;
+    }
+
+    for (const dent of entries) {
+      const full = path.join(dir, dent.name);
+      if (dent.isDirectory()) {
+        if (dent.name.startsWith(".") || dent.name === "node_modules") continue;
+        await walk(full);
+        continue;
+      }
+      if (!dent.isFile() || !dent.name.endsWith(".json") || dent.name.startsWith(".")) continue;
+      paths.push(full);
+    }
+  }
+
+  await walk(root);
+  paths.sort((a, b) => a.localeCompare(b));
+  return paths;
+}
+
 export async function loadScenarioDefinitionsFromDirectory(
   dir?: string,
 ): Promise<ScenarioDefinition[]> {
   const root = dir ?? defaultScenariosDirectory();
 
   try {
-    const entries = await fs.readdir(root, { withFileTypes: true });
+    const files = await discoverScenarioJsonFiles(root);
     const defs: ScenarioDefinition[] = [];
 
-    for (const dent of entries) {
-      if (!dent.isFile() || !dent.name.endsWith(".json")) continue;
-      if (dent.name.startsWith(".")) continue;
-      const full = path.join(root, dent.name);
+    for (const full of files) {
       const raw = JSON.parse(await fs.readFile(full, "utf8"));
       try {
         defs.push(parseSimulationScenarioDocument(raw));
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        throw new Error(`Invalid scenario fixture [${dent.name}]: ${msg}`);
+        const label = path.relative(root, full) || full;
+        throw new Error(`Invalid scenario fixture [${label}]: ${msg}`);
       }
     }
 
@@ -258,7 +286,7 @@ export async function executeScenarioSimulation(
   };
 }
 
-/** Load every `*.json` scenario from `{repo}/simulator/scenarios` unless overridden. */
+/** Load every `*.json` scenario recursively from `{repo}/simulator/scenarios` (includes subdirs such as `golden-path/`) unless overridden. */
 export async function executeAllScenarioSimulations(opts?: RunScenarioOptions) {
   const scenarioFiles = opts?.scenarioPath
     ? await loadScenarioDefinitionFile(opts.scenarioPath).then((s) => [s])
@@ -314,6 +342,9 @@ export function buildStructuredSimulationReport(
       severity: scenario.severity,
       mitre_attack_techniques: scenario.mitre_attack_techniques,
       target_type: scenario.target_type,
+      ...(scenario.golden_path_demo !== undefined
+        ? { golden_path_demo: scenario.golden_path_demo }
+        : {}),
     },
   };
 }

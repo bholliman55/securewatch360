@@ -10,6 +10,9 @@ export {
   passFailRulesSchema,
   failureInjectionTypeSchema,
   failureInjectionSchema,
+  goldenPathDatabaseOutputExpectationSchema,
+  goldenPathDashboardSummarySchema,
+  goldenPathDemoSchema,
   scenarioDefinitionSchema,
   parseScenarioDefinition,
   safeParseScenarioDefinition,
@@ -34,6 +37,7 @@ export {
   type AttackPlaybookDefinition,
   type FailureInjectionType,
   type FailureInjection,
+  type GoldenPathDemo,
 } from "./scenario.schema";
 
 export {

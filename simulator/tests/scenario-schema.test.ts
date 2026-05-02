@@ -16,6 +16,11 @@ const playbookFiles = fs
   .filter((f) => f.startsWith("pb-") && f.endsWith(".json"))
   .sort();
 
+const goldenPathDir = path.join(scenariosDir, "golden-path");
+const goldenPathFiles = fs.existsSync(goldenPathDir)
+  ? fs.readdirSync(goldenPathDir).filter((f) => f.endsWith(".json")).sort()
+  : [];
+
 describe("scenarioDefinitionSchema", () => {
   it.each([
     "phishing_email_clicked.json",
@@ -31,6 +36,16 @@ describe("scenarioDefinitionSchema", () => {
 
   it("has fifteen safe synthetic playbook JSON files under scenarios/", () => {
     expect(playbookFiles.length).toBe(15);
+  });
+
+  it("has five golden-path investor playbook JSON files under scenarios/golden-path/", () => {
+    expect(goldenPathFiles.length).toBe(5);
+  });
+
+  it.each(goldenPathFiles)("parses golden-path playbook fixture golden-path/%s", (file) => {
+    const raw = JSON.parse(fs.readFileSync(path.join(goldenPathDir, file), "utf8"));
+    expect(attackPlaybookSchema.safeParse(raw).success).toBe(true);
+    expect(() => parseSimulationScenarioDocument(raw)).not.toThrow();
   });
 
   it.each(playbookFiles)("parses safe synthetic playbook fixture %s", (file) => {

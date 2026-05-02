@@ -15,6 +15,8 @@ describe("Scenario loading from disk", () => {
     expect(defs.length).toBeGreaterThan(0);
     const ids = new Set(defs.map((d) => d.id));
     expect(ids.has("lab-phish-001")).toBe(true);
+    expect(ids.has("golden-msp-rdp-remediated")).toBe(true);
+    expect(ids.has("golden-ransomware-isolated-incident-report")).toBe(true);
   });
 
   it("loads scenarios from an isolated temporary directory copy", async () => {

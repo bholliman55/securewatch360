@@ -127,6 +127,33 @@ export const failureInjectionSchema = z
 
 export type FailureInjection = z.infer<typeof failureInjectionSchema>;
 
+/** Investor / demo narratives — what leaders expect to see in data stores, dashboards, and briefings (synthetic only). */
+export const goldenPathDatabaseOutputExpectationSchema = z
+  .object({
+    logical_table_family: z.string().min(1),
+    business_outcome: z.string().min(1),
+    synthetic_row_preview: z.string().min(1),
+  })
+  .strict();
+
+export const goldenPathDashboardSummarySchema = z
+  .object({
+    headline: z.string().min(1),
+    kpis: z.array(z.string().min(1)).min(1),
+    narrative: z.string().min(1),
+  })
+  .strict();
+
+export const goldenPathDemoSchema = z
+  .object({
+    executive_timeline_summary: z.string().min(1),
+    expected_database_outputs: z.array(goldenPathDatabaseOutputExpectationSchema).min(1),
+    expected_dashboard_summary: goldenPathDashboardSummarySchema,
+  })
+  .strict();
+
+export type GoldenPathDemo = z.infer<typeof goldenPathDemoSchema>;
+
 /**
  * Full scenario document (e.g. JSON fixture under `simulator/fixtures/samples/`).
  * Field names use snake_case to match compliance-style exports and static analysis tools.
@@ -152,6 +179,7 @@ export const scenarioDefinitionSchema = z
       .enum(["synthetic_metadata_only", "fixture_replay", "mock_orchestration"])
       .default("synthetic_metadata_only"),
     tags: z.array(z.string().min(1)).optional(),
+    golden_path_demo: goldenPathDemoSchema.optional(),
   })
   .strict();
 

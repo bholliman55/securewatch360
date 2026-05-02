@@ -1,0 +1,199 @@
+{
+  "id": "golden-msp-rdp-remediated",
+  "name": "Golden path: MSP discovers exposed client RDP and closes the gap",
+  "description": "Board-ready story for a managed service provider (MSP): continuous assessment flags internet-reachable Remote Desktop on a labeled client workstation, ownership is clarified with the client's IT lead, corrective changes are tracked to completion, and post-change validation confirms the blast radius collapsed. Demonstration-grade synthetic telemetry only.",
+  "severity": "high",
+  "attack_category": "exposed_service",
+  "mitre_attack_techniques": ["T1133", "T1046"],
+  "target_type": "managed_client_endpoint",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["golden_path", "investor_demo", "msp", "remediation_closed", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "risk_signal_ingested",
+      "synthetic_narrative": "SecureWatch correlates perimeter telemetry with CMDB context: workstation ACME-WIN-FIN03 (MSP-owned asset tag) exposes RDP-compatible listening behavior to commodity scan sources—no brute-force payloads, heuristic signal only."
+    },
+    {
+      "t_offset_seconds": 420,
+      "phase": "stakeholder_alignment",
+      "synthetic_narrative": "Service delivery manager notifies the customer's IT owner; MSP policy requires VPN-only privileged access—the client acknowledges the exception that caused the posture drift."
+    },
+    {
+      "t_offset_seconds": 1800,
+      "phase": "change_executed",
+      "synthetic_narrative": "Firewall rule simulation denies WAN→host RDP; host-based policy forces NLA-only where still required internally; MFA gate on privileged jump path recorded as satisfied in lab metadata."
+    },
+    {
+      "t_offset_seconds": 3600,
+      "phase": "validation_and_retention",
+      "synthetic_narrative": "Follow-up posture scan stub shows no reachable RDP from the synthetic internet perspective; auditor-friendly evidence bundle attached to tenant record."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "gp-msp-rdp-e1",
+      "kind": "external_intel.synthetic",
+      "payload": {
+        "source": "msp_perimeter_intel_stub",
+        "client_name_fixture": "ACME Packaging (MSP demo tenant)",
+        "asset_hostname": "acme-win-fin03.lab.example.invalid",
+        "service_label": "remote_desktop_protocol_exposure_synthetic",
+        "exposure": "internet_reachable_fixture",
+        "severity": "high"
+      },
+      "metadata": { "golden_path": true }
+    },
+    {
+      "ref": "gp-msp-rdp-e2",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "DEMO: Public RDP path on MSP-managed workstation (synthetic)",
+        "severity": "high",
+        "category": "network_exposure",
+        "asset_type": "host",
+        "target_value": "host:acme-win-fin03.lab.example.invalid"
+      }
+    },
+    {
+      "ref": "gp-msp-rdp-e3",
+      "kind": "remediation.execution.synthetic",
+      "payload": {
+        "summary": "RDP WAN exposure removed; privileged access routed via MSP VPN posture (simulation)",
+        "status": "completed_synthetic",
+        "validation_note": "Rescan shows no reachable RDP from external vantage (fixture)"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "gp-msp-rdp-e1",
+      "headline": "MSP perimeter intelligence observed exposure",
+      "synthetic_detail": "Signal is labeled as demo-only; links to client contract line and asset owner in CMDB stub."
+    },
+    {
+      "ref": "gp-msp-rdp-e2",
+      "headline": "Normalized finding for customer leadership",
+      "synthetic_detail": "Severity and business impact summarized in MSP executive language for QBR-ready reporting."
+    },
+    {
+      "ref": "gp-msp-rdp-e3",
+      "headline": "Remediation verified",
+      "synthetic_detail": "Closed-loop evidence shows policy restored and stakeholder sign-off path satisfied in lab."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "gp-msp-s1",
+      "agent_key": "scanner-external-recon",
+      "capability": "surface_finding_ingest",
+      "match": {}
+    },
+    {
+      "id": "gp-msp-s2",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": { "severity": "high" }
+    },
+    {
+      "id": "gp-msp-s3",
+      "agent_key": "incident-coordinator",
+      "capability": "remediation_ticket_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-1-scanner-external-recon",
+      "triggered_reason_synthetic": "Perimeter-aligned exposure signal ingested with asset context."
+    },
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "High-impact exposure routes through IR orchestration and customer comms stubs."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "PR.IP-1",
+      "control_label": "Baseline configuration maintained"
+    },
+    {
+      "framework": "cis",
+      "control_id": "9.2",
+      "control_label": "Restrict remote desktop exposure (conceptually mapped)"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Eliminate WAN RDP, enforce MSP VPN boundary, privileged access via MFA-protected bastion posture; archive validation scans for MSSP audit.",
+    "expected_action_types": ["firewall_change_recorded", "config_hardening", "external_rescan_proof"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Generate customer-facing remediation packet with SLA clock and milestone checklist.",
+      "automation_boundary": "recommended_automation_simulation"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "customer_change_calendar",
+      "synthetic_rationale": "MSP defers intrusive network moves to approved maintenance windows with customer CAB acknowledgment."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "customer_impact_statement",
+    "exposure_evidence",
+    "remediation_proof",
+    "compliance_mappings"
+  ],
+  "expected_final_report": {
+    "title": "Executive briefing — RDP exposure discovered and remediated under MSP governance",
+    "synthetic_executive_summary": "We detected an internet-reachable remote administration posture on an MSP-managed client asset, prioritized it with accountable owners, executed boundary-hardening changes in line with MSP policy, and closed the finding with repeatable validation artifacts suitable for SOC 2 and customer QBR narratives.",
+    "sections": ["what_was_at_risk", "what_we_did", "how_we_verified", "how_we_ll_prevent_recurrence"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  },
+  "golden_path_demo": {
+    "executive_timeline_summary": "From first signal to validated closure inside a single MSP business day: discovery at T+0, client alignment inside the first operational hour, change execution within SLA for high exposures, independent-style validation documenting that the WAN attack surface for RDP collapsed.",
+    "expected_database_outputs": [
+      {
+        "logical_table_family": "findings",
+        "business_outcome": "Risk item exists with MSP client attribution, severity, and traceable lifecycle through remediated.",
+        "synthetic_row_preview": "{\"title_contains\":\"Public RDP\", \"severity\":\"high\", \"status\":\"closed\", \"client_tag\":\"ACME_MSP_demo\"}"
+      },
+      {
+        "logical_table_family": "audit_logs",
+        "business_outcome": "Tamper-evident history for who saw the signal, who approved remediation, and when validation completed.",
+        "synthetic_row_preview": "{\"action\":\"finding.remediation_validated\", \"actor_role\":\"msp_operator\", \"summary\":\"external_rescan_green\"}"
+      },
+      {
+        "logical_table_family": "remediation_actions",
+        "business_outcome": "Work-items map to SLA timers and MSP billing/PSA-friendly references (demo stub).",
+        "synthetic_row_preview": "{\"type\":\"network_hardening\", \"completed_at\":\"within_sla_fixture\", \"evidence_refs\":[\"rescan_bundle_v1\"]}"
+      },
+      {
+        "logical_table_family": "policy_decisions",
+        "business_outcome": "Decision engine rationale stored for MSSP auditors (fail-open/fail-closed posture per tenant controls).",
+        "synthetic_row_preview": "{\"action_strength\":\"create_remediation\", \"deterministic\":\"true\", \"golden_path_demo\":\"true\"}"
+      }
+    ],
+    "expected_dashboard_summary": {
+      "headline": "High-risk exposure surfaced and remediated faster than SLA — customer-visible proof",
+      "kpis": [
+        "Time-to-acknowledged (executive metric): trending under MSP Gold-tier target for critical exposure class",
+        "Open critical exposures attributable to WAN RDP posture: trending to zero across monitored estate (demo cohort)",
+        "Customer satisfaction proxy (CSAT) retained on playbook communication quality (synthetic rollup)",
+        "Repeat drift guardrails: MFA + VPN prerequisite compliance rate improved post-change",
+        "Audit readiness: SOC 2 / CMMC evidence packets auto-staged for MSSP auditors"
+      ],
+      "narrative": "Leadership sees a single-pane story: exposure detected, stakeholder loop closed, corrective work packaged with evidence—not a toolchain demo. Charts emphasize reduction in unmanaged attack surface and predictable MSP operating rhythm."
+    }
+  }
+}
