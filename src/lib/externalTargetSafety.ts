@@ -2,13 +2,17 @@ import { isIP } from "node:net";
 
 /**
  * SSRF-safe checks for user-supplied external intelligence / discovery targets.
- * Handles IPv4-mapped IPv6 (::ffff:a.b.c.d) and RFC 6598 CGNAT (100.64.0.0/10).
+ * Aligns public-IPv4 allowlisting with merged main (#39); blocks RFC1918, CGNAT,
+ * multicast, loops, IPv4-mapped SSRF chains, unsafe IPv6 literals, and pseudo-domains.
  */
 
 function stripZoneId(hostname: string): string {
   const i = hostname.indexOf("%");
   return i === -1 ? hostname : hostname.slice(0, i);
 }
+
+const RESERVED_HOST_PATTERN =
+  /^(localhost|.*\.local|.*\.internal|.*\.test|.*\.example)(:\d+)?$/i;
 
 export function parseIpv4Octets(value: string): [number, number, number, number] | null {
   const m = value.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
@@ -19,7 +23,7 @@ export function parseIpv4Octets(value: string): [number, number, number, number]
 }
 
 /**
- * RFC1918, loopback, link-local, CGNAT (RFC 6598), multicast, and reserved IPv4.
+ * RFC1918, loopback, CGNAT (RFC 6598), multicast, reserved IPv4, etc.
  */
 export function isPrivateCgnatOrReservedIpv4(octets: [number, number, number, number]): boolean {
   const [a, b] = octets;
@@ -34,17 +38,6 @@ export function isPrivateCgnatOrReservedIpv4(octets: [number, number, number, nu
   return false;
 }
 
-function isReservedHostname(hostname: string): boolean {
-  const h = hostname.toLowerCase().trim();
-  if (h === "localhost") return true;
-  return (
-    h.endsWith(".local") ||
-    h.endsWith(".internal") ||
-    h.endsWith(".test") ||
-    h.endsWith(".example")
-  );
-}
-
 function ipv6FirstSegment(lower: string): string | null {
   if (lower.startsWith("::")) {
     const rest = lower.slice(2);
@@ -57,8 +50,6 @@ function ipv6FirstSegment(lower: string): string | null {
 function isBlockedIpv6Literal(hostname: string): boolean {
   const h = hostname.toLowerCase();
   if (h === "::1") return true;
-  if (h.startsWith("::ffff:")) return false;
-
   if (h.startsWith("ff")) return true;
   if (h.startsWith("fc") || h.startsWith("fd")) return true;
   if (h.startsWith("2001:db8")) return true;
@@ -73,36 +64,44 @@ function isBlockedIpv6Literal(hostname: string): boolean {
 }
 
 /**
- * True when the hostname must not be used for external discovery / OSINT triggers.
- * - Blocks reserved hostnames (.internal, localhost, …).
- * - Blocks any dotted IPv4 literal and any ::ffff:IPv4 mapped form (fixes SSRF via ::ffff:10.0.0.1).
- * - Blocks non-public IPv6 literals (loopback, ULA, link-local, multicast, documentation).
- * - Blocks malformed colon strings that are not valid IPs.
+ * Normalize a URL hostname or bare domain for validation.
  */
+export function normalizeDomain(raw: string): string {
+  try {
+    const withScheme = raw.startsWith("http") ? raw : `https://${raw}`;
+    return new URL(withScheme).hostname.toLowerCase().trim();
+  } catch {
+    return raw.toLowerCase().trim();
+  }
+}
+
 export function isBlockedExternalTarget(hostname: string): boolean {
   const h = stripZoneId(hostname.trim());
   if (!h) return true;
 
   const lower = h.toLowerCase();
 
-  if (isReservedHostname(lower)) return true;
+  if (RESERVED_HOST_PATTERN.test(lower)) return true;
 
   if (lower.startsWith("::ffff:")) {
-    return true;
+    const ipv4Tail = lower.slice(7);
+    const octets = parseIpv4Octets(ipv4Tail);
+    if (!octets) return true;
+    return isPrivateCgnatOrReservedIpv4(octets);
   }
 
   const family = isIP(lower);
   if (family === 4) {
-    return true;
+    const octets = parseIpv4Octets(lower);
+    if (!octets) return true;
+    return isPrivateCgnatOrReservedIpv4(octets);
   }
 
   if (family === 6) {
     return isBlockedIpv6Literal(lower);
   }
 
-  if (lower.includes(":")) {
-    return true;
-  }
+  if (lower.includes(":")) return true;
 
   return false;
 }

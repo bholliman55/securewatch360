@@ -30,8 +30,8 @@ describe("externalTargetSafety", () => {
       expect(isBlockedExternalTarget("::ffff:100.64.0.5")).toBe(true);
     });
 
-    it("blocks IPv4-mapped public addresses (parity with bare IPv4 literals)", () => {
-      expect(isBlockedExternalTarget("::ffff:8.8.8.8")).toBe(true);
+    it("allows IPv4-mapped public addresses (matches public dotted-quad policy)", () => {
+      expect(isBlockedExternalTarget("::ffff:8.8.8.8")).toBe(false);
     });
 
     it("allows normal public domains", () => {
@@ -44,9 +44,12 @@ describe("externalTargetSafety", () => {
       expect(isBlockedExternalTarget("app.internal")).toBe(true);
     });
 
-    it("blocks bare IPv4 literals", () => {
+    it("blocks private bare IPv4 literals", () => {
       expect(isBlockedExternalTarget("10.0.0.1")).toBe(true);
-      expect(isBlockedExternalTarget("8.8.8.8")).toBe(true);
+    });
+
+    it("allows public bare IPv4 literals", () => {
+      expect(isBlockedExternalTarget("8.8.8.8")).toBe(false);
     });
 
     it("blocks IPv6 loopback and ULA", () => {
