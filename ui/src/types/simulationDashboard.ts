@@ -25,4 +25,8 @@ export interface SimulationDashboardSummaryUi {
   executiveSummary: string;
   technicalSummary: string;
   nextRecommendedAction: string;
+  /** Present when runner used demo rehearsal mode — matches persisted JSON keys. */
+  simulation_demo_mode?: boolean;
+  demo_client_display_name?: string;
+  demo_disclaimer?: string;
 }

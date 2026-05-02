@@ -9,6 +9,7 @@ import type { EmitCorrelation } from "../engines/eventEmitter";
 import type { AutonomyScorecard } from "./autonomyScorecard";
 import { autonomyReadinessLabel } from "./autonomyScorecard";
 import type { AgentValidatorResult } from "../validators/agentValidatorShared";
+import { buildDemoTechnicalSummarySuffix } from "../fixtures/demoMode";
 
 export type SimulationDashboardSummaryStatus = "passed" | "failed" | "partial";
 
@@ -38,6 +39,10 @@ export interface SimulationDashboardSummary {
   executiveSummary: string;
   technicalSummary: string;
   nextRecommendedAction: string;
+  /** Present when `SIMULATION_DEMO_MODE` or runner `simulationDemoMode` forced fictitious client fixtures. */
+  simulation_demo_mode?: boolean;
+  demo_client_display_name?: string;
+  demo_disclaimer?: string;
 }
 
 type PlaybookishScenario = ScenarioDefinition & {
@@ -157,6 +162,7 @@ function deriveTechnicalSummary(
   signals: CollectedSignals,
   emissions: EmitCorrelation[],
   mode?: string,
+  simulationDemo?: boolean,
 ): string {
   const ok = result.validations.filter((v) => v.passed).length;
   const total = result.validations.length;
@@ -164,13 +170,24 @@ function deriveTechnicalSummary(
 
   const inj = emissions.filter((e) => e.inject_error).length;
 
-  return [
+  const base = [
     `scenario_validations ${ok}/${total} passed`,
     `simulation_mode ${m}`,
     `emissions ${emissions.length}${inj ? ` (${inj} simulated emit faults)` : ""}`,
     `audit_aligned_rows ${signals.auditRowsForRun.length}`,
     `poll_iterations ${signals.pollIterations}`,
   ].join(" · ");
+
+  if (simulationDemo) {
+    return `${base} · ${buildDemoTechnicalSummarySuffix(m as "local" | "supabase" | "inngest")}`;
+  }
+  return base;
+}
+
+function demoExecutivePreamble(run: SimulationRun): string {
+  if (!run.simulation_demo_mode || !run.demo_client_snapshot) return "";
+  const d = run.demo_client_snapshot;
+  return `[Demo rehearsal · simulated only · ${d.display_name}] Fictitious portfolio company (${d.vertical}). Assets use *.sw360-demo.invalid hostnames. Narrative is scripted for investor-grade clarity — not field SIEM/EDR ingest. `;
 }
 
 function deriveNextRecommendedAction(
@@ -178,9 +195,26 @@ function deriveNextRecommendedAction(
   result: SimulationResult,
   agents: AgentValidatorResult[],
   autonomy: AutonomyScorecard,
+  simulationDemo?: boolean,
 ): string {
   const failedAgents = agents.filter((a) => !a.passed);
   const names = failedAgents.map((a) => a.agentId.replace(/^agent-/i, "Agent ").slice(0, 42)).slice(0, 3);
+
+  if (simulationDemo) {
+    const base = (() => {
+      if (!result.passed) {
+        return "Flip `SIMULATION_DEMO_MODE` off and use supabase/inngest when you need correlation against a real lab tenant.";
+      }
+      if (failedAgents.length > 0) {
+        return `Tune validator correlation for ${names.join(", ")}; confirm audit payloads include expected agent keywords for this tenant.`;
+      }
+      if (autonomy.overall_autonomy_score < 75) {
+        return `Raise autonomy (score ${Math.round(autonomy.overall_autonomy_score)}): reduce human-intervention-heavy gates where policy allows or improve detection fidelity to trim false negatives.`;
+      }
+      return "Archive this demo bundle for pitches; keep investor language synchronized with product GA milestones.";
+    })();
+    return `${base} Production-style validation still requires turning demo mode off so orchestration sinks exercise your configured tenant.`;
+  }
 
   if (!result.passed) {
     return "Rerun in supabase/inngest mode when credentials are available so audit correlation can satisfy sequencing expectations—or relax pass rules for purely local rehearsals.";
@@ -205,13 +239,28 @@ export function buildSimulationDashboardSummary(params: {
   signals: CollectedSignals;
   emissions: EmitCorrelation[];
   simulationMode?: string;
+  simulationDemoMode?: boolean;
+  demoClientDisplayName?: string;
 }): SimulationDashboardSummary {
-  const { scenario, run, result, autonomyScorecard, securewatchAgents, signals, emissions, simulationMode } = params;
+  const {
+    scenario,
+    run,
+    result,
+    autonomyScorecard,
+    securewatchAgents,
+    signals,
+    emissions,
+    simulationMode,
+    simulationDemoMode,
+    demoClientDisplayName,
+  } = params;
 
   const agentsPassed = securewatchAgents.filter((a) => a.passed).length;
   const agentsFailed = securewatchAgents.length - agentsPassed;
   const status = deriveDashboardSummaryStatus(result, securewatchAgents);
   const mode = simulationMode ?? emissions[0]?.mode ?? "local";
+
+  const remediationStatus = `${simulationDemoMode ? "[Simulated demo — live remediation execution blocked] " : ""}${deriveRemediationStatus(scenario, result, autonomyScorecard)}`;
 
   return {
     schema_version: 1,
@@ -224,11 +273,25 @@ export function buildSimulationDashboardSummary(params: {
     autonomyReadinessLabel: autonomyReadinessLabel(autonomyScorecard.readiness_band),
     agentsPassed,
     agentsFailed,
-    remediationStatus: deriveRemediationStatus(scenario, result, autonomyScorecard),
+    remediationStatus,
     controlsValidated: deriveControlsValidated(result, scenario),
     timelineEvents: timelineFromScenario(scenario, run),
-    executiveSummary: deriveExecutiveSummary(scenario, result),
-    technicalSummary: deriveTechnicalSummary(result, signals, emissions, mode),
-    nextRecommendedAction: deriveNextRecommendedAction(scenario, result, securewatchAgents, autonomyScorecard),
+    executiveSummary: `${demoExecutivePreamble(run)}${deriveExecutiveSummary(scenario, result)}`,
+    technicalSummary: deriveTechnicalSummary(result, signals, emissions, mode, simulationDemoMode),
+    nextRecommendedAction: deriveNextRecommendedAction(
+      scenario,
+      result,
+      securewatchAgents,
+      autonomyScorecard,
+      simulationDemoMode,
+    ),
+    ...(simulationDemoMode
+      ? {
+          simulation_demo_mode: true,
+          demo_client_display_name: demoClientDisplayName ?? run.demo_client_snapshot?.display_name,
+          demo_disclaimer:
+            "Demonstration data only. Organizations, assets, and timelines are fictitious; remediation playbooks did not execute against customer infrastructure.",
+        }
+      : {}),
   };
 }

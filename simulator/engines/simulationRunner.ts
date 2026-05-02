@@ -32,6 +32,13 @@ import {
   observeDelayForFailureInjection,
 } from "./failureInjector";
 import { runAllSecureWatchAgentValidators } from "../validators";
+import {
+  annotateSimulatedEventsForDemo,
+  buildDemoSimulationContext,
+  coerceOrchestrationModeForSimulationDemo,
+  resolveSimulationDemoMode,
+  type DemoSimulationContext,
+} from "../fixtures/demoMode";
 
 export function defaultScenariosDirectory(cwd?: string): string {
   const base = cwd ?? process.cwd();
@@ -129,9 +136,12 @@ export interface RunScenarioOptions {
   persistenceBaseDir?: string;
   /** Human JSON/Markdown reports; defaults to `simulator/reports/output` (or `SIMULATION_REPORT_OUTPUT_DIR`). */
   reportOutputDir?: string;
+  /** When true (or env `SIMULATION_DEMO_MODE`), orchestration sinks are coerced local and payloads use fictitious clients. */
+  simulationDemoMode?: boolean;
 }
 
-function pickEnvironment(mode: SimulationMode): SimulationRun["environment"] {
+function pickEnvironment(mode: SimulationMode, demoSimulation: boolean): SimulationRun["environment"] {
+  if (demoSimulation) return "demo-local";
   const tag = process.env.SIMULATION_ENVIRONMENT?.trim();
   if (tag) return tag;
   if (mode === "supabase") return "staging-supabase-audit";
@@ -148,6 +158,7 @@ export async function executeScenarioSimulation(
     mode?: SimulationMode;
     persistenceBaseDir?: string;
     reportOutputDir?: string;
+    simulationDemoMode?: boolean;
   },
 ): Promise<
   SimulationLabReport & {
@@ -161,19 +172,33 @@ export async function executeScenarioSimulation(
   }
 > {
   const runId = randomUUID();
-  const mode = options?.mode ?? resolveSimulationMode();
-  const stamped = applyDuplicateEventInjection(
+  const demoMode = resolveSimulationDemoMode(options?.simulationDemoMode);
+  const requestedMode = options?.mode ?? resolveSimulationMode();
+  const mode = (demoMode
+    ? coerceOrchestrationModeForSimulationDemo(requestedMode)
+    : requestedMode) as SimulationMode;
+
+  const demoContext: DemoSimulationContext | undefined = demoMode
+    ? buildDemoSimulationContext(scenario.id)
+    : undefined;
+
+  const tenantMarker =
+    demoContext?.client.id ?? process.env.SIMULATION_TENANT_ID?.trim() ?? undefined;
+
+  let stamped = applyDuplicateEventInjection(
     scenario,
-    stampSimulatedEvents(
-      scenario,
-      runId,
-      process.env.SIMULATION_TENANT_ID?.trim() ?? undefined,
-    ),
+    stampSimulatedEvents(scenario, runId, tenantMarker),
   );
+  if (demoContext) {
+    stamped = annotateSimulatedEventsForDemo(stamped, demoContext);
+  }
 
   const startedAt = new Date().toISOString();
   let correlationAccumulator: string[];
-  const emissions = await emitSimulatedEvents(scenario, stamped, mode);
+  const emissions = await emitSimulatedEvents(scenario, stamped, mode, {
+    simulationDemo: demoMode,
+    demoContext: demoContext ?? null,
+  });
 
   correlationAccumulator = emissions
     .flatMap((e) => [
@@ -195,10 +220,20 @@ export async function executeScenarioSimulation(
     scenarioId: scenario.id,
     startedAt,
     completedAt: new Date().toISOString(),
-    environment: pickEnvironment(mode),
+    environment: pickEnvironment(mode, demoMode),
     events: stamped,
     orchestrationCorrelationIds:
       correlationAccumulator.length > 0 ? correlationAccumulator : undefined,
+    simulation_demo_mode: demoMode,
+    demo_client_snapshot: demoContext
+      ? {
+          display_name: demoContext.client.display_name,
+          surrogate_tenant_id: demoContext.client.id,
+          vertical: demoContext.client.vertical,
+          tagline: demoContext.client.demo_tagline,
+          primary_fixture_hostname: demoContext.headline_asset_hostname,
+        }
+      : undefined,
   };
 
   let simulationResult = evaluateScenarioExpectations({ scenario, signals, runId });
@@ -212,6 +247,10 @@ export async function executeScenarioSimulation(
       startedAt: run.startedAt,
       ...(run.completedAt !== undefined ? { completedAt: run.completedAt } : {}),
       environment: run.environment,
+      ...(run.simulation_demo_mode !== undefined
+        ? { simulation_demo_mode: run.simulation_demo_mode }
+        : {}),
+      ...(run.demo_client_snapshot ? { demo_client_snapshot: run.demo_client_snapshot } : {}),
     },
     result: simulationResult,
   };
@@ -243,6 +282,8 @@ export async function executeScenarioSimulation(
     signals,
     emissions,
     simulationMode: mode,
+    simulationDemoMode: demoMode,
+    demoClientDisplayName: demoContext?.client.display_name,
   });
 
   const humanReports = isReportGenerationFailureInjected(scenario)
@@ -318,6 +359,7 @@ export async function executeAllScenarioSimulations(opts?: RunScenarioOptions) {
         mode,
         persistenceBaseDir: opts?.persistenceBaseDir,
         reportOutputDir: opts?.reportOutputDir,
+        simulationDemoMode: opts?.simulationDemoMode,
       }),
     );
   }
@@ -359,6 +401,12 @@ export function buildStructuredSimulationReport(
       target_type: scenario.target_type,
       ...(scenario.golden_path_demo !== undefined
         ? { golden_path_demo: scenario.golden_path_demo }
+        : {}),
+      ...(lab.run.simulation_demo_mode === true
+        ? {
+            simulation_demo_mode: true,
+            demo_client_display_name: lab.run.demo_client_snapshot?.display_name,
+          }
         : {}),
     },
   };

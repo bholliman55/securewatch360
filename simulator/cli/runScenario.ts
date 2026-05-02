@@ -34,7 +34,9 @@ async function main() {
   }
 
   console.log(`Running scenario: ${resolved.definition.id} (${resolved.stem}.json)`);
-  const lab = await executeScenarioSimulation(resolved.definition, {});
+  const lab = await executeScenarioSimulation(resolved.definition, {
+    simulationDemoMode: args.demo === true,
+  });
   console.log(`${lab.result.passed ? "PASS" : "FAIL"}  runId=${lab.result.runId}  scenario=${lab.scenario.name}`);
   console.log(`Results: ${defaultSimulationResultsDir(cwd)}`);
   if (lab.persisted?.resultPath) console.log(`  artifact: ${lab.persisted.resultPath}`);

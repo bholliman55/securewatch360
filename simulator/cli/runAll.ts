@@ -7,14 +7,16 @@ import { defaultSimulationReportOutputDir } from "../reports/reportGenerator";
 import { parseCliArgs, defaultSimulationResultsDir } from "./shared";
 
 async function main() {
-  parseCliArgs(process.argv.slice(2));
+  const args = parseCliArgs(process.argv.slice(2));
   process.env.SIMULATION_AGENT_WAIT_MS ??= "0";
   process.env.SIMULATION_MODE ??= "local";
 
   const cwd = process.cwd();
   console.log("Running all simulator scenarios...\n");
 
-  const results = await executeAllScenarioSimulations({});
+  const results = await executeAllScenarioSimulations({
+    simulationDemoMode: args.demo === true,
+  });
 
   let fails = 0;
   for (const r of results) {

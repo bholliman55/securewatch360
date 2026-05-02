@@ -22,6 +22,13 @@ async function fetchLatestSummary(signal: AbortSignal): Promise<SimulationDashbo
   return (data?.summary ?? null) as SimulationDashboardSummaryUi | null;
 }
 
+async function fetchServerDemoMode(signal: AbortSignal): Promise<boolean> {
+  const res = await fetch("/api/simulation/demo-mode", { signal, credentials: "include" });
+  if (!res.ok) return false;
+  const data = (await res.json()) as { simulationDemoMode?: unknown };
+  return data.simulationDemoMode === true;
+}
+
 function statusTone(status: SimulationDashboardSummaryUi["status"]): string {
   switch (status) {
     case "passed":
@@ -35,6 +42,7 @@ function statusTone(status: SimulationDashboardSummaryUi["status"]): string {
 
 export default function SimulationDashboard() {
   const [summary, setSummary] = useState<SimulationDashboardSummaryUi | null>(null);
+  const [serverDemoMode, setServerDemoMode] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -43,8 +51,12 @@ export default function SimulationDashboard() {
     try {
       setLoading(true);
       setError(null);
-      const next = await fetchLatestSummary(ac.signal);
+      const [next, demoSrv] = await Promise.all([
+        fetchLatestSummary(ac.signal),
+        fetchServerDemoMode(ac.signal),
+      ]);
       setSummary(next);
+      setServerDemoMode(demoSrv);
       if (!next) setError("No lab run on disk yet, or summary field missing.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load simulation summary.");
@@ -90,6 +102,32 @@ export default function SimulationDashboard() {
           Refresh summary
         </button>
       </div>
+
+      {(serverDemoMode || summary?.simulation_demo_mode) && (
+        <div className="rounded-xl border border-amber-500/35 bg-[rgba(251,191,36,0.07)] px-5 py-4 text-[var(--sw-text-muted)] text-sm leading-relaxed space-y-2">
+          <div className="flex items-center gap-2 text-amber-200 font-semibold">
+            <Sparkles className="w-4 h-4 shrink-0" />
+            <span>Demonstration / simulated data</span>
+          </div>
+          {serverDemoMode && (
+            <p>
+              Server flag <code className="text-[11px] text-amber-100/90 px-1.5 py-0.5 rounded bg-black/30">SIMULATION_DEMO_MODE</code> is on —
+              new simulator runs default to fictitious MSSP clients and local-only orchestration.
+            </p>
+          )}
+          {summary?.simulation_demo_mode && (
+            <p>
+              {summary.demo_disclaimer ?? "This dashboard summary was produced in demo rehearsal mode."}
+              {summary.demo_client_display_name ? (
+                <>
+                  {" "}
+                  <span className="text-[var(--sw-accent-bright)]">Fixture client:</span> {summary.demo_client_display_name}.
+                </>
+              ) : null}
+            </p>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="rounded-xl border border-[rgba(249,115,22,0.35)] bg-[rgba(249,115,22,0.06)] px-5 py-4 text-[var(--sw-text-muted)] text-sm leading-relaxed">

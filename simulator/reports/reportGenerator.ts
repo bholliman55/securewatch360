@@ -87,6 +87,9 @@ export interface SimulationRunHumanReport {
     schema_version: typeof SIMULATION_RUN_REPORT_SCHEMA_VERSION;
     report_kind: "securewatch360_simulation_run";
   };
+  simulation_demo_mode?: boolean;
+  demo_client_display_name?: string;
+  demo_truthfulness_statement?: string;
   simulation_run_id: string;
   scenario_id: string;
   scenario_name: string;
@@ -189,6 +192,7 @@ function remediationSection(
   scenario: ScenarioDefinition,
   result: SimulationResult,
   signals: CollectedSignals,
+  run: SimulationRun,
 ): SimulationRunReportRemediation {
   const base: SimulationRunReportRemediation = {
     expected_summary: scenario.expected_remediation.summary,
@@ -208,6 +212,11 @@ function remediationSection(
         synthetic_rationale: g.synthetic_rationale,
       }));
     }
+  }
+
+  if (run.simulation_demo_mode) {
+    base.results_summary +=
+      " Demo mode: remediation playbooks are storyline-only — no production CMDB, ITSM, or remote execution hooks fire during this run.";
   }
 
   return base;
@@ -261,8 +270,15 @@ function recommendedFixes(
   result: SimulationResult,
   agents: AgentValidatorResult[],
   card: AutonomyScorecard,
+  run: SimulationRun,
 ): string[] {
   const fixes: string[] = [];
+
+  if (run.simulation_demo_mode) {
+    fixes.push(
+      "Demo mode is active: metrics showcase narrative fidelity, not customer telemetry. Disable SIMULATION_DEMO_MODE and use a lab tenant for engineering validation.",
+    );
+  }
 
   for (const v of result.validations) {
     if (!v.passed) {
@@ -319,6 +335,14 @@ export function buildSimulationRunHumanReport(input: SimulationRunReportBuildInp
       schema_version: SIMULATION_RUN_REPORT_SCHEMA_VERSION,
       report_kind: "securewatch360_simulation_run",
     },
+    ...(run.simulation_demo_mode === true
+      ? {
+          simulation_demo_mode: true as const,
+          demo_client_display_name: run.demo_client_snapshot?.display_name,
+          demo_truthfulness_statement:
+            "Demonstration rehearsal only. Organizations, assets, and remediation steps are fictitious (*.sw360-demo.invalid). No customer infrastructure was contacted.",
+        }
+      : {}),
     simulation_run_id: run.id,
     scenario_id: scenario.id,
     scenario_name: scenario.name,
@@ -345,7 +369,7 @@ export function buildSimulationRunHumanReport(input: SimulationRunReportBuildInp
         }))
       : undefined,
     expected_vs_actual_actions: expectedVsActual(scenario, result),
-    remediation_results: remediationSection(scenario, result, signals),
+    remediation_results: remediationSection(scenario, result, signals, run),
     policy_controls_tested: scenario.expected_controls_triggered.map((c) => ({
       framework: c.framework,
       ...(c.control_id !== undefined ? { control_id: c.control_id } : {}),
@@ -371,7 +395,7 @@ export function buildSimulationRunHumanReport(input: SimulationRunReportBuildInp
       },
     },
     critical_failures: criticalFailuresList(result, securewatchAgents),
-    recommended_fixes: recommendedFixes(scenario, result, securewatchAgents, autonomyScorecard),
+    recommended_fixes: recommendedFixes(scenario, result, securewatchAgents, autonomyScorecard, run),
     telemetry: {
       simulation_mode: emissions[0]?.mode,
       emissions_count: emissions.length,
@@ -400,6 +424,13 @@ export function renderSimulationRunReportMarkdown(doc: SimulationRunHumanReport)
   lines.push(`- **Outcome:** ${doc.pass_fail_status}`);
   lines.push(`- **Generated:** ${doc.meta.generated_at_iso}`);
   lines.push("");
+  if (doc.simulation_demo_mode) {
+    lines.push(`## Demonstration rehearsal`);
+    lines.push("");
+    lines.push(`- **Fixture client:** ${mdCell(doc.demo_client_display_name ?? "rotating demo portfolio")}`);
+    lines.push(`- **Truthfulness:** ${mdCell(doc.demo_truthfulness_statement ?? "Simulated data only.")}`);
+    lines.push("");
+  }
   lines.push(`## Timeline`);
   lines.push("");
   lines.push("| Offset (s) | Phase | Narrative | Source |");

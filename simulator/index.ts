@@ -40,6 +40,34 @@ export { buildSimulationDashboardSummary, deriveDashboardSummaryStatus } from ".
 export { minimalSyntheticFindingScenario } from "./fixtures/minimalSyntheticFinding.fixture";
 
 export {
+  readSimulationDemoModeFromEnv,
+  resolveSimulationDemoMode,
+  SIMULATION_DEMO_MODE_ENV_VAR,
+  buildDemoSimulationContext,
+  coerceOrchestrationModeForSimulationDemo,
+  annotateSimulatedEventsForDemo,
+  buildDemoTechnicalSummarySuffix,
+} from "./fixtures/demoMode";
+export type {
+  DemoSimulationContext,
+  SimulatorOrchestrationSinkName,
+} from "./fixtures/demoMode";
+
+export {
+  DEMO_CLIENT_FIXTURES,
+  demoClientBySlug,
+  pickDemoClientForScenario,
+} from "./fixtures/demoClients";
+export type { DemoClientFixture } from "./fixtures/demoClients";
+
+export {
+  DEMO_ASSET_FIXTURES,
+  demoAssetsForClient,
+  primaryDemoAssetForClient,
+} from "./fixtures/demoAssets";
+export type { DemoAssetFixture } from "./fixtures/demoAssets";
+
+export {
   scenarioDefinitionSchema,
   simulationResultSchema,
   parseScenarioDefinition,

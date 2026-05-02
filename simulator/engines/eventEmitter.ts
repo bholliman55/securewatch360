@@ -11,6 +11,7 @@ import {
   shouldSimulateDatabaseInsertFailure,
   shouldSimulateInngestSendFailure,
 } from "./failureInjector";
+import type { DemoSimulationContext } from "../fixtures/demoMode";
 
 export type SimulationMode = "local" | "supabase" | "inngest";
 
@@ -95,6 +96,7 @@ export function simulatedEventToMonitoringPayload(
   event: SimulatedEvent,
   scenario: ScenarioDefinition,
   tenantId: string,
+  demoContext?: DemoSimulationContext,
 ): {
   tenantId: string;
   source: string;
@@ -158,6 +160,14 @@ export function simulatedEventToMonitoringPayload(
       simulationEventId: event.id,
       synthetic_kind: event.kind,
       ...(event.metadata ?? {}),
+      ...(demoContext
+        ? {
+            sw360_simulation_demo: true,
+            demo_fixture_client: demoContext.client.display_name,
+            demo_fixture_tenant_id: demoContext.client.id,
+            remediation_live_execution_blocked: true,
+          }
+        : {}),
     },
   };
 }
@@ -210,6 +220,10 @@ export type EmitCorrelation = {
 export type EmitSimulatedEventOptions = {
   /** Zero-based index among emissions in this run (for `database_failure` / `inngest_failure`). */
   sequenceIndex?: number;
+  /** When true, envelopes and console previews are stamped as investor-safe demo-only data. */
+  simulationDemo?: boolean;
+  /** Populated when `simulationDemo`; used for tenant-id substitution in local sink previews. */
+  demoContext?: DemoSimulationContext | null;
 };
 
 /** Emit one simulated event according to SIMULATION_MODE. */
@@ -221,6 +235,8 @@ export async function emitSimulatedEvent(
 ): Promise<EmitCorrelation> {
   const m = mode ?? resolveSimulationMode();
   const sequenceIndex = options?.sequenceIndex ?? 0;
+  const demo = options?.simulationDemo === true;
+  const demoCtx = options?.demoContext ?? undefined;
 
   await emitConsoleLine({
     phase: "emit_start",
@@ -229,11 +245,14 @@ export async function emitSimulatedEvent(
     runId: event.runId,
     eventId: event.id,
     kind: event.kind,
+    ...(demo ? { simulation_demo_mode: true, demo_fixture_client: demoCtx?.client.display_name } : {}),
   });
 
   if (m === "local") {
     const pseudoTenant =
-      process.env.SIMULATION_TENANT_ID?.trim() ?? "11111111-1111-1111-1111-111111111111";
+      demoCtx?.client.id ??
+      process.env.SIMULATION_TENANT_ID?.trim() ??
+      "11111111-1111-1111-1111-111111111111";
     if (shouldSimulateDatabaseInsertFailure(scenario, m, sequenceIndex)) {
       await emitConsoleLine({
         phase: "emit_local_metadata",
@@ -245,14 +264,15 @@ export async function emitSimulatedEvent(
       phase: "emit_complete",
       mode: m,
       payloadPreview: prunePayloadForLog(
-        simulatedEventToMonitoringPayload(event, scenario, pseudoTenant),
+        simulatedEventToMonitoringPayload(event, scenario, pseudoTenant, demoCtx),
       ),
+      ...(demo ? { simulation_demo_mode: true, live_remediation_suppressed: true } : {}),
     });
     return { mode: m };
   }
 
   const tenantId = requireSimulationTenantId();
-  const payloadEnvelope = buildAuditEnvelope(scenario, event, m);
+  const payloadEnvelope = buildAuditEnvelope(scenario, event, m, demoCtx);
   let auditLogId: string | undefined;
 
   if (shouldSimulateDatabaseInsertFailure(scenario, m, sequenceIndex)) {
@@ -302,7 +322,7 @@ export async function emitSimulatedEvent(
         ingestSummary: ingest,
       });
     } else {
-      const monitoring = simulatedEventToMonitoringPayload(event, scenario, tenantId);
+      const monitoring = simulatedEventToMonitoringPayload(event, scenario, tenantId, demoCtx);
       const ng = createSimulationInngest();
       ingest = await ng.send({
         name: MONITORING_EVENT,
@@ -335,8 +355,10 @@ function buildAuditEnvelope(
   scenario: ScenarioDefinition,
   event: SimulatedEvent,
   mode: SimulationMode,
+  demoContext?: DemoSimulationContext,
 ): Record<string, unknown> {
   const tenantSegment = process.env.SIMULATION_TENANT_ID?.trim() ?? null;
+  const demoTenant = demoContext?.client.id;
   return {
     simulation_run_id: event.runId,
     simulation_event_id: event.id,
@@ -347,12 +369,22 @@ function buildAuditEnvelope(
     simulated_at: event.simulatedAt,
     synthetic_kind: event.kind,
     simulation_mode: mode,
+    ...(demoContext
+      ? {
+          sw360_simulation_demo: true,
+          demo_fixture_client: demoContext.client.display_name,
+          demo_fixture_tenant_id: demoContext.client.id,
+          remediation_live_execution_blocked: true,
+        }
+      : {}),
     ...(tenantSegment ? { simulation_tenant_id: tenantSegment } : {}),
+    ...(demoTenant && !tenantSegment ? { simulation_tenant_id: demoTenant } : {}),
     event_payload: event.payload,
     monitoring_preview: simulatedEventToMonitoringPayload(
       event,
       scenario,
-      tenantSegment ?? "00000000-0000-0000-0000-000000000000",
+      tenantSegment ?? demoTenant ?? "00000000-0000-0000-0000-000000000000",
+      demoContext,
     ),
   };
 }
@@ -376,13 +408,14 @@ export async function emitSimulatedEvents(
   scenario: ScenarioDefinition,
   events: SimulatedEvent[],
   mode?: SimulationMode,
+  options?: Omit<EmitSimulatedEventOptions, "sequenceIndex">,
 ): Promise<EmitCorrelation[]> {
   const m = mode ?? resolveSimulationMode();
   const staggerMs = Number.parseInt(process.env.SIMULATION_EMIT_STAGGER_MS ?? "250", 10);
   const out: EmitCorrelation[] = [];
   for (let i = 0; i < events.length; i += 1) {
     if (i > 0 && staggerMs > 0) await sleep(staggerMs);
-    out.push(await emitSimulatedEvent(scenario, events[i], m, { sequenceIndex: i }));
+    out.push(await emitSimulatedEvent(scenario, events[i], m, { ...options, sequenceIndex: i }));
   }
   return out;
 }

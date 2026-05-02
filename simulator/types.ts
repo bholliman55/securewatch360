@@ -59,6 +59,15 @@ export interface ExpectedAgentAction {
   match: Record<string, unknown>;
 }
 
+/** Snapshot of the fictitious client used only when `simulation_demo_mode` is active. */
+export interface DemoClientSnapshot {
+  display_name: string;
+  surrogate_tenant_id: string;
+  vertical: string;
+  tagline: string;
+  primary_fixture_hostname?: string;
+}
+
 /** One execution of a scenario against orchestration backends (dev/staging mocks). */
 export interface SimulationRun {
   id: string;
@@ -68,6 +77,9 @@ export interface SimulationRun {
   environment: SimulationEnvironmentLabel;
   events: SimulatedEvent[];
   orchestrationCorrelationIds?: string[];
+  /** UI / lab — when true, fixtures are fictitious MSSP clients and sinks stay local by default. */
+  simulation_demo_mode?: boolean;
+  demo_client_snapshot?: DemoClientSnapshot;
 }
 
 export type SimulationEnvironmentLabel = "local" | "ci" | "staging" | string;
