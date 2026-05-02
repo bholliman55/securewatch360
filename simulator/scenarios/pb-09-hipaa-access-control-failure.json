@@ -1,0 +1,139 @@
+{
+  "id": "pb-lab-09-hipaa-access-failure",
+  "name": "Safe synthetic playbook: HIPAA access-control failure signal",
+  "description": "Synthetic scenario where a lab EHR API role grants excessive read scope relative to HIPAA minimum necessary. Discusses segregation and auditing—no PHI payloads, identifiers are hashed fixtures.",
+  "severity": "high",
+  "attack_category": "compliance_drift",
+  "mitre_attack_techniques": ["T1078"],
+  "target_type": "application_identity",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["playbook", "hipaa", "access", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "access_review_scheduler",
+      "synthetic_narrative": "Periodic lab review compares clinical app roles against minimum-necessary matrices."
+    },
+    {
+      "t_offset_seconds": 3600,
+      "phase": "over_privileged_role_detected",
+      "synthetic_narrative": "Role LAB_ANALYST_EXTENDED granted global read facet in sandbox tenant (metadata)."
+    },
+    {
+      "t_offset_seconds": 7200,
+      "phase": "corrective_track",
+      "synthetic_narrative": "Access removal simulation and audit sampling plan drafted."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "pb09-evt-01",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: Over-broad PHI API role (synthetic, no payloads)",
+        "severity": "high",
+        "category": "authorization_drift_healthcare_lab",
+        "asset_type": "healthcare_application_role",
+        "target_value": "role:LAB_ANALYST_EXTENDED"
+      }
+    },
+    {
+      "ref": "pb09-evt-02",
+      "kind": "monitoring.alert.synthetic",
+      "payload": {
+        "alert_type": "hipaa.minimum_necessary.review_needed_synthetic",
+        "application": "lab-ehr-api-stub",
+        "risk_note": "role_scope_exceeds_matrix_fixture_row_14",
+        "severity": "high"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "pb09-evt-01",
+      "headline": "Access-control gap finding",
+      "synthetic_detail": "Matrix comparison only; patient narratives never included."
+    },
+    {
+      "ref": "pb09-evt-02",
+      "headline": "Compliance monitoring alert",
+      "synthetic_detail": "Workflow opens privacy office review queue (simulation)."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "pb09-seq-01",
+      "agent_key": "compliance-assessor",
+      "capability": "hipaa_matrix_compare_stub",
+      "match": {}
+    },
+    {
+      "id": "pb09-seq-02",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": {}
+    },
+    {
+      "id": "pb09-seq-03",
+      "agent_key": "incident-coordinator",
+      "capability": "privacy_task_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-3-compliance-policy",
+      "triggered_reason_synthetic": "HIPAA-aligned access matrix breach requires policy agent."
+    },
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "High-severity access drift may map to privacy incident triage path."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "hipaa",
+      "control_label": "164.312(a)(1) Access control (high-level mapping)"
+    },
+    {
+      "framework": "hipaa",
+      "control_label": "164.308(a)(4) Information access management (high-level mapping)"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Tighten role scopes, schedule user access re-certification, expand audit sampling on API calls (simulation).",
+    "expected_action_types": ["iam_scope_reduction_request", "recertification_campaign_stub", "audit_rule_tune_simulation"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Attach role-to-function justification template to ticket (stub).",
+      "automation_boundary": "lab_stub_only"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "privacy_officer_review",
+      "synthetic_rationale": "Determine if breach notification criteria evaluated (lab-only decision tree)."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "role_inventory_excerpt",
+    "minimum_necessary_delta",
+    "recommended_controls",
+    "remediation_timeline"
+  ],
+  "expected_final_report": {
+    "title": "HIPAA access-control failure — synthetic playbook outcome",
+    "synthetic_executive_summary": "A lab role exceeded minimum-necessary expectations; remediation centers on scope reduction and governance evidence, not real PHI handling.",
+    "sections": ["matrix_reference", "affected_systems_lab", "corrective_actions", "audit_expansion_plan"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  }
+}

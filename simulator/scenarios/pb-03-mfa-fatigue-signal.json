@@ -1,0 +1,143 @@
+{
+  "id": "pb-lab-03-mfa-fatigue",
+  "name": "Safe synthetic playbook: MFA fatigue pattern (numerous prompts)",
+  "description": "Lab enumeration of repeated push-challenge telemetry for a test account. Describes volume and pacing only—no payloads, no OTP capture, no instruction to harass users.",
+  "severity": "medium",
+  "attack_category": "suspicious_login",
+  "mitre_attack_techniques": ["T1621", "T1110"],
+  "target_type": "user_identity",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["playbook", "mfa", "identity", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "window_open",
+      "synthetic_narrative": "IdP emits first synthetic push MFA challenge for lab principal."
+    },
+    {
+      "t_offset_seconds": 60,
+      "phase": "burst_pattern",
+      "synthetic_narrative": "Fixture counter records N synthetic denials/timeouts exceeding lab threshold."
+    },
+    {
+      "t_offset_seconds": 300,
+      "phase": "analyst_handoff",
+      "synthetic_narrative": "Rule labels pattern as MFA fatigue risk and opens review queue (stub)."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "pb03-evt-01",
+      "kind": "monitoring.alert.synthetic",
+      "payload": {
+        "alert_type": "identity.mfa.fatigue_signal_synthetic",
+        "user_id": "lab-user-mfa-03",
+        "challenge_count_fixture": 12,
+        "window_minutes_fixture": 15,
+        "severity": "medium"
+      },
+      "metadata": { "simulator": true, "data_classification": "lab_synthetic" }
+    },
+    {
+      "ref": "pb03-evt-02",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: Elevated MFA prompt volume (synthetic)",
+        "severity": "medium",
+        "category": "authentication_abuse_signal",
+        "asset_type": "user_identity",
+        "target_value": "user:lab-user-mfa-03"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "pb03-evt-01",
+      "headline": "Volume-based MFA alert",
+      "synthetic_detail": "Counters-only fixture; does not imply successful authentication."
+    },
+    {
+      "ref": "pb03-evt-02",
+      "headline": "Finding tied to suspected fatigue campaign",
+      "synthetic_detail": "Policy engine scores pattern for possible coordinated prompting (simulation)."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "pb03-seq-01",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": { "category": "authentication_abuse_signal" }
+    },
+    {
+      "id": "pb03-seq-02",
+      "agent_key": "incident-coordinator",
+      "capability": "case_open_low_or_medium",
+      "match": {}
+    },
+    {
+      "id": "pb03-seq-03",
+      "agent_key": "awareness-workflow",
+      "capability": "user_guidance_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "Alert volume crosses fatigue heuristic in lab profile."
+    },
+    {
+      "agent_id": "agent-4-awareness-phishing-training",
+      "triggered_reason_synthetic": "User education on approving only expected prompts may be queued."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "PR.AC-7",
+      "control_label": "Individuals are authenticated"
+    },
+    {
+      "framework": "soc2",
+      "control_id": "CC6.1",
+      "control_label": "Logical and physical access"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Simulator expects rate-limit tuning plan, phishing-resistant MFA roadmap note, and user comms stub—no coercion of approvals.",
+    "expected_action_types": ["policy_tune_simulation", "user_guidance", "case_tagging"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Temporarily widen cooling period between challenges in lab IdP sandbox (fixture flag).",
+      "automation_boundary": "lab_stub_only"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "mfa_policy_change",
+      "synthetic_rationale": "Changing MFA vendor settings or phishing-resistant methods requires change control."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "authentication_telemetry_summary",
+    "mitre_mapping",
+    "recommended_controls",
+    "remediation_timeline"
+  ],
+  "expected_final_report": {
+    "title": "MFA fatigue signal — synthetic playbook outcome",
+    "synthetic_executive_summary": "Repeated synthetic challenges flagged a fatigue pattern; playbook documents containment and MFA hardening without assuming compromise.",
+    "sections": ["volume_charts_fixture", "user_impact", "policy_changes_proposed", "approval_log"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  }
+}

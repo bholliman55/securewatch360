@@ -1,0 +1,142 @@
+{
+  "id": "pb-lab-15-patch-failure-after-remediation",
+  "name": "Safe synthetic playbook: Remediation execution reports patch failure",
+  "description": "Post-remediation regression where orchestration validates that a defect remains on a patched asset—measurement mismatch or failed install scenario. Describes status codes and reschedule only—no exploit retest instructions.",
+  "severity": "high",
+  "attack_category": "vulnerable_dependency",
+  "mitre_attack_techniques": ["T1190"],
+  "target_type": "application_host",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["playbook", "patch", "remediation_verify", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "deployment_declared_complete",
+      "synthetic_narrative": "Change ticket LAB-CHG-8842 closes with success flag in orchestrator stub."
+    },
+    {
+      "t_offset_seconds": 3600,
+      "phase": "validation_scan",
+      "synthetic_narrative": "Compliance scanner simulation still observes vulnerable build marker on lab-app-batch-09."
+    },
+    {
+      "t_offset_seconds": 5400,
+      "phase": "rollback_discussion",
+      "synthetic_narrative": "Engineering reviews packaging error versus missed instance group."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "pb15-evt-01",
+      "kind": "remediation.execution.synthetic",
+      "payload": {
+        "change_id_fixture": "LAB-CHG-8842",
+        "target_asset": "lab-app-batch-09",
+        "remediation_kind": "security_patch_rollout_lab",
+        "reported_outcome": "failure_verification_positive_still_vulnerable_fixture",
+        "severity": "high"
+      }
+    },
+    {
+      "ref": "pb15-evt-02",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: Patch verification failed — defect persists (synthetic)",
+        "severity": "high",
+        "category": "patch_failure_followup",
+        "asset_type": "host",
+        "target_value": "host:lab-app-batch-09"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "pb15-evt-01",
+      "headline": "Remediation job reported unsuccessful validation",
+      "synthetic_detail": "Execution record carries synthetic status enums only."
+    },
+    {
+      "ref": "pb15-evt-02",
+      "headline": "Reopened or escalated finding",
+      "synthetic_detail": "SLA clock adjusted for renewed emergency priority (fixture)."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "pb15-seq-01",
+      "agent_key": "decision-engine",
+      "capability": "sla_reopen_stub",
+      "match": {}
+    },
+    {
+      "id": "pb15-seq-02",
+      "agent_key": "incident-coordinator",
+      "capability": "change_review_escalation_stub",
+      "match": {}
+    },
+    {
+      "id": "pb15-seq-03",
+      "agent_key": "osint-vuln-feed",
+      "capability": "rescan_request_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-2-osint-vuln-intel",
+      "triggered_reason_synthetic": "Revalidation and advisory refresh after failed patch verification."
+    },
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "Persistent vulnerability keeps incident posture elevated."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "RC.CO-3",
+      "control_label": "Recovery activities communicated"
+    },
+    {
+      "framework": "iso27001",
+      "control_id": "A.12.6.1",
+      "control_label": "Technical vulnerability management"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Rebuild patch package targeting correct fleet slice, rerun validation scans, extend compensating monitoring until green (simulation).",
+    "expected_action_types": ["patch_redeployment_request", "compensating_waf_tune_simulation", "validation_campaign"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Automatically reopen CAB task with linkage to failed execution record.",
+      "automation_boundary": "recommended_automation_simulation"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "emergency_patch_redeploy",
+      "synthetic_rationale": "Humans approve maintenance window variance after first attempt failed verification."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "remediation_history",
+    "verification_evidence_fixture",
+    "recommended_controls",
+    "remediation_timeline"
+  ],
+  "expected_final_report": {
+    "title": "Patch failure after remediation — synthetic playbook outcome",
+    "synthetic_executive_summary": "Post-change validation contradicted closure; playbook tracks reopening workflows and tightened verification gates without exploitation testing.",
+    "sections": ["change_timeline", "failure_hypotheses", "second_attempt_plan", "metrics_for_mean_time_to_remediate"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  }
+}

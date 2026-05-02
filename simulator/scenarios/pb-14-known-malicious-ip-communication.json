@@ -1,0 +1,142 @@
+{
+  "id": "pb-lab-14-malicious-ip-communication-signal",
+  "name": "Safe synthetic playbook: Communication with categorized threat intel indicator",
+  "description": "Netflow heuristic tied to an abstract threat-intelligence category in the lab (no routable IPs, no C2 configs). Represents how SOC would ingest a benign sinkhole-equivalent classification for testing correlation only.",
+  "severity": "medium",
+  "attack_category": "endpoint_compromise_signal",
+  "mitre_attack_techniques": ["T1071", "T1048"],
+  "target_type": "network_boundary",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["playbook", "intel", "network", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "intel_feed_refresh",
+      "synthetic_narrative": "Lab intel bundle adds category label LAB-IOC-SINKHOLE-STUB without embedding addresses."
+    },
+    {
+      "t_offset_seconds": 420,
+      "phase": "flow_match",
+      "synthetic_narrative": "Netflow summary fixture notes outbound session toward an indicator bucket tagged malicious_category_synthetic."
+    },
+    {
+      "t_offset_seconds": 900,
+      "phase": "investigation_spawn",
+      "synthetic_narrative": "IR opens lightweight task to inventory affected internal host list (labels only)."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "pb14-evt-01",
+      "kind": "external_intel.synthetic",
+      "payload": {
+        "source": "lab_intel_stub",
+        "indicator_class": "ip_address_placeholder_lab",
+        "intel_list_name": "LAB_SINKHOLE_CATEGORY_STUB",
+        "threat_actor_label": "LAB_THREAT_BUCKET_GENERIC",
+        "severity": "medium"
+      }
+    },
+    {
+      "ref": "pb14-evt-02",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: Session matched synthetic malicious intel bucket (no live C2)",
+        "severity": "medium",
+        "category": "threat_intel_correlation_signal",
+        "asset_type": "internal_host_set",
+        "target_value": "group:LAB_NET_SEGMENT_MARKETING"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "pb14-evt-01",
+      "headline": "Intel category published to lab aggregator",
+      "synthetic_detail": "Demonstrates ingestion path without leaking real subscriber indicators."
+    },
+    {
+      "ref": "pb14-evt-02",
+      "headline": "Correlated sessions summarized",
+      "synthetic_detail": "Volume and directionality fixtures only."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "pb14-seq-01",
+      "agent_key": "scanner-external-recon",
+      "capability": "intel_alignment_stub",
+      "match": {}
+    },
+    {
+      "id": "pb14-seq-02",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": {}
+    },
+    {
+      "id": "pb14-seq-03",
+      "agent_key": "incident-coordinator",
+      "capability": "network_review_case_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-2-osint-vuln-intel",
+      "triggered_reason_synthetic": "Threat intel alignment is primary driver."
+    },
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "Potential C2 egress triggers IR monitoring lane."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "DE.CM-1",
+      "control_label": "Network monitored"
+    },
+    {
+      "framework": "nist_csf",
+      "control_id": "RS.AN-3",
+      "control_label": "Analysis investigative results"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Block indicator category at perimeter simulation, sweep affected hosts for persistence checklist (generic), escalate if volume grows.",
+    "expected_action_types": ["perimeter_rule_simulation", "host_sweep_ticket", "intel_feedback_loop_stub"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Attach latest intel bulletin stub to incident record.",
+      "automation_boundary": "lab_stub_only"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "perimeter_blocking_scope",
+      "synthetic_rationale": "Avoid blocking legitimate CDN edges mis-tagged in lab bundles."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "intel_context",
+    "session_summaries_fixture",
+    "recommended_controls",
+    "remediation_timeline"
+  ],
+  "expected_final_report": {
+    "title": "Malicious intel category correlation — synthetic playbook outcome",
+    "synthetic_executive_summary": "Lab feeds produced a benign sinkhole-category match; playbook validates correlation and optional blocking without transmitting real IOC material.",
+    "sections": ["intel_provenance_lab", "affected_assets_labels", "blocklist_simulation_result", "next_review_date"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  }
+}

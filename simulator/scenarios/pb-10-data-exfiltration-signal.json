@@ -1,0 +1,142 @@
+{
+  "id": "pb-lab-10-data-exfiltration-signal",
+  "name": "Safe synthetic playbook: Data exfiltration heuristic signal",
+  "description": "Network DLP heuristic where an endpoint shows elevated upload volume toward an uncommon external category. Statistical fixtures only—no covert channels, no tunneling configs, no actual data samples.",
+  "severity": "high",
+  "attack_category": "data_exfiltration_signal",
+  "mitre_attack_techniques": ["T1048", "T1567"],
+  "target_type": "network_flow",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["playbook", "dlp", "network", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "baseline",
+      "synthetic_narrative": "Per-host egress baseline computed from lab telemetry window W-72h."
+    },
+    {
+      "t_offset_seconds": 600,
+      "phase": "spike_detection",
+      "synthetic_narrative": "Upload_bytes counter for principal lab-notebook-hailey-14 exceeds sigma threshold fixture."
+    },
+    {
+      "t_offset_seconds": 1200,
+      "phase": "enrichment_stub",
+      "synthetic_narrative": "Classifier labels destination category EXTERNAL_STORAGE_UNK_LAB—not a live hostname dump."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "pb10-evt-01",
+      "kind": "monitoring.alert.synthetic",
+      "payload": {
+        "alert_type": "dlp.egress.anomaly_synthetic",
+        "principal_id": "lab-notebook-hailey-14",
+        "upload_bytes_fixture": 512000000,
+        "baseline_sigma_fixture": 5.2,
+        "severity": "high"
+      }
+    },
+    {
+      "ref": "pb10-evt-02",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: Possible bulk egress (synthetic heuristic)",
+        "severity": "high",
+        "category": "data_movement_signal",
+        "asset_type": "endpoint",
+        "target_value": "host:lab-notebook-hailey-14"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "pb10-evt-01",
+      "headline": "DLP egress threshold crossed",
+      "synthetic_detail": "Fixture counters; does not embed file names or content."
+    },
+    {
+      "ref": "pb10-evt-02",
+      "headline": "Investigation finding opened",
+      "synthetic_detail": "Aligns with insider-threat triage checklist (lab)."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "pb10-seq-01",
+      "agent_key": "incident-coordinator",
+      "capability": "case_open_high",
+      "match": {}
+    },
+    {
+      "id": "pb10-seq-02",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": {}
+    },
+    {
+      "id": "pb10-seq-03",
+      "agent_key": "scanner-external-recon",
+      "capability": "intel_context_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "High-volume egress triggers IR collaboration lane."
+    },
+    {
+      "agent_id": "agent-2-osint-vuln-intel",
+      "triggered_reason_synthetic": "Optional enrichment for destination reputation (lab stub, no live queries required)."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "PR.DS-2",
+      "control_label": "Data-in-transit protected"
+    },
+    {
+      "framework": "iso27001",
+      "control_id": "A.13.2.1",
+      "control_label": "Information transfer policies"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Simulated egress policy tightening, CASB inspection enablement suggestion, HR/legal consultation flag (fixture).",
+    "expected_action_types": ["casb_simulation", "investigation_ticket", "controls_harden_plan"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Snapshot lab firewall counters for investigative record (stub).",
+      "automation_boundary": "lab_stub_only"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "content_inspection_ethics_review",
+      "synthetic_rationale": "Expanded inspection may intersect privacy regimes; humans gate depth."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "volume_analysis_fixture",
+    "user_context_lab",
+    "recommended_controls",
+    "remediation_timeline"
+  ],
+  "expected_final_report": {
+    "title": "Data exfiltration signal — synthetic playbook outcome",
+    "synthetic_executive_summary": "Statistical egress spike triggered containment planning without asserting theft or exposing file contents.",
+    "sections": ["timeline", "network_telemetry_fixture", "user_interview_checkbox", "control_gaps"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "id": "pb-lab-07-cloud-bucket-public",
+  "name": "Safe synthetic playbook: Object storage bucket marked public",
+  "description": "Cloud posture drift where a lab bucket ACL/policy grants world-readable listing. Uses fake resource names and synthetic ARNs only—no presigned URLs, no data download instructions.",
+  "severity": "high",
+  "attack_category": "misconfigured_cloud_resource",
+  "mitre_attack_techniques": ["T1530", "T1213"],
+  "target_type": "cloud_storage",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["playbook", "cloud", "data_exposure_risk", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "cspm_scan",
+      "synthetic_narrative": "Cloud posture scan records public-read equivalent on bucket lab-sim-invoices-archive."
+    },
+    {
+      "t_offset_seconds": 300,
+      "phase": "data_classification_touch",
+      "synthetic_narrative": "DLP tag simulation suggests possible sensitive prefix (label only, no file contents)."
+    },
+    {
+      "t_offset_seconds": 900,
+      "phase": "remediation_queue",
+      "synthetic_narrative": "Policy requests private ACL and logging enablement simulation."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "pb07-evt-01",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: Public object storage bucket (synthetic)",
+        "severity": "high",
+        "category": "cloud_posture_public_access",
+        "asset_type": "s3_compatible_bucket_fixture",
+        "target_value": "bucket:lab-sim-invoices-archive"
+      }
+    },
+    {
+      "ref": "pb07-evt-02",
+      "kind": "external_intel.synthetic",
+      "payload": {
+        "source": "lab_cloud_audit_stub",
+        "note": "public_acl_equivalent_fixture",
+        "resource_name": "lab-sim-invoices-archive",
+        "severity": "high"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "pb07-evt-01",
+      "headline": "CSPM finding for public bucket",
+      "synthetic_detail": "Resource identifiers are imaginary; tenancy is sandbox only."
+    },
+    {
+      "ref": "pb07-evt-02",
+      "headline": "Audit trail corroboration",
+      "synthetic_detail": "Configuration change correlated to deployment pipeline label LAB-REL-884."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "pb07-seq-01",
+      "agent_key": "scanner-cloud-posture",
+      "capability": "misconfig_ticket_stub",
+      "match": {}
+    },
+    {
+      "id": "pb07-seq-02",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": {}
+    },
+    {
+      "id": "pb07-seq-03",
+      "agent_key": "incident-coordinator",
+      "capability": "data_governance_handoff_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-1-scanner-external-recon",
+      "triggered_reason_synthetic": "External/cloud surface inventory contributes to exposure scoring."
+    },
+    {
+      "agent_id": "agent-3-compliance-policy",
+      "triggered_reason_synthetic": "Data classification and retention policies evaluated."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "PR.DS-5",
+      "control_label": "Protections against data leaks"
+    },
+    {
+      "framework": "soc2",
+      "control_id": "CC6.6",
+      "control_label": "Logical access to data"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Remove public principal, enforce private-only policy, enable access logging and inventory export (simulation).",
+    "expected_action_types": ["iam_policy_simulation", "logging_enable_request", "owner_notification"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Draft restrictive bucket policy JSON in dry-run sandbox.",
+      "automation_boundary": "lab_stub_only"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "break_glass_public_access",
+      "synthetic_rationale": "Temporary public buckets sometimes exist for migrations; humans confirm revocation."
+    },
+    {
+      "gate": "customer_notification_threshold",
+      "synthetic_rationale": "Determine if contractual breach notification thresholds met (fixture assessment)."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "cloud_asset_context",
+    "data_risk_hypothesis",
+    "recommended_controls",
+    "remediation_timeline"
+  ],
+  "expected_final_report": {
+    "title": "Public cloud bucket — synthetic playbook outcome",
+    "synthetic_executive_summary": "A lab bucket flagged public-equivalent posture; playbook covers lockdown path and governance attestations.",
+    "sections": ["config_diff_fixture", "sensitive_prefix_hypothesis", "remediation_proof_points", "governance_notes"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  }
+}

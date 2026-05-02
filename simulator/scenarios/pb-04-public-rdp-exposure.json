@@ -1,0 +1,143 @@
+{
+  "id": "pb-lab-04-public-rdp",
+  "name": "Safe synthetic playbook: Public RDP listener detected",
+  "description": "Attack-surface simulation where an external recon scan observes an RDP-like port exposed to the internet on a labeled lab asset. No exploitation steps, port numbers are descriptive metadata only.",
+  "severity": "high",
+  "attack_category": "exposed_service",
+  "mitre_attack_techniques": ["T1133", "T1046"],
+  "target_type": "network_endpoint",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["playbook", "surface", "rdp", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "external_scan_stub",
+      "synthetic_narrative": "Agent-1 style scan fixture records reachable remote-desktop service fingerprint on asset lab-win-rdp-01."
+    },
+    {
+      "t_offset_seconds": 600,
+      "phase": "finding_normalization",
+      "synthetic_narrative": "Finding normalized as high-risk exposure awaiting ownership mapping."
+    },
+    {
+      "t_offset_seconds": 1200,
+      "phase": "remediation_planning",
+      "synthetic_narrative": "Simulator proposes bastion/VPN posture and firewall rule simulation."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "pb04-evt-01",
+      "kind": "external_intel.synthetic",
+      "payload": {
+        "source": "lab_external_discovery_stub",
+        "asset_hostname": "lab-win-rdp-01.example.invalid",
+        "service_label": "remote_desktop_protocol_exposure_synthetic",
+        "exposure": "internet_reachable_fixture",
+        "severity": "high"
+      },
+      "metadata": { "simulator": true }
+    },
+    {
+      "ref": "pb04-evt-02",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: Internet-exposed remote administration service (synthetic)",
+        "severity": "high",
+        "category": "network_exposure",
+        "asset_type": "host",
+        "target_value": "host:lab-win-rdp-01.example.invalid"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "pb04-evt-01",
+      "headline": "External discovery observation",
+      "synthetic_detail": "Benign scan artifact; no connection attempts beyond handshake metadata in lab."
+    },
+    {
+      "ref": "pb04-evt-02",
+      "headline": "Normalized exposure finding",
+      "synthetic_detail": "Inventory links the host to a mock business unit for routing."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "pb04-seq-01",
+      "agent_key": "scanner-external-recon",
+      "capability": "surface_finding_ingest",
+      "match": {}
+    },
+    {
+      "id": "pb04-seq-02",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": { "severity": "high" }
+    },
+    {
+      "id": "pb04-seq-03",
+      "agent_key": "incident-coordinator",
+      "capability": "remediation_ticket_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-1-scanner-external-recon",
+      "triggered_reason_synthetic": "External surface signal ingested for lab asset."
+    },
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "High exposure drives incident queue simulation."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "PR.IP-1",
+      "control_label": "Baseline configuration maintained"
+    },
+    {
+      "framework": "cis",
+      "control_id": "9.2",
+      "control_label": "Ensure RDP access is restricted (mapped conceptually)"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Close public path via firewall/group policy simulation, enforce VPN-only access pattern, validate with rescan artifact.",
+    "expected_action_types": ["network_rule_simulation", "config_hardening_request", "rescan_followup"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Draft firewall deny rule for LAB profile (not applied globally).",
+      "automation_boundary": "recommended_automation_simulation"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "change_window_firewall",
+      "synthetic_rationale": "Network changes may disrupt operators; CAB-style approval modeled."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "asset_context",
+    "exposure_evidence",
+    "recommended_controls",
+    "remediation_timeline"
+  ],
+  "expected_final_report": {
+    "title": "Public RDP exposure — synthetic playbook outcome",
+    "synthetic_executive_summary": "Lab asset showed internet-reachable remote administration; playbook closes with containment plan and governance mapping only.",
+    "sections": ["discovery_details", "blast_radius_estimate", "remediation_tracking", "rescan_checkpoint"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  }
+}

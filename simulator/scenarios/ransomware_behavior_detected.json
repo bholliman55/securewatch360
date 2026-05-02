@@ -1,0 +1,88 @@
+{
+  "id": "lab-ransom-002",
+  "name": "LAB: Ransomware-like file activity (synthetic EDR signals)",
+  "description": "Structured lab events that resemble mass file extension renames and shadow-copy tamper *signals* only. No ransomware binary, no encryption, no lateral movement execution.",
+  "severity": "critical",
+  "attack_category": "ransomware_behavior",
+  "mitre_attack_techniques": ["T1486", "T1490"],
+  "target_type": "endpoint",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["edr", "ransomware_behavior", "recovery_readiness"],
+  "simulated_events": [
+    {
+      "ref": "evt-01",
+      "kind": "monitoring.alert.synthetic",
+      "payload": {
+        "alert_type": "endpoint.mass_file_rename_signal",
+        "device_hostname": "lab-ws-orchid-07.example.invalid",
+        "process_name": "LAB-SyntheticProcessHost.exe",
+        "files_touched_count": 42,
+        "extension_pattern_observed": "*.lab-locked-synthetic",
+        "is_simulation": true
+      }
+    },
+    {
+      "ref": "evt-02",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: Possible ransomware preparation (synthetic)",
+        "severity": "critical",
+        "category": "ransomware_behavior_signal",
+        "asset_type": "endpoint",
+        "target_value": "lab-ws-orchid-07.example.invalid"
+      }
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "seq-01",
+      "agent_key": "soc-automation",
+      "capability": "high_priority_escalation_stub",
+      "match": {
+        "priority": "p1_or_equivalent"
+      }
+    },
+    {
+      "id": "seq-02",
+      "agent_key": "remediation-router",
+      "capability": "isolation_or_snapshots_recommended",
+      "match": {}
+    },
+    {
+      "id": "seq-03",
+      "agent_key": "backup-readiness",
+      "capability": "recovery_point_checklist_emitted",
+      "match": {}
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "PR.IP-4",
+      "control_label": "Backups are tested"
+    },
+    {
+      "framework": "cis",
+      "control_id": "10.4",
+      "control_label": "Configure anti-malware scanning (control family reference — lab)"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "LAB expectation: simulate host isolation workflow, validate backup immutability checks, open war-room channel without destructive commands.",
+    "expected_action_types": ["simulate_isolate_host", "backup_verification_stub", "incident_ticket"],
+    "human_in_the_loop": true
+  },
+  "expected_report_sections": [
+    "timeline_of_synthetic_signals",
+    "affected_assets",
+    "mitre_mapping",
+    "recovery_and_containment_plan",
+    "communications_template"
+  ],
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": true,
+    "min_controls_matched": 1,
+    "require_all_agent_steps": false
+  }
+}
