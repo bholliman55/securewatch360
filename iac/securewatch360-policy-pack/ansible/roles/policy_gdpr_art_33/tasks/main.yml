@@ -1,0 +1,5 @@
+---
+# GDPR Article 33 — Notification of a personal data breach to the supervisory authority.
+- name: Advisory reference — GDPR Art. 33
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_gdpr_art_33 — breach notification; extend with SOC handoff and supervisory authority templates."

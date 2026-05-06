@@ -1,0 +1,5 @@
+---
+# CMMC 2.0 — Access Control (Level 2 scaffold) — reference AC family control automation.
+- name: Advisory reference — CMMC AC (L2 scaffold)
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_cmmc_ac_l2_3 — access control L2 reference; map to CMMC assessment scope and SSP."

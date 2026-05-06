@@ -1,0 +1,5 @@
+---
+# COBIT 2019 — APO12 Managed risk (risk management framework and practices).
+- name: Advisory reference — COBIT APO12
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_cobit_apo12 — enterprise risk management linkage; extend with risk register and KPI evidence."

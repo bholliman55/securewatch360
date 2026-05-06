@@ -1,0 +1,5 @@
+---
+# HIPAA Security Rule 164.308(a)(5) — Protection against malicious software.
+- name: Advisory reference — HIPAA 164.308(a)(5)
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_hipaa_164_308_a_5 — malicious software protection; extend with endpoint and mail security controls."
