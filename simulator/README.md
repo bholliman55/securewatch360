@@ -105,19 +105,21 @@ Tests live under `simulator/tests/`. They cover:
 | Command | What it does |
 |---------|--------------|
 | `npm run sim:list` | Print discovered scenario ids and names |
-| `npm run sim:run -- <id-or-path>` | Run a single scenario by id substring or `.json` path |
+| `npm run sim:run -- --scenario <id-or-path>` | Run one scenario (**requires** `--scenario`; stem, scenario id substring, or path to `.json`) |
 | `npm run sim:run-all` | Run every scenario in `simulator/scenarios/` |
-| `npm run sim:report` | Generate a human Markdown + JSON report from the latest persisted result |
+| `npm run sim:report -- --runId <uuid>` | Regenerate Markdown + JSON reports for a persisted run (artifacts under `.simulation-results/`) |
 
 ### Example: run a golden-path scenario
 
 ```bash
-# by id substring (finds golden-phishing-training-monitoring.json)
-npm run sim:run -- golden-phishing
+# by scenario id substring (matches golden-phishing-training-monitoring.json)
+npm run sim:run -- --scenario golden-phishing
 
 # by explicit path
-npm run sim:run -- simulator/scenarios/golden-path/golden-ransomware-isolated-incident-report.json
+npm run sim:run -- --scenario simulator/scenarios/golden-path/golden-ransomware-isolated-incident-report.json
 ```
+
+**Staging:** for `SIMULATION_MODE=supabase|inngest`, tenant credentials, and verification steps see [`docs/simulator/STAGING-RUNBOOK.md`](../docs/simulator/STAGING-RUNBOOK.md).
 
 ### Example: demo mode rehearsal
 

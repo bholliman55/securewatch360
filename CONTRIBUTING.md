@@ -13,6 +13,7 @@ This project follows a simplified Git Flow (see your team’s branching doc for 
 
 - `npm run typecheck` (or `npx tsc --noEmit`) passes.
 - `npm run build` passes.
+- If you change `20260425150000_policy_pack_full_catalog.sql` or `scripts/generate-policy-pack-full-sql.mjs` inputs, run **`npm run generate:policy-pack-iac`** and commit the regenerated `iac/securewatch360-policy-pack/` outputs.
 - Security checks pass for your scope:
   - `npm audit --audit-level=high` (or `snyk test` when configured)
   - `npx semgrep --config p/owasp-top-ten --error`

@@ -27,6 +27,9 @@ npm run ui:dev        # Vite dev server for ui/
 # Database
 supabase db push      # apply migrations in supabase/migrations/
 
+# Policy pack IaC (align with SQL catalog migration)
+npm run generate:policy-pack-iac
+
 # Seeding & QA
 npm run seed:v4
 npm run qa:v4:e2e
@@ -38,22 +41,24 @@ npm run qa:frameworks:operational
 ```
 src/
   app/
-    api/          # 51 REST route handlers (App Router)
+    api/          # REST route handlers — see glob under src/app/api/**/route.ts (order of sixty; grows with features)
     analyst/      # analyst dashboard page
     account/      # account/settings page
   lib/            # service layer — all domain logic lives here
   inngest/
-    functions/    # 10 event-driven workflows
+    functions/    # event-driven workflows — registered array in functions/index.ts (cron + alert handlers + agent jobs)
   scanner/        # scanner adapter layer (mock + Tenable/Semgrep)
   types/          # shared TypeScript domain models
 supabase/
   migrations/     # 28+ timestamped SQL migrations
 ui/               # Vite React sub-app (served at /console/)
 policies/         # OPA Rego policy files
-iac/              # Terraform + Ansible reference modules
-docs/             # engineering guardrails, ITSM integration docs
-scripts/          # QA, seeding, compliance generation scripts
+iac/              # Terraform + Ansible modules; securewatch360-policy-pack (Ansible+Terraform stubs from `npm run generate:policy-pack-iac`)
+docs/             # engineering guardrails, simulator runbooks (`docs/simulator/`), ITSM docs
+scripts/          # QA, seeding, `generate-policy-pack-*.mjs`, compliance generators
 ```
+
+**Outbound notifications:** when implementing SMTP/Slack/SMS/etc., follow `.cursor/skills/alert-dispatcher/SKILL.md` (single choke point; tenant-scoped credentials; audit/evidence).
 
 ## Architecture Patterns
 
@@ -71,7 +76,7 @@ Key services:
 
 **Auth**: Supabase SSR cookie sessions. Two clients — browser (anon key, RLS enforced) and admin (service role, server-only). Roles defined in `src/lib/apiRoleMatrix.ts` (owner/admin/analyst/viewer).
 
-**Inngest workflows**: triggered by events, not cron (except scheduled scans, digest, compliance snapshot, awareness refresh). Entry point: `POST /api/inngest`.
+**Inngest workflows**: mix of **`event`** triggers (e.g. monitoring alerts, remediation requests) and **`cron`** triggers (scheduled scans, digests, compliance posture, OSINT/discovery, SLAs, scheduled reports — see `src/inngest/functions/`). Entry point: `POST /api/inngest`.
 
 **OPA**: optional external evaluator at `OPA_POLICY_EVAL_URL`. Fail-open by default; set `OPA_FAIL_ON_ENDPOINT_ERROR=true` for fail-closed (escalates with `sw360_opa_fail_closed: true`).
 

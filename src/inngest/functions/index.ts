@@ -15,6 +15,7 @@ import { runVendorRiskAssessmentFunction } from "./runVendorRiskAssessment";
 import { generateRemediationPlaybookFunction } from "./generateRemediationPlaybook";
 import { generateThreatDigestFunction } from "./generateThreatDigest";
 import { slaBreachSweepFunction } from "./slaBreachSweep";
+import { approvalRiskSlaSweep } from "./approval-risk-sla-sweep";
 import { runScheduledReportsFunction } from "./runScheduledReports";
 
 export const inngestFunctions = [
@@ -36,5 +37,6 @@ export const inngestFunctions = [
   generateRemediationPlaybookFunction,
   generateThreatDigestFunction,
   slaBreachSweepFunction,
+  approvalRiskSlaSweep,
   runScheduledReportsFunction,
 ];

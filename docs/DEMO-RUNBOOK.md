@@ -110,7 +110,7 @@ SIMULATION_DEMO_MODE=true npm run sim:run-all
 | `golden-cmmc-drift-corrected` | CMMC control drift detected → corrective action + compliance snapshot |
 | `golden-vulnerable-dependency-ticket` | CVE in dependency → ticket-driven patch workflow |
 
-See [`simulator/README.md`](../simulator/README.md) for the full CLI reference and scenario schema.
+See [`simulator/README.md`](../simulator/README.md) for the full CLI reference (`sim:run` requires `--scenario`). For **staging** integrations (real audit rows + Inngest monitoring workflow), leave demo mode off and follow [`simulator/STAGING-RUNBOOK.md`](./simulator/STAGING-RUNBOOK.md).
 
 ---
 
