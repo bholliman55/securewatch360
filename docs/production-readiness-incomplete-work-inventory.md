@@ -32,7 +32,7 @@ This document records **placeholder text, TODO/FIXME markers, and structural gap
 
 | Item | Location | Issue | Remediation |
 |------|----------|-------|-------------|
-| Orchestrator | `src/agents/agent6-quantum-readiness/index.ts` | JSDoc and inline **TODO** for **Supabase persistence** and **OPA/Rego** HTTP evaluation. | Implement persistence (e.g. `src/lib/quantumAssessmentPersistence.ts` using service-role server path) and optional OPA calls to `policies/rego/quantum/*.rego` packages, or remove TODOs only after those features exist elsewhere and the contract is updated. |
+| Orchestrator | `src/agents/agent6-quantum-readiness/index.ts` | ~~TODO persistence + OPA~~ **Done:** `persistQuantumReadinessOutput` in `src/lib/quantumAssessmentPersistence.ts`, optional OPA in `quantumOpaEvaluation.ts`, `POST /api/quantum/readiness-assessment`. | Operational: load quantum bundles on OPA; tune timeouts via `OPA_POLICY_EVAL_TIMEOUT_MS`. |
 | README | `src/agents/agent6-quantum-readiness/README.md` | ~~Referenced open RLS TODO.~~ **Done:** points at tenant-scoped RLS migration. | — |
 
 ---
@@ -59,7 +59,7 @@ This document records **placeholder text, TODO/FIXME markers, and structural gap
 1. ~~**Quantum RLS**~~ — **Done** (`20260505203000_quantum_tables_tenant_scoped_rls.sql`, PR #43 → `main`).
 2. ~~**Ansible playbook + missing roles (all frameworks)**~~ — **Done** — every framework in the pack (NIST, HIPAA, PCI-DSS, ISO 27001, SOC 2, CIS, GDPR, FedRAMP, CMMC, COBIT, CCPA) has an on-disk `roles/<ansible_role>/tasks/main.yml`; playbook header lists all 22 roles.
 3. ~~**GV.PO-01**~~ — **Done** — evidence directory + markdown artefact + enforced-mode assert (see role `tasks/main.yml`).
-4. **Agent 6 persistence + OPA** — implement or formally defer in README/API contract.
+4. ~~**Agent 6 persistence + OPA**~~ — **Done** (`quantumAssessmentPersistence`, `quantumOpaEvaluation`, API route).
 5. **Bright Data client** — clarify configuration vs stub language.
 
 ---
@@ -70,5 +70,6 @@ This document records **placeholder text, TODO/FIXME markers, and structural gap
 |------|--------|
 | 2026-05-05 | Initial inventory from repo audit (grep + playbook/layout review). |
 | 2026-05-05 | Recorded completion: quantum RLS migration (PR #43); full eleven-framework Ansible role set + GV.PO-01 hardening tasks; playbook/framework documentation. |
+| 2026-05-06 | Agent 6: Supabase persistence + optional OPA + `POST /api/quantum/readiness-assessment`. |
 
 When an item is fixed, update the corresponding row or append a dated note under §7 instead of deleting history, until the checklist is fully clear.

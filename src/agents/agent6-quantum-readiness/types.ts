@@ -130,6 +130,16 @@ export interface QuantumPolicyResult {
   evidence: Record<string, unknown>;
 }
 
+/** Optional vendor PQC declarations for supply-chain Rego (Agent 6). */
+export interface VendorMetadata {
+  vendorName: string;
+  productName?: string;
+  pqcStatus: "supported" | "roadmap_confirmed" | "evaluating" | "no_roadmap" | "unknown";
+  nistPqcStandardsListed?: string[];
+  isCriticalSystem?: boolean;
+  contactConfirmedAt?: string;
+}
+
 // ── Algorithm Profile (internal engine type) ──────────────────────────────────
 
 export interface QuantumAlgorithmProfile {

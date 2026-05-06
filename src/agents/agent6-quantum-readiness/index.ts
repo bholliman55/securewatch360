@@ -9,6 +9,7 @@ import type {
   QuantumRemediationTask,
   QuantumPolicyResult,
   RawScanFinding,
+  VendorMetadata,
 } from "./types";
 import { normalizeCryptoInventory } from "./cryptoInventoryScanner";
 import type { ManualAssetPayload } from "./cryptoInventoryScanner";
@@ -16,8 +17,12 @@ import { analyzeQuantumRisk } from "./quantumRiskEngine";
 import { calculateQuantumReadinessScore } from "./quantumReadinessScoring";
 import { generateQuantumRemediationTasks } from "./remediationPlanner";
 import { evaluatePolicies, mapToFrameworkControls } from "./policyMapper";
+import { evaluateQuantumInventoryOpa, evaluateQuantumVendorOpa } from "./quantumOpaEvaluation";
+import { randomUUID } from "node:crypto";
 
 // ── Input / Output ────────────────────────────────────────────────────────────
+
+export type { VendorMetadata } from "./types";
 
 export interface QuantumAssessmentInput {
   clientId: string;
@@ -31,20 +36,13 @@ export interface QuantumAssessmentInput {
   options?: AssessmentOptions;
 }
 
-export interface VendorMetadata {
-  vendorName: string;
-  productName?: string;
-  pqcStatus: "supported" | "roadmap_confirmed" | "evaluating" | "no_roadmap" | "unknown";
-  nistPqcStandardsListed?: string[];
-  isCriticalSystem?: boolean;
-  contactConfirmedAt?: string;
-}
-
 export interface AssessmentOptions {
   /** Compliance frameworks to include in control gap mapping. */
   frameworks?: string[];
   /** Suppress per-item tasks for findings below this risk level. */
   minimumRiskLevel?: "critical" | "high" | "medium" | "low";
+  /** When false, skip HTTP calls to OPA for quantum packages (defaults to true). */
+  enableOpa?: boolean;
 }
 
 export interface QuantumAssessmentOutput {
@@ -67,6 +65,8 @@ export interface AssessmentMeta {
   itemsEnriched: number;
   tasksGenerated: number;
   policyChecksRun: number;
+  /** Count of rows produced by quantum Rego OPA evaluation (crypto + tls + vendor). */
+  opaPolicyResultsCount?: number;
   durationMs: number;
 }
 
@@ -78,24 +78,20 @@ export interface AssessmentMeta {
  * Steps:
  *   1. Normalise crypto inventory from all provided sources.
  *   2. Enrich every item with analyzeQuantumRisk().
- *   3. Calculate Quantum Readiness Score.
- *   4. Generate remediation tasks.
- *   5. Evaluate in-process policy rules.
- *   6. Map findings to compliance framework controls.
+ *   3. Assign stable inventory UUIDs (for remediation FKs and persistence).
+ *   4. Calculate Quantum Readiness Score.
+ *   5. Generate remediation tasks.
+ *   6. Evaluate in-process policy rules (TypeScript).
+ *   7. Optionally evaluate `policies/rego/quantum/*.rego` via OPA when `OPA_BASE_URL` is set.
+ *   8. Map findings to compliance framework controls.
  *
- * Returns a pure data structure — no Supabase writes occur here.
- *
- * TODO: Add Supabase persistence layer (write inventory, assessment,
- *       tasks, and policy results to their respective tables).
- * TODO: Add OPA/Rego evaluation via HTTP call to policy agent for
- *       quantum_crypto_policy.rego, quantum_tls_policy.rego, and
- *       quantum_vendor_readiness_policy.rego.
+ * Persistence is server-only: use `persistQuantumReadinessOutput` from `@/lib/quantumAssessmentPersistence`.
  */
 export async function runQuantumReadinessAssessment(
   input: QuantumAssessmentInput,
 ): Promise<QuantumAssessmentOutput> {
   const startMs = Date.now();
-  const { clientId, scanId, assets = [], scanFindings = [], options = {} } = input;
+  const { clientId, scanId, assets = [], scanFindings = [], options = {}, vendorMetadata = [] } = input;
 
   // ── Step 1: Normalise crypto inventory ─────────────────────────────────────
 
@@ -122,36 +118,42 @@ export async function runQuantumReadinessAssessment(
     item.vulnerabilityStatus === "unknown" ? analyzeQuantumRisk(item) : item,
   );
 
+  // ── Stable ids for remediation tasks, OPA rows, and Supabase FKs ───────────
+  const withIds: CryptoInventoryItem[] = enriched.map((item) => ({
+    ...item,
+    id: item.id ?? randomUUID(),
+  }));
+
   // ── Step 3: Calculate readiness score ──────────────────────────────────────
 
-  const assessment = calculateQuantumReadinessScore(enriched, clientId, scanId);
+  const assessment = calculateQuantumReadinessScore(withIds, clientId, scanId);
 
   // ── Step 4: Generate remediation tasks ─────────────────────────────────────
 
-  const remediationTasks = generateQuantumRemediationTasks(clientId, assessment, enriched);
+  const remediationTasks = generateQuantumRemediationTasks(clientId, assessment, withIds);
 
-  // ── Step 5: Evaluate in-process policy rules ───────────────────────────────
+  // ── Step 5: Evaluate in-process policy rules ────────────────────────────────
 
-  const policyResults = evaluatePolicies(enriched, clientId);
+  const tsPolicyResults = evaluatePolicies(withIds, clientId);
+
+  const enableOpa = options.enableOpa !== false;
+  const opaInventoryResults = enableOpa ? await evaluateQuantumInventoryOpa(withIds, clientId) : [];
+  const opaVendorResults =
+    enableOpa && vendorMetadata.length > 0
+      ? await evaluateQuantumVendorOpa(vendorMetadata, clientId)
+      : [];
+
+  const policyResults: QuantumPolicyResult[] = [...tsPolicyResults, ...opaInventoryResults, ...opaVendorResults];
 
   // ── Step 6: Map to compliance framework controls ───────────────────────────
 
-  const controlMappings = mapToFrameworkControls(enriched, options.frameworks);
-
-  // TODO: OPA evaluation
-  // const opaResults = await evaluateOpaPolicy("quantum_crypto_policy", enriched);
-
-  // TODO: Supabase persistence
-  // await persistInventory(enriched, clientId, scanId);
-  // await persistAssessment(assessment);
-  // await persistRemediationTasks(remediationTasks);
-  // await persistPolicyResults(policyResults);
+  const controlMappings = mapToFrameworkControls(withIds, options.frameworks);
 
   return {
     clientId,
     scanId,
     completedAt: new Date().toISOString(),
-    inventory: enriched,
+    inventory: withIds,
     assessment,
     remediationTasks,
     policyResults,
@@ -159,9 +161,10 @@ export async function runQuantumReadinessAssessment(
     meta: {
       totalSourcesProcessed: sources.length,
       itemsDiscovered: inventory.length,
-      itemsEnriched: enriched.length,
+      itemsEnriched: withIds.length,
       tasksGenerated: remediationTasks.length,
       policyChecksRun: policyResults.length,
+      opaPolicyResultsCount: opaInventoryResults.length + opaVendorResults.length,
       durationMs: Date.now() - startMs,
     },
   };
