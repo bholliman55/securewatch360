@@ -67,6 +67,53 @@ Show that SecureWatch360 can continuously monitor assets, execute scans, surface
 - If scans are stale, trigger one scan from an existing adversarial target and refresh `Recent Scans`.
 - If assets look empty, verify `scan_targets` exist for test tenant and reload scanner page.
 
+## Simulation Lab Demo Mode
+
+For investor briefings and pre-sales rehearsals you can drive the SecureWatch360 **Simulation Dashboard** with fictitious MSSP client fixtures instead of a live tenant.
+
+### Enable demo mode
+
+Set the environment variable before starting the Next.js dev server:
+
+```bash
+SIMULATION_DEMO_MODE=true npm run dev
+```
+
+Then run a golden-path scenario in demo mode in a second terminal:
+
+```bash
+SIMULATION_DEMO_MODE=true npm run sim:run-all
+```
+
+### What demo mode does
+
+- Orchestration sink is forced to `local` — no Supabase writes, no Inngest events.
+- Simulated events are annotated with fictitious MSSP company names and `*.sw360-demo.invalid` hostnames.
+- Live remediation execution is blocked (`remediation_live_execution_blocked: true` in event metadata).
+- Dashboard summary surfaces a prominent **"Demonstration / simulated data"** banner and `demo_disclaimer` text.
+- `GET /api/simulation/demo-mode` returns `{ simulationDemoMode: true }` for badge rendering.
+
+### Demo dashboard in the console
+
+1. Navigate to the **Simulation** tab in the side menu (`/console/`).
+2. The **Simulation Lab Briefing** panel pulls the latest persisted `dashboard_summary` from `.simulation-results/`.
+3. Run `npm run sim:run-all` to generate or refresh results; click **Refresh summary** in the UI.
+4. The autonomy score, scenario timeline, executive summary, and agent pass/fail counts update automatically.
+
+### Golden-path scenarios available for demos
+
+| Scenario | Narrative |
+|----------|-----------|
+| `golden-phishing-training-monitoring` | Employee phishing campaign → training dispatch + continuous monitoring |
+| `golden-ransomware-isolated-incident-report` | Ransomware behaviour signal → endpoint isolation + full incident report |
+| `golden-msp-rdp-remediated` | Public RDP exposure → firewall remediation via MSP ticketing |
+| `golden-cmmc-drift-corrected` | CMMC control drift detected → corrective action + compliance snapshot |
+| `golden-vulnerable-dependency-ticket` | CVE in dependency → ticket-driven patch workflow |
+
+See [`simulator/README.md`](../simulator/README.md) for the full CLI reference and scenario schema.
+
+---
+
 ## Known Demo Dataset
 
 Current adversarial set includes:
