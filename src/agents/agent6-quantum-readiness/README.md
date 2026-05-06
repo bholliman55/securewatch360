@@ -19,17 +19,21 @@ Key threats addressed:
 
 ```
 agent6-quantum-readiness/
-├── types.ts                  # All TypeScript types and interfaces
-├── quantumRiskEngine.ts      # Algorithm database + per-asset risk analysis
-├── cryptoInventoryScanner.ts # Finding-to-inventory conversion + metadata ingestion
-├── quantumReadinessScoring.ts# Aggregate Quantum Readiness Score (0–100)
-├── remediationPlanner.ts     # Prioritised QuantumRemediationTask generation
-├── policyMapper.ts           # Compliance control mapping + OPA policy evaluation
-├── samplePayloads.ts         # Synthetic test data (no client-specific values)
+├── index.ts                   # Orchestrator: scoring + TS policies + optional OPA
+├── types.ts                   # Types (including VendorMetadata)
+├── quantumRiskEngine.ts       # Algorithm database + per-asset risk analysis
+├── quantumOpaEvaluation.ts    # HTTP evaluation of policies/rego/quantum/*.rego (fail-open)
+├── cryptoInventoryScanner.ts  # Finding-to-inventory conversion + metadata ingestion
+├── quantumReadinessScoring.ts # Aggregate Quantum Readiness Score (0–100)
+├── remediationPlanner.ts      # Prioritised QuantumRemediationTask generation
+├── policyMapper.ts            # Compliance mapping + TypeScript policy rules
+├── samplePayloads.ts          # Synthetic test data (no client-specific values)
 └── tests/
     ├── quantumRiskEngine.test.ts
     └── quantumReadinessScoring.test.ts
 ```
+
+(Orchestration tests: `src/__tests__/quantumReadinessOrchestration.test.ts`.)
 
 ---
 
@@ -123,6 +127,28 @@ Each policy returns a `results` set with `policy_id`, `severity`, `passed`, `mes
 | PCI DSS v4.0 | 4.2.1, 3.5.1 |
 | FedRAMP | SC-13 |
 | NIST SP 800-52 | TLS version |
+
+---
+
+## Persistence and OPA (production)
+
+| Concern | Location / behaviour |
+|--------|------------------------|
+| **Supabase writes** | `src/lib/quantumAssessmentPersistence.ts` → `persistQuantumReadinessOutput(output)` inserts `quantum_readiness_assessments`, `quantum_crypto_inventory`, `quantum_remediation_tasks`, and `quantum_policy_results` using **`getSupabaseAdminClient()`** (server-only). |
+| **API** | `POST /api/quantum/readiness-assessment` with `{ tenantId, scanId?, scanFindings?, assets?, vendorMetadata?, persist? }`; requires tenant session + `remediationAndScan` role membership. |
+
+**Optional OPA (fail-open)**
+
+When `OPA_BASE_URL` or `QUANTUM_OPA_BASE_URL` is set, each inventory row is evaluated against:
+
+- `POST {base}/v1/data/securewatch/quantum/crypto`
+- `POST {base}/v1/data/securewatch/quantum/tls`
+
+Each `vendorMetadata` entry is evaluated against:
+
+- `POST {base}/v1/data/securewatch/quantum/vendor`
+
+Optional bearer token: `OPA_POLICY_EVAL_TOKEN` or `OPA_AUTH_TOKEN`. Disable OPA per call with `options.enableOpa: false`.
 
 ---
 
