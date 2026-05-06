@@ -1,6 +1,6 @@
 ---
 name: alert-dispatcher
-description: Delivers outbound notifications across email, Slack, SMS, and webhooks using rendered content and escalation output. Implements the SecureWatch alert pipeline choke point — after deduplication, notification-cooldown (finding-based alerts), escalation-chain-resolver, and message-template-renderer. Use when sending alerts, wiring n8n/ worker notification delivery, adding a channel adapter, confirming delivery status for cooldown bookkeeping, retrying failed sends, or mapping alert payloads to real transports.
+description: Delivers outbound notifications across email, Slack, SMS, and webhooks using rendered content and escalation output. Implements the SecureWatch alert pipeline choke point — after deduplication, notification-cooldown (finding-based alerts), escalation-chain-resolver, and message-template-renderer. Use when sending alerts, wiring worker or app notification delivery, adding a channel adapter, confirming delivery status for cooldown bookkeeping, retrying failed sends, or mapping alert payloads to real transports.
 ---
 
 # Alert Dispatcher
@@ -98,7 +98,6 @@ Return a single structured result for the workflow:
 
 - Immediate notification transports may be stubs in some paths (for example digest jobs that record audit intent). When implementing real sends, tenant-scope all lookups, record **audit/evidence** as required by project patterns, and keep policy evaluation off the dispatcher (dispatcher is transport-only).
 
-## n8n
+## Visual / third-party orchestrators (optional)
 
-- Implement as sub-workflow **`SW - Alert Dispatcher`**.
-- Input: merged JSON above. Inside: Split In Batches on `recipients`, then Switch on channel to dedicated nodes (SMTP, Slack, SMS, HTTP Request).
+If you model delivery in a low-code tool, mirror the same contract: single **Alert Dispatcher** choke point, Split In Batches on `recipients`, then Switch on channel to SMTP / Slack / SMS / HTTP Request. Prefer implementing the dispatcher in **SecureWatch360** application code or Inngest steps so credentials and audit stay tenant-scoped.

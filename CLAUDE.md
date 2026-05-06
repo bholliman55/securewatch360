@@ -8,7 +8,7 @@ SecureWatch360 is a multi-tenant security operations platform (v4). It scans ass
 
 - **Next.js 15** (App Router), **React 19**, **TypeScript 5.9**
 - **Supabase** (Postgres + Auth + RLS) — client factories in `src/lib/supabase.ts`
-- **Inngest** — event-driven workflow orchestration (`src/inngest/`)
+- **Inngest** — event-driven workflow orchestration (`src/inngest/`); no separate low-code workflow engine in the product architecture
 - **OPA** (optional) — external policy evaluation; fail-open by default
 - **UI sub-app** — separate Vite + React + Tailwind app in `ui/`, proxies `/api` to Next.js on `:3000`
 
