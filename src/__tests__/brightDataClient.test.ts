@@ -90,6 +90,34 @@ describe("BrightDataClient.fetchUrl", () => {
   });
 });
 
+describe("BrightDataClient.searchWeb", () => {
+  beforeEach(() => vi.stubGlobal("fetch", vi.fn()));
+
+  it("normalises organic_results shape from JSON", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        organic_results: [
+          { title: "One", url: "https://a.test", snippet: "s1" },
+          { name: "Two", destination: "https://b.test", description: "s2" },
+        ],
+      }),
+    });
+
+    const client = new BrightDataClient({
+      ...BASE_CONFIG,
+      serpApiBaseUrl: "https://brd.superproxy.io:22225",
+    });
+    const res = await client.searchWeb({ query: "qtest", numResults: 10 });
+    expect(res.results).toHaveLength(2);
+    expect(res.results[0].title).toBe("One");
+    expect(res.results[0].url).toBe("https://a.test");
+    expect(res.results[1].url).toBe("https://b.test");
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining("q=qtest"), expect.any(Object));
+  });
+});
+
 describe("BrightDataClient.browserScrape", () => {
   it("extracts links from HTML", async () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({

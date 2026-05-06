@@ -41,7 +41,7 @@ This document records **placeholder text, TODO/FIXME markers, and structural gap
 
 | Item | Location | Issue | Remediation |
 |------|----------|-------|-------------|
-| Comments | `src/integrations/brightdata/brightDataClient.ts` | **“Wire: replace with…”** on endpoints and SERP implementation. | Either implement configurable hosts via `BrightDataConfig` / env, or replace comments with accurate documentation that defaults are intentional and how to override—remove “replace with your” wording so grep stays clean. |
+| Config + docs | `brightDataClient.ts`, `brightDataConfig.ts`, `brightDataTypes.ts` | ~~“Wire: replace…” placeholders on gateway/SERP.~~ **Done:** `BRIGHTDATA_WEB_UNLOCKER_PROXY_URL`, `BRIGHTDATA_SERP_API_BASE_URL`; `DEFAULT_BRIGHTDATA_GATEWAY`; SERP JSON normaliser (`organic` / `organic_results` / `results`). | Wire real proxy dispatcher (e.g. `HttpsProxyAgent`) if your runtime requires routing `fetch(url)` via the gateway. |
 
 ---
 
@@ -60,7 +60,7 @@ This document records **placeholder text, TODO/FIXME markers, and structural gap
 2. ~~**Ansible playbook + missing roles (all frameworks)**~~ — **Done** — every framework in the pack (NIST, HIPAA, PCI-DSS, ISO 27001, SOC 2, CIS, GDPR, FedRAMP, CMMC, COBIT, CCPA) has an on-disk `roles/<ansible_role>/tasks/main.yml`; playbook header lists all 22 roles.
 3. ~~**GV.PO-01**~~ — **Done** — evidence directory + markdown artefact + enforced-mode assert (see role `tasks/main.yml`).
 4. ~~**Agent 6 persistence + OPA**~~ — **Done** (`quantumAssessmentPersistence`, `quantumOpaEvaluation`, API route).
-5. **Bright Data client** — clarify configuration vs stub language.
+5. ~~**Bright Data client**~~ — **Done** — env-driven gateway URLs, production comments, richer SERP parse.
 
 ---
 
@@ -71,5 +71,6 @@ This document records **placeholder text, TODO/FIXME markers, and structural gap
 | 2026-05-05 | Initial inventory from repo audit (grep + playbook/layout review). |
 | 2026-05-05 | Recorded completion: quantum RLS migration (PR #43); full eleven-framework Ansible role set + GV.PO-01 hardening tasks; playbook/framework documentation. |
 | 2026-05-06 | Agent 6: Supabase persistence + optional OPA + `POST /api/quantum/readiness-assessment`. |
+| 2026-05-06 | Bright Data client: configurable gateway/SERP URLs, documented Unlocker semantics, SERP envelope parsing. |
 
 When an item is fixed, update the corresponding row or append a dated note under §7 instead of deleting history, until the checklist is fully clear.
