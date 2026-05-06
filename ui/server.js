@@ -27,14 +27,6 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-const N8N_WEBHOOK_MAPPING = {
-  'vulnerability':    process.env.N8N_WEBHOOK_AGENT_2,
-  'penetration_test': process.env.N8N_WEBHOOK_AGENT_1,
-  'web_application':  process.env.N8N_WEBHOOK_AGENT_1,
-  'compliance':       process.env.N8N_WEBHOOK_AGENT_3,
-  'network':          process.env.N8N_WEBHOOK_AGENT_2,
-};
-
 const errorResponse = (endpoint, scanResultId, message, statusCode = 500) => ({
   error: message,
   endpoint,
@@ -70,35 +62,13 @@ const logRequest = (endpoint, scanType, target, scanResultId) => {
   console.log(`[${timestamp}] ${endpoint} - scanType: ${scanType}, target: ${target}, scanResultId: ${scanResultId}`);
 };
 
-const logWebhookCall = (webhookUrl, payload) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] Calling webhook: ${webhookUrl}`);
-  console.log(`[${timestamp}] Webhook payload:`, JSON.stringify(payload, null, 2));
-};
-
-const logWebhookResponse = (webhookUrl, status, responseBody) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] Webhook response from ${webhookUrl}: ${status}`);
-  console.log(`[${timestamp}] Response body:`, JSON.stringify(responseBody, null, 2));
-};
-
+/** @deprecated Legacy path — scans are orchestrated in the SecureWatch360 Next.js app via Inngest (`scan-tenant` / API routes). */
 app.post('/api/run-scan', async (req, res) => {
-  const { scanId, scanType, target, clientId } = req.body;
   const timestamp = new Date().toISOString();
 
   try {
-    logRequest('/api/run-scan', scanType, target, scanId || null);
-
-    if (!scanType || !target || clientId === undefined) {
-      return res.status(400).json(
-        errorResponse(
-          '/api/run-scan',
-          null,
-          'Missing required fields: scanType, target, clientId',
-          400
-        )
-      );
-    }
+    const { scanType, target } = req.body;
+    logRequest('/api/run-scan', scanType, target, req.body.scanId ?? null);
 
     const validationError = validateTarget(scanType, target);
     if (validationError) {
@@ -112,66 +82,13 @@ app.post('/api/run-scan', async (req, res) => {
       );
     }
 
-    const webhookUrl = N8N_WEBHOOK_MAPPING[scanType];
-    if (!webhookUrl) {
-      return res.status(500).json(
-        errorResponse(
-          '/api/run-scan',
-          null,
-          `Webhook URL not configured for scanType: ${scanType}`,
-          500
-        )
-      );
-    }
-
-    const payload = {
-      scanId,
-      scanType,
-      target,
-      clientId,
-      timestamp,
-    };
-
-    logWebhookCall(webhookUrl, payload);
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      const responseBody = await response.json().catch(() => ({}));
-      logWebhookResponse(webhookUrl, response.status, responseBody);
-
-      if (!response.ok) {
-        return res.status(500).json(
-          errorResponse('/api/run-scan', null, `Webhook failed with status ${response.status}: ${JSON.stringify(responseBody)}`, 500)
-        );
-      }
-
-      res.json({ success: true, scanType, target, timestamp });
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        console.error(`[${timestamp}] Webhook timeout:`, error.message);
-        return res.status(504).json(
-          errorResponse('/api/run-scan', null, 'Webhook timed out', 504)
-        );
-      }
-
-      console.error(`[${timestamp}] Webhook call error:`, error);
-      return res.status(500).json(
-        errorResponse('/api/run-scan', null, `Webhook error: ${error.message}`, 500)
-      );
-    }
+    console.warn(`[${timestamp}] /api/run-scan: returning 410 — use SecureWatch360 Next.js + POST /api/scans/request`);
+    return res.status(410).json({
+      error: 'deprecated',
+      message:
+        'This legacy UI server no longer forwards scans to external workflow engines. Run tenant-scoped scans from the SecureWatch360 application (Next.js + Inngest), e.g. POST /api/scans/request.',
+      hints: ['Run `npm run dev` from the repo root.', 'Configure scan targets under the Scan / Command Center UX.'],
+    });
   } catch (error) {
     console.error(`[${timestamp}] Unexpected error in /api/run-scan:`, error);
     res.status(500).json(
@@ -350,7 +267,7 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log('API Endpoints:');
-  console.log('  POST /api/run-scan - Initiate a scan');
-  console.log('  POST /api/scan-webhook-response - Receive scan results from n8n');
-  console.log('  GET /api/scan-status/:scanResultId - Get scan status');
+  console.log('  POST /api/run-scan — deprecated (410); use SecureWatch360 Next.js + Inngest');
+  console.log('  POST /api/scan-webhook-response — optional callback payload → scan_results / findings');
+  console.log('  GET /api/scan-status/:scanResultId — Get scan status');
 });

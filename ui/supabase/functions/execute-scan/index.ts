@@ -17,13 +17,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const getN8nWebhooks = () => ({
-  'compliance': edge.env.get('N8N_WEBHOOK_AGENT_3') || 'https://blackstrawfarms.app.n8n.cloud/webhook/compliance-scan',
-  'vulnerability': edge.env.get('N8N_WEBHOOK_AGENT_2') || 'https://blackstrawfarms.app.n8n.cloud/webhook/vuln-scan',
-  'penetration_test': edge.env.get('N8N_WEBHOOK_AGENT_1') || 'https://blackstrawfarms.app.n8n.cloud/webhook/security-scanner-start',
-  'web_application': edge.env.get('N8N_WEBHOOK_AGENT_1') || 'https://blackstrawfarms.app.n8n.cloud/webhook/security-scanner-start',
-});
-
 interface ScanRequest {
   scanId: string;
   scanType: string;
@@ -441,25 +434,6 @@ edge.serve(async (req: Request) => {
       .from('scan_results')
       .update({ status: 'running' })
       .eq('scan_results_id', scanId);
-
-    const N8N_WEBHOOKS = getN8nWebhooks();
-    const webhookUrl = N8N_WEBHOOKS[scanType as keyof typeof N8N_WEBHOOKS];
-    if (webhookUrl) {
-      try {
-        await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            scanId,
-            scanType,
-            target,
-            timestamp: new Date().toISOString()
-          })
-        });
-      } catch (webhookError) {
-        console.warn('N8N webhook call failed:', webhookError);
-      }
-    }
 
     const results = await plugin.execute(target);
 

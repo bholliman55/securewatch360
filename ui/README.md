@@ -30,3 +30,9 @@ ConnectWise must be configured on the server (env/credentials in `connectwise` l
 
 - Root project: `../README.md`
 - Supabase Edge Functions: `../supabase/functions/` and `../ui/supabase/functions/` (see root `README.md` for deploy order)
+
+## Legacy `server.js`
+
+`ui/server.js` is a static host + optional API helpers. **`POST /api/run-scan` returns HTTP 410 Gone** — scans are not initiated through external workflow tooling; use the **SecureWatch360 Next.js** app and **Inngest** (`scan-tenant`, `POST /api/scans/request`, etc.). **`POST /api/scan-webhook-response`** remains for generic JSON callbacks that update `scan_results` (if you still wire a custom orchestrator).
+
+The **execute-scan** Edge Function under `ui/supabase/functions/execute-scan/` runs built-in scan plugins only (no outbound workflow webhooks).
