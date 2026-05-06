@@ -1,5 +1,0 @@
----
-# PCI DSS v4 Requirement 6 — Develop and maintain secure systems and software.
-- name: Advisory reference — PCI DSS Req. 6
-  ansible.builtin.debug:
-    msg: "SecureWatch360 policy pack role policy_pci_dss_req_6 — secure SDLC; extend with SAST/DAST pipeline hooks and change management."

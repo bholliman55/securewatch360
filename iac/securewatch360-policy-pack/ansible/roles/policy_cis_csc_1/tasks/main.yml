@@ -1,5 +1,0 @@
----
-# CIS Controls v8 — CIS 1 (IG1) — Inventory and control of enterprise assets.
-- name: Advisory reference — CIS Control 1
-  ansible.builtin.debug:
-    msg: "SecureWatch360 policy pack role policy_cis_csc_1 — enterprise asset inventory; integrate with CMDB and discovery sources."

@@ -1,5 +1,0 @@
----
-# CMMC 2.0 — Incident Response (Level 2 scaffold) — reference IR family control automation.
-- name: Advisory reference — CMMC IR (L2 scaffold)
-  ansible.builtin.debug:
-    msg: "SecureWatch360 policy pack role policy_cmmc_ir_l2_3 — incident response L2 reference; align with IR plan and tabletop evidence."

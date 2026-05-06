@@ -350,6 +350,7 @@ function main() {
 
   fs.writeFileSync(OUT, lines.join("\n"), "utf8");
   console.log("wrote", OUT);
+  console.log("Also run: node scripts/generate-policy-pack-iac.mjs (sync Ansible/Terraform to policy_framework_controls paths)");
   console.log(
     "row counts:",
     JSON.stringify(
