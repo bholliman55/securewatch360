@@ -150,11 +150,11 @@ This is intentional — failure injection tests verify that the scorecard reflec
 
 ## Interpreting a low score
 
-A score below 60 (`not_ready`) in a local run is expected and normal — it usually means the simulation ran without Supabase/Inngest side-effects so audit correlation rows are absent. The score improves significantly when running against a staging tenant with `SIMULATION_MODE=supabase` or `inngest`.
+A score below 60 (`not_ready`) in a local run is expected and normal — it usually means the simulation ran without Supabase/Inngest side-effects so audit correlation rows are absent. The score improves significantly when running against a staging tenant with `SIMULATION_MODE=supabase` or `inngest` ([`STAGING-RUNBOOK.md`](./STAGING-RUNBOOK.md)).
 
 Steps to improve a score:
 
-1. Run with `SIMULATION_MODE=supabase` + valid `SIMULATION_TENANT_ID` to get audit correlation.
+1. Run per [`STAGING-RUNBOOK.md`](./STAGING-RUNBOOK.md) (`SIMULATION_MODE=supabase` or `inngest`, **`SIMULATION_DEMO_MODE` off**) with a valid **`SIMULATION_TENANT_ID`** so audit correlation (and workflows, for `inngest`) exercises the path.
 2. Ensure all `expected_agent_sequence` steps have matching `agent_key` and `capability` in validators.
 3. Review `nextRecommendedAction` in the dashboard summary — it surfaces the highest-leverage fix.
 4. Add `remediation.execution.synthetic` events to the scenario if remediation timing matters.

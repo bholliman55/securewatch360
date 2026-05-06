@@ -275,7 +275,7 @@ Run with:
 
 ```bash
 SIMULATION_MODE=supabase SIMULATION_TENANT_ID=<ci-tenant-uuid> \
-  npm run sim:run -- ci-database-fault
+  npm run sim:run -- --scenario ci-database-fault
 ```
 
 Expect `SimulationResult.passed` to be `false` (or `partial`) and inspect `telemetry.emissions[0].inject_error` in the persisted report JSON to confirm the fault fired.
