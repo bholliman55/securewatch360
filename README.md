@@ -736,21 +736,13 @@ Required Terraform variables: `supabase_organization_id`, `supabase_db_password`
 
 ### Policy Pack (multi-framework)
 
-The reference policy pack at `iac/securewatch360-policy-pack/` now covers all 11 compliance frameworks:
+The reference policy pack at `iac/securewatch360-policy-pack/` aligns with the seeded `policy_framework_controls` catalog (currently **995** Ansible roles plus matching Terraform modules under `terraform/modules/policies/<slug>/`). Paths and slugs mirror `ansible_role` and `terraform_module` in the migration `20260425150000_policy_pack_full_catalog.sql`.
 
-| Framework | Modules |
-|-----------|---------|
-| NIST CSF 2.0 | `nist_gv_po_01`, `nist_id_am_01`, `nist_pr_ds_01` |
-| HIPAA | `hipaa_164_308_a_1`, `hipaa_164_308_a_5` |
-| PCI-DSS | `pci_dss_req_1`, `pci_dss_req_6` |
-| ISO 27001 | `iso27001_a_5_1`, `iso27001_a_8_1` |
-| SOC 2 | `soc2_cc6_1`, `soc2_cc7_1` |
-| CIS Controls | `cis_csc_1`, `cis_csc_3` |
-| GDPR | `gdpr_art_32`, `gdpr_art_33` |
-| FedRAMP | `fedramp_ac_2`, `fedramp_au_2` |
-| CMMC | `cmmc_ac_l2_3`, `cmmc_ir_l2_3` |
-| COBIT | `cobit_apo12`, `cobit_dss05` |
-| CCPA | `ccpa_s1798_100`, `ccpa_s1798_105` |
+Regenerate stubs after changing that migration or `data/policy-catalog/`:
+
+```bash
+npm run generate:policy-pack-iac
+```
 
 **Apply all policy controls:**
 ```bash
