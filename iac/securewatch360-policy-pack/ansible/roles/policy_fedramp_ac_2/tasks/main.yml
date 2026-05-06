@@ -1,0 +1,5 @@
+---
+# FedRAMP — AC-2 Account management.
+- name: Advisory reference — FedRAMP AC-2
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_fedramp_ac_2 — account management; extend with SCIM and periodic access reviews."

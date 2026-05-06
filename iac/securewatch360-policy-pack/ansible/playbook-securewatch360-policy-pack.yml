@@ -1,5 +1,19 @@
 ---
-# SecureWatch360 Policy Pack — all 11 frameworks
+# SecureWatch360 Policy Pack — all 11 frameworks (22 catalog roles below)
+#
+# Coverage (each line is an on-disk role under ansible/roles/):
+#   NIST CSF 2.0 — GV.PO-01, ID.AM-01, PR.DS-01
+#   HIPAA — 164.308(a)(1), 164.308(a)(5)
+#   PCI-DSS — Req. 1, Req. 6
+#   ISO 27001 — A.5.1, A.8.1
+#   SOC 2 — CC6.1, CC7.1
+#   CIS Controls — CSC 1, CSC 3
+#   GDPR — Art. 32, Art. 33
+#   FedRAMP — AC-2, AU-2
+#   CMMC — AC-L2 scaffold, IR-L2 scaffold
+#   COBIT — APO12, DSS05
+#   CCPA — §1798.100, §1798.105
+#
 # Reference roles for GET /api/policy/export/ansible — names match policy_framework_controls.ansible_role
 # Run: ansible-playbook playbook-securewatch360-policy-pack.yml [-e enforcement_mode=enforced]
 - name: SecureWatch360 policy pack (reference)

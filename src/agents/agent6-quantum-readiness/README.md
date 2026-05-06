@@ -137,7 +137,7 @@ Migration: `supabase/migrations/20260428210000_create_agent6_quantum_tables.sql`
 | `quantum_remediation_tasks` | Actionable remediation items |
 | `quantum_policy_results` | Per-asset policy pass/fail records |
 
-All tables have RLS enabled. See migration for TODO notes on org-membership integration.
+All tables have RLS enabled. Tenant isolation is enforced via `tenant_users` in follow-up migration `20260505203000_quantum_tables_tenant_scoped_rls.sql` (select for any tenant member; insert/update for owner, admin, or analyst).
 
 ---
 

@@ -40,3 +40,6 @@ iac/**/.terraform/
 iac/**/terraform.tfstate
 iac/**/terraform.tfstate.backup
 iac/**/crash.log
+
+# local Ansible policy-evidence output (GV.PO-01 role; see policy pack readme)
+iac/securewatch360-policy-pack/policy-evidence-out/

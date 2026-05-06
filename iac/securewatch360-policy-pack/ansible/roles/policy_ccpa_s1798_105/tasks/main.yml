@@ -1,0 +1,5 @@
+---
+# CCPA / CPRA §1798.105 — Consumer right to deletion.
+- name: Advisory reference — CCPA §1798.105
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_ccpa_s1798_105 — right to delete; extend with erasure runbooks and subsystem dependency checks."

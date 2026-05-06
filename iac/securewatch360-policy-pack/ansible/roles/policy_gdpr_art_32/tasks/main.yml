@@ -1,0 +1,5 @@
+---
+# GDPR Article 32 — Security of processing (appropriate technical and organisational measures).
+- name: Advisory reference — GDPR Art. 32
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_gdpr_art_32 — security of processing; extend with RoPA-linked technical measures evidence."

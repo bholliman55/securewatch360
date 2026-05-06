@@ -1,0 +1,5 @@
+---
+# SOC 2 (TSC) CC7.1 — System operations detection and monitoring.
+- name: Advisory reference — SOC 2 CC7.1
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_soc2_cc7_1 — detection and monitoring; extend with SIEM and alert routing playbooks."

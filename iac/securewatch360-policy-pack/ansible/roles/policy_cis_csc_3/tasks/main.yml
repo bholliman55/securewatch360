@@ -1,0 +1,5 @@
+---
+# CIS Controls v8 — CIS 3 (IG1) — Data protection.
+- name: Advisory reference — CIS Control 3
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_cis_csc_3 — data protection; extend with DLP and classification automation."

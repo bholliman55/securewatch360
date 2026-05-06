@@ -1,0 +1,5 @@
+---
+# SOC 2 (TSC) CC6.1 — Logical and physical access controls.
+- name: Advisory reference — SOC 2 CC6.1
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_soc2_cc6_1 — access controls; extend with IdP and IAM evidence collection."

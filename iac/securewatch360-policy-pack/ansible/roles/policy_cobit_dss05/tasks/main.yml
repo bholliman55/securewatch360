@@ -1,0 +1,5 @@
+---
+# COBIT 2019 — DSS05 Managed security services (security operations and services).
+- name: Advisory reference — COBIT DSS05
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_cobit_dss05 — managed security services; extend with SOC KPIs and sourcing controls."

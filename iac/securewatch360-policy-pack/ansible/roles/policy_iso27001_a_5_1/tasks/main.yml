@@ -1,0 +1,5 @@
+---
+# ISO/IEC 27001:2022 Annex A.5.1 — Policies for information security.
+- name: Advisory reference — ISO 27001 A.5.1
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_iso27001_a_5_1 — information security policies; align artefact reviews with ISMS governance cadence."

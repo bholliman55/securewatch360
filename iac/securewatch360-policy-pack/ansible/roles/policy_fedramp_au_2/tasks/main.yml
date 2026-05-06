@@ -1,0 +1,5 @@
+---
+# FedRAMP — AU-2 Audit events.
+- name: Advisory reference — FedRAMP AU-2
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_fedramp_au_2 — auditable events; extend with logging configuration and retention attestation."

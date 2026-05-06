@@ -1,0 +1,5 @@
+---
+# HIPAA Security Rule 164.308(a)(1) — Security management process (administrative safeguards).
+- name: Advisory reference — HIPAA 164.308(a)(1)
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_hipaa_164_308_a_1 — HIPAA administrative safeguard; extend with tenant BCM and security management procedures."

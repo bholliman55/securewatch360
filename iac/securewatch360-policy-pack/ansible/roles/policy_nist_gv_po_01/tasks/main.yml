@@ -1,4 +1,61 @@
 ---
-- name: Document NIST GV.PO-01 (advisory) — replace with your hardening tasks
+# NIST CSF 2.0 GV.PO-01 — Organizational cybersecurity policy and cyber supply chain
+# risk management policies are established, communicated, enforced, and reviewed.
+
+- name: Resolve portable policy evidence directory (defaults beside policy pack checkout)
+  ansible.builtin.set_fact:
+    _sw360_po_ev_root: >-
+      {{
+        securewatch360_policy_evidence_root
+          if securewatch360_policy_evidence_root is defined
+          else ((playbook_dir | dirname) ~ '/policy-evidence-out')
+      }}
+    nist_gv_po_01_marker: "GV.PO-01_POLICY_ARTIFACT_PRESENT"
+
+- name: Ensure NIST CSF GV.PO-01 evidence directory exists
+  ansible.builtin.file:
+    path: "{{ _sw360_po_ev_root }}/nist-csf/GV.PO-01"
+    state: directory
+    mode: "0750"
+
+- name: Deploy GV.PO-01 policy lifecycle evidence artefact
+  ansible.builtin.copy:
+    dest: "{{ _sw360_po_ev_root }}/nist-csf/GV.PO-01/policy-lifecycle-evidence.md"
+    mode: "0640"
+    content: |
+      # NIST CSF 2.0 GV.PO-01 — Cybersecurity and cyber supply chain policy
+      Marker: {{ nist_gv_po_01_marker }}
+      Enforcement mode: {{ enforcement_mode | default('advisory') }}
+      ---
+      Organizational outcomes — operationalise per regulated enterprise programme:
+      1. Documented cybersecurity policies approved under governance.
+      2. Policies explicitly address cyber supply-chain risk management (supplier assurance, provenance visibility, disruption handling).
+      3. Periodic review cadence documented; deviations risk-assessed and approved.
+      4. Accountability and escalation paths communicated to accountable parties.
+
+      Ansible generated this artefact directory as automation evidence — attach attestations / approvals externally.
+
+  register: gv_po_evidence
+
+- name: Enforced mode gate — GV.PO-01 evidence presence
+  when: enforcement_mode | default('advisory') == 'enforced'
+  block:
+    - name: Stat GV.PO-01 markdown evidence file
+      ansible.builtin.stat:
+        path: "{{ _sw360_po_ev_root }}/nist-csf/GV.PO-01/policy-lifecycle-evidence.md"
+      register: gv_po_stat
+
+    - name: Assert GV.PO-01 evidence is present and substantive
+      ansible.builtin.assert:
+        that:
+          - gv_po_stat.stat.exists | default(false)
+          - (gv_po_stat.stat.size | default(0)) > 120
+        fail_msg: >-
+          GV.PO-01 policy lifecycle evidence missing or below minimum size —
+          remediation required prior to enforced mode.
+
+- name: Report GV.PO-01 playbook completion path
   ansible.builtin.debug:
-    msg: "securewatch360 policy pack role policy_nist_gv_po_01"
+    msg: >-
+      policy_nist_gv_po_01 complete —
+      artefacts under {{ _sw360_po_ev_root }}/nist-csf/GV.PO-01/

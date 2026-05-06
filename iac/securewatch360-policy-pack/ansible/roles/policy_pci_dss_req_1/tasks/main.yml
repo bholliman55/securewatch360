@@ -1,0 +1,5 @@
+---
+# PCI DSS v4 Requirement 1 — Install and maintain network security controls.
+- name: Advisory reference — PCI DSS Req. 1
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_pci_dss_req_1 — network security controls; extend with firewall and segmentation automation."

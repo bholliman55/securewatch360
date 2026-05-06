@@ -1,0 +1,5 @@
+---
+# CCPA / CPRA §1798.100 — Consumer rights to know categories and specific pieces of PI collected.
+- name: Advisory reference — CCPA §1798.100
+  ansible.builtin.debug:
+    msg: "SecureWatch360 policy pack role policy_ccpa_s1798_100 — consumer rights to know; extend with DSAR workflow and data map evidence."
