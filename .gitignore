@@ -28,10 +28,17 @@ yarn-error.log*
 .DS_Store
 *.tsbuildinfo
 
-# simulator local run artifacts (regenerate with npm run sim:run)
+# Simulation run artifacts (local; regenerate with npm run sim:run / sim:report / demo:stack)
 .simulation-results/
+simulation-results/
 
-# ephemeral human report outputs (keep README only)
+# Per-run report files (default naming; SIMULATION_RESULTS_DIR may point anywhere)
+*-simulation-report.json
+*-simulation-report.md
+*-securewatch-simulation-report.json
+*-securewatch-simulation-report.md
+
+# Human-readable exports under simulator (keep README only)
 simulator/reports/output/*
 !simulator/reports/output/README.md
 
