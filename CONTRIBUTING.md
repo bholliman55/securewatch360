@@ -2,23 +2,14 @@
 
 ## Git and branches
 
-Promotion order for this repo (do not skip steps for normal work):
+This repository uses **feature branches and pull requests** targeted at **`main`**.
 
-1. **`develop`** — default integration branch. All feature PRs merge here first (`feature/*` → `develop`).
-2. **`staging`** — pre-production validation. Promote with a PR or merge **`develop` → `staging`** after CI and manual smoke tests.
-3. **`main`** — production. Promote with a PR or merge **`staging` → `main`** after staging sign-off.
+1. **Feature work:** `git checkout main && git pull origin main && git checkout -b feature/<short-description>`.
+2. **Commit messages:** use clear prefixes, e.g. `feat:`, `fix:`, `chore:`.
+3. **Ship:** open a PR into **`main`**, get review / CI green, then merge (squash merge is typical for features unless policy says otherwise).
+4. **Hotfixes:** branch from **`main`**, fix, PR back to **`main`**.
 
-Feature workflow:
-
-1. `git fetch origin && git checkout develop && git pull origin develop`
-2. `git checkout -b feature/<short-description>`
-3. Commit with clear prefixes (`feat:`, `fix:`, `chore:`).
-4. Open a PR **into `develop`** (squash merge for features unless policy says otherwise).
-5. After merge to `develop`, open **`develop` → `staging`**, then **`staging` → `main`** when ready to release.
-
-**Remote setup:** ensure `origin` fetches all heads (`git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"`) so local `origin/develop` and `origin/staging` stay current.
-
-Hotfixes: branch from `main`, fix, PR to `main`, then back-merge into `staging` and `develop` so no branch drifts.
+Optional **`develop`** or other long-lived branches may exist for team experiments, but the default integration target for changes is **`main`**.
 
 ## Checks before you open a PR
 
