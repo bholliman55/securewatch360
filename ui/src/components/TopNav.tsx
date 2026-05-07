@@ -5,7 +5,13 @@ import { useAuth } from "../contexts/AuthContext";
 import { useTenant } from "../contexts/TenantContext";
 import secureWatchLogo from "../assets/securewatch360-logo.png";
 
-export default function TopNav({ onRefresh }: { onRefresh?: () => void }) {
+export default function TopNav({
+  onRefresh,
+  onOpenSettings,
+}: {
+  onRefresh?: () => void;
+  onOpenSettings?: () => void;
+}) {
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
   const { selectedTenantId, tenants, selectedTenantName } = useTenant();
@@ -88,7 +94,10 @@ export default function TopNav({ onRefresh }: { onRefresh?: () => void }) {
             </button>
 
             <button
-              className="p-2 rounded-lg hover:bg-[var(--sw-surface-elevated)] transition-all duration-200"
+              type="button"
+              onClick={onOpenSettings}
+              disabled={!onOpenSettings}
+              className="p-2 rounded-lg hover:bg-[var(--sw-surface-elevated)] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
               title="Settings"
             >
               <Settings className="w-5 h-5 text-[var(--sw-text-muted)]" />

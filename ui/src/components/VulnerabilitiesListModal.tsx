@@ -72,7 +72,10 @@ export default function VulnerabilitiesListModal({ isOpen, onClose, filterType =
               <p className="text-red-100 text-sm mt-1">{count} vulnerabilities found</p>
             </div>
             <button
+              type="button"
               onClick={onClose}
+              aria-label="Close vulnerabilities modal"
+              title="Close vulnerabilities modal"
               className="text-white/80 hover:text-white transition-colors"
             >
               <X className="w-6 h-6" />
