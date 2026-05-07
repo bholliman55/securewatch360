@@ -16,6 +16,37 @@ const COLORS = {
   success: '#10b981'
 };
 
+const COMPLETION_WIDTH_CLASSES = [
+  'w-0',
+  'w-[5%]',
+  'w-[10%]',
+  'w-[15%]',
+  'w-[20%]',
+  'w-[25%]',
+  'w-[30%]',
+  'w-[35%]',
+  'w-[40%]',
+  'w-[45%]',
+  'w-[50%]',
+  'w-[55%]',
+  'w-[60%]',
+  'w-[65%]',
+  'w-[70%]',
+  'w-[75%]',
+  'w-[80%]',
+  'w-[85%]',
+  'w-[90%]',
+  'w-[95%]',
+  'w-full'
+];
+
+function getCompletionWidthClass(completion: number): string {
+  const safeCompletion = Number.isFinite(completion) ? completion : 0;
+  const boundedCompletion = Math.max(0, Math.min(100, safeCompletion));
+  const nearestBucket = Math.round(boundedCompletion / 5);
+  return COMPLETION_WIDTH_CLASSES[nearestBucket];
+}
+
 export default function Analytics() {
   const dashboardData = useDashboardData();
   useScannerData();
@@ -211,8 +242,7 @@ export default function Analytics() {
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                   <div
-                    className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all"
-                    style={{ width: `${item.completion}%` }}
+                    className={`bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all ${getCompletionWidthClass(item.completion)}`}
                   />
                 </div>
                 <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">{item.completed} of {item.enrolled} completed</div>

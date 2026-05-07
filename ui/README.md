@@ -26,6 +26,12 @@ The UI calls the Next.js BFF at `/api/integrations/connectwise/tickets` (see roo
 
 ConnectWise must be configured on the server (env/credentials in `connectwise` lib) or list/create will return 503.
 
+## Troubleshooting console + API (local)
+
+- **Vite proxies `/api` to** `VITE_NEXT_DEV_URL` if set, otherwise **`http://127.0.0.1:3000`**. If `next dev` prints *“Port 3000 is in use … using … 3001”*, the UI will still call **3000** unless you point it at the real server, e.g. create `ui/.env.local` with `VITE_NEXT_DEV_URL=http://127.0.0.1:3001` (or stop the extra process and run a single Next server on 3000).
+
+- **HTTP 500 / “Internal Server Error”** while the Network tab shows `/api/...` failing: you may be hitting a **stale or broken** Next process on 3000 (e.g. Next error: missing `.next/server/app/api/.../route.js`). Stop all `node`/`next` dev servers for this repo, delete the root `.next` folder if needed, run **`npm run dev` once** so it binds to 3000 (or set `VITE_NEXT_DEV_URL` to the port that actually works), then restart **`npm run ui:dev`**.
+
 ## Related
 
 - Root project: `../README.md`

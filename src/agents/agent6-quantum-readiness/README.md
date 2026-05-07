@@ -9,6 +9,7 @@ Discovers cryptographic assets, identifies quantum-vulnerable algorithms, calcul
 Post-quantum cryptography (PQC) migration is a multi-year initiative driven by NIST's finalisation of FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), and FIPS 205 (SLH-DSA). Agent 6 gives MSP clients actionable visibility into their cryptographic posture before a cryptographically-relevant quantum computer (CRQC) arrives.
 
 Key threats addressed:
+
 - **Shor's algorithm** — breaks RSA, ECC, ECDSA, ECDH, DH, DSA
 - **Grover's algorithm** — halves symmetric key security (AES-128 → ~64-bit)
 - **Harvest-now-decrypt-later (HNDL)** — adversaries collect ciphertext today for future quantum decryption
@@ -17,7 +18,7 @@ Key threats addressed:
 
 ## Module Structure
 
-```
+```text
 agent6-quantum-readiness/
 ├── index.ts                   # Orchestrator: scoring + TS policies + optional OPA
 ├── types.ts                   # Types (including VendorMetadata)
@@ -40,7 +41,7 @@ agent6-quantum-readiness/
 ## Key Types
 
 | Type | Description |
-|------|-------------|
+| ---- | ----------- |
 | `CryptoInventoryItem` | One discovered cryptographic asset (DB row shape) |
 | `QuantumReadinessAssessment` | Aggregate score + counts per client/scan |
 | `QuantumRemediationTask` | Actionable task for a specific asset |
@@ -54,7 +55,7 @@ agent6-quantum-readiness/
 Score starts at **100** and deducts:
 
 | Finding Level | Penalty |
-|---------------|---------|
+| ------------- | ------- |
 | critical | −20 each |
 | high | −12 each |
 | medium | −6 each |
@@ -67,7 +68,7 @@ Score is clamped to `[0, 100]`.
 **Grade thresholds:**
 
 | Score | Priority |
-|-------|----------|
+| ----- | -------- |
 | 0–39 | critical |
 | 40–69 | high |
 | 70–84 | medium |
@@ -78,7 +79,7 @@ Score is clamped to `[0, 100]`.
 ## Quantum Risk Levels
 
 | Level | Algorithms | Threat |
-|-------|-----------|--------|
+| ----- | ---------- | ------ |
 | critical | RSA <2048, SHA-1, MD5, 3DES, RC4, TLS 1.0/1.1 | Immediately exploitable classically or near-term quantum |
 | high | RSA-2048+, ECDSA, ECDH on public-facing assets | Shor's algorithm breaks on CRQC arrival |
 | medium | RSA/ECC on internal assets, AES-128 | Lower urgency but must migrate before CRQC |
@@ -104,7 +105,7 @@ ML-KEM-512/768/1024 (FIPS 203), ML-DSA-44/65/87 (FIPS 204), FN-DSA-512/1024 (FIP
 Three Rego policies ship with Agent 6 at `policies/rego/quantum/`:
 
 | File | Package | Coverage |
-|------|---------|----------|
+| ---- | ------- | -------- |
 | `quantum_crypto_policy.rego` | `securewatch.quantum.crypto` | Algorithm classification (deny RSA <2048, MD5, SHA-1; warn RSA/ECC; pass PQC) |
 | `quantum_tls_policy.rego` | `securewatch.quantum.tls` | TLS version (deny 1.0/1.1; warn 1.2 RSA/ECC; warn public non-PQC) |
 | `quantum_vendor_readiness_policy.rego` | `securewatch.quantum.vendor` | Vendor PQC status (deny no_roadmap on critical; warn unknown; pass supported) |
@@ -116,7 +117,7 @@ Each policy returns a `results` set with `policy_id`, `severity`, `passed`, `mes
 ## Compliance Framework Mappings
 
 | Framework | Controls |
-|-----------|---------|
+| --------- | -------- |
 | NIST SP 800-131A | SC-13 |
 | NIST SP 800-208 | PQC-1 |
 | NIST IR 8413 | HNDL-1 (harvest-now) |
@@ -133,7 +134,7 @@ Each policy returns a `results` set with `policy_id`, `severity`, `passed`, `mes
 ## Persistence and OPA (production)
 
 | Concern | Location / behaviour |
-|--------|------------------------|
+| ------- | -------------------- |
 | **Supabase writes** | `src/lib/quantumAssessmentPersistence.ts` → `persistQuantumReadinessOutput(output)` inserts `quantum_readiness_assessments`, `quantum_crypto_inventory`, `quantum_remediation_tasks`, and `quantum_policy_results` using **`getSupabaseAdminClient()`** (server-only). |
 | **API** | `POST /api/quantum/readiness-assessment` with `{ tenantId, scanId?, scanFindings?, assets?, vendorMetadata?, persist? }`; requires tenant session + `remediationAndScan` role membership. |
 
@@ -157,7 +158,7 @@ Optional bearer token: `OPA_POLICY_EVAL_TOKEN` or `OPA_AUTH_TOKEN`. Disable OPA 
 Migration: `supabase/migrations/20260428210000_create_agent6_quantum_tables.sql`
 
 | Table | Purpose |
-|-------|---------|
+| ----- | ------- |
 | `quantum_crypto_inventory` | One row per discovered crypto asset |
 | `quantum_readiness_assessments` | Aggregate score per client/scan |
 | `quantum_remediation_tasks` | Actionable remediation items |

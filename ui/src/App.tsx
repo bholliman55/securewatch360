@@ -15,7 +15,7 @@ function AuthenticatedApp() {
 
   return (
     <div className="min-h-screen bg-[var(--sw-bg)] transition-colors duration-200">
-      <TopNav onRefresh={refresh} />
+      <TopNav onRefresh={refresh} onOpenSettings={() => setActiveView("settings")} />
       <div className="flex h-[calc(100vh-73px)]">
         <Sidebar activeView={activeView} onViewChange={setActiveView} />
         <Dashboard
