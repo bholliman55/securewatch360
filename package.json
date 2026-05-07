@@ -18,6 +18,7 @@
     "sim:run-all": "npx tsx simulator/cli/runAll.ts",
     "sim:report": "npx tsx simulator/cli/generateReport.ts",
     "demo:stack": "node scripts/demo-stack.mjs",
+    "demo:stack:staging": "node scripts/demo-stack-staging.mjs",
     "seed:v4": "npx tsx scripts/seed-v4.ts",
     "seed:cve-catalog": "node scripts/seed-cve-catalog.mjs",
     "generate:policy-pack-iac": "node scripts/generate-policy-pack-iac.mjs",
