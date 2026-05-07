@@ -2,6 +2,23 @@
 
 Stable copies of simulator outputs live here so reviewers can skim a report without running the lab.
 
+## Fastest demo run
+
+```bash
+npm run demo:stack
+```
+
+The command runs three curated scenarios and auto-generates reports for a complete demo narrative:
+- vulnerability discovery with remediation workflow
+- incident containment/isolation workflow
+- compliance drift correction workflow
+
+Defaults:
+- `SIMULATION_MODE=local`
+- `SIMULATION_DEMO_MODE=true`
+
+Artifacts are written to `.simulation-results/` and `simulator/reports/output/`.
+
 ## Staging rehearsals
 
 - [`STAGING-RUNBOOK.md`](./STAGING-RUNBOOK.md) — **`SIMULATION_MODE=supabase` / `inngest`**, tenant id, verification, and correlation behavior.
