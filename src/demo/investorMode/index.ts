@@ -22,6 +22,8 @@ export {
   STALE_RDP_EXPOSURE,
   IMPACTED_CONTROLS,
   getDemoSeed,
+  INVESTOR_DEMO_SCENARIO,
+  INVESTOR_DEMO_AGENTS,
   type DemoClient,
   type DemoAsset,
   type DemoUser,
@@ -29,6 +31,13 @@ export {
   type DemoExposure,
   type DemoComplianceControl,
   type DemoSeedSnapshot,
+  type InvestorDemoScenario,
+  type InvestorDemoAgent,
+  type InvestorDemoClientShape,
+  type InvestorDemoAssetShape,
+  type InvestorDemoTimelineEvent,
+  type InvestorDemoAgentReasoning,
+  type InvestorDemoMetric,
 } from "./demoSeedData";
 
 export {
