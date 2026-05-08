@@ -49,7 +49,7 @@ jobs:
         run: npm run security:sast
 
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.16.1
         with:
           scan-type: fs
           scan-ref: .
