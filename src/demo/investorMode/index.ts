@@ -41,6 +41,7 @@ export {
   type InvestorDemoMetric,
   type InvestorDemoActionShape,
   type InvestorDemoReportTemplateShape,
+  type InvestorDemoAssetStatus,
 } from "./demoSeedData";
 
 export {
@@ -70,6 +71,18 @@ export {
   type ManualReplayHandle,
   type ManualReplayOptions,
   type ReplayClock,
+  startInvestorDemoReplay,
+  runInvestorDemoReplay,
+  createSupabaseRealtimePublisher,
+  getSpokenSummary,
+  type InvestorReplayHandle,
+  type InvestorReplayOptions,
+  type InvestorReplayResult,
+  type InvestorReplayPublisher,
+  type InvestorReplayClock,
+  type InvestorReplayLogger,
+  type InvestorDemoReplayState,
+  type InvestorDemoReplayEvent,
 } from "./demoReplayEngine";
 
 export {

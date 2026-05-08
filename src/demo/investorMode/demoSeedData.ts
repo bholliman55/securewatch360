@@ -255,11 +255,21 @@ export interface InvestorDemoClientShape {
   metadata: Record<string, unknown>;
 }
 
+export type InvestorDemoAssetStatus =
+  | "healthy"
+  | "suspicious"
+  | "at_risk"
+  | "compromised"
+  | "compromised_simulated"
+  | "isolated"
+  | "isolated_simulated"
+  | "remediated";
+
 export interface InvestorDemoAssetShape {
   asset_name: string;
   asset_type: string;
   risk_level: "low" | "medium" | "high" | "critical";
-  status: "healthy" | "at_risk" | "compromised" | "isolated" | "remediated";
+  status: InvestorDemoAssetStatus;
   metadata: Record<string, unknown>;
 }
 
