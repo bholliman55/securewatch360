@@ -32,7 +32,12 @@ function ScoreBar({ score, hasData }: { score: number | null; hasData: boolean }
   const color = score >= 80 ? "bg-green-500" : score >= 60 ? "bg-yellow-400" : score >= 40 ? "bg-orange-400" : "bg-red-500";
   return (
     <div className="h-1.5 w-full rounded-full bg-gray-200">
-      <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${score}%` }} />
+      <div
+        ref={(el) => {
+          if (el) el.style.setProperty('--bar-width', `${score}%`);
+        }}
+        className={`h-full rounded-full transition-all w-[var(--bar-width)] ${color}`}
+      />
     </div>
   );
 }
