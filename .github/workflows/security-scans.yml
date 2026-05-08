@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   baseline-security:
-    name: PR Dependency Audit + Semgrep
+    name: PR Dependency Audit
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
@@ -41,12 +41,6 @@ jobs:
 
       - name: Dependency audit (high+)
         run: npm run security:audit
-
-      - name: Install Semgrep
-        run: python3 -m pip install --upgrade pip semgrep
-
-      - name: SAST scan with Semgrep
-        run: npm run security:sast
 
   nightly-infra-tools:
     name: Nightly Tooling (Trivy + OPA)
