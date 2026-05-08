@@ -75,7 +75,15 @@ export interface DemoAssetRow {
   asset_name: string;
   asset_type: string;
   risk_level: "low" | "medium" | "high" | "critical";
-  status: "healthy" | "at_risk" | "compromised" | "isolated" | "remediated";
+  status:
+    | "healthy"
+    | "suspicious"
+    | "at_risk"
+    | "compromised"
+    | "compromised_simulated"
+    | "isolated"
+    | "isolated_simulated"
+    | "remediated";
   metadata: Record<string, unknown>;
   created_at: string;
 }
