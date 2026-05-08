@@ -24,6 +24,7 @@ export {
   getDemoSeed,
   INVESTOR_DEMO_SCENARIO,
   INVESTOR_DEMO_AGENTS,
+  INVESTOR_DEMO_SEED_REPORT_PREFIX,
   type DemoClient,
   type DemoAsset,
   type DemoUser,
@@ -38,6 +39,8 @@ export {
   type InvestorDemoTimelineEvent,
   type InvestorDemoAgentReasoning,
   type InvestorDemoMetric,
+  type InvestorDemoActionShape,
+  type InvestorDemoReportTemplateShape,
 } from "./demoSeedData";
 
 export {
@@ -115,6 +118,9 @@ export {
   getDemoMetrics,
   createDemoReport,
   upsertDemoMetricsBulk,
+  seedInvestorDemoScenario,
+  resetInvestorDemoScenario,
+  runInvestorDemoScenario,
   type DemoRepository,
   type DemoScenarioRow,
   type DemoClientRow,
@@ -129,4 +135,11 @@ export {
   type UpdateDemoActionInput,
   type CreateDemoReportInput,
   type ResetDemoScenarioResult,
+  type SeedInvestorDemoCounts,
+  type SeedInvestorDemoResult,
+  type ResetInvestorDemoResult,
+  type RunInvestorDemoOptions,
+  type RunInvestorDemoLogger,
+  type RunInvestorDemoClock,
+  type RunInvestorDemoResult,
 } from "./demoRepository";

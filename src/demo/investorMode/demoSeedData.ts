@@ -288,6 +288,29 @@ export interface InvestorDemoMetric {
   sort_order: number;
 }
 
+export interface InvestorDemoActionShape {
+  action_type: string;
+  action_label: string;
+  safety_level:
+    | "READ_ONLY"
+    | "LOW_RISK_ACTION"
+    | "HIGH_RISK_ACTION"
+    | "DESTRUCTIVE_ACTION";
+  requires_confirmation: boolean;
+}
+
+/**
+ * Report rows seeded as placeholders by `npm run demo:seed`. The titles must
+ * begin with `"Seed: "` because the reset flow uses that prefix to keep
+ * templates and clear "real" generated reports.
+ */
+export interface InvestorDemoReportTemplateShape {
+  report_type: "executive" | "business_impact" | "technical" | "compliance";
+  title: string;
+  summary: string;
+  report_json: Record<string, unknown>;
+}
+
 export interface InvestorDemoScenario {
   scenario_key: "ransomware-precursor-acme-dental";
   name: string;
@@ -300,7 +323,12 @@ export interface InvestorDemoScenario {
   containment_recommendation: string;
   metrics: ReadonlyArray<InvestorDemoMetric>;
   executive_summary: string;
+  actions: ReadonlyArray<InvestorDemoActionShape>;
+  report_templates: ReadonlyArray<InvestorDemoReportTemplateShape>;
 }
+
+/** Magic prefix so reset can distinguish templates from generated reports. */
+export const INVESTOR_DEMO_SEED_REPORT_PREFIX = "Seed: " as const;
 
 export const INVESTOR_DEMO_SCENARIO: InvestorDemoScenario = {
   scenario_key: "ransomware-precursor-acme-dental",
@@ -688,5 +716,47 @@ export const INVESTOR_DEMO_SCENARIO: InvestorDemoScenario = {
     "correlated the activity across multiple security signals, requested confirmation " +
     "for containment, simulated isolation of the affected endpoint, created remediation " +
     "evidence, and generated an executive-ready incident summary.",
+
+  actions: [
+    {
+      action_type: "isolate_endpoint",
+      action_label: "Isolate LAPTOP-123",
+      safety_level: "DESTRUCTIVE_ACTION",
+      requires_confirmation: true,
+    },
+    {
+      action_type: "create_remediation_ticket",
+      action_label: "Open ITSM ticket DEMO-INC-2042",
+      safety_level: "HIGH_RISK_ACTION",
+      requires_confirmation: false,
+    },
+    {
+      action_type: "generate_executive_report",
+      action_label: "Generate executive report for Acme Dental leadership",
+      safety_level: "READ_ONLY",
+      requires_confirmation: false,
+    },
+    {
+      action_type: "generate_business_impact_summary",
+      action_label: "Generate investor-facing business impact summary",
+      safety_level: "READ_ONLY",
+      requires_confirmation: false,
+    },
+  ],
+
+  report_templates: [
+    {
+      report_type: "executive",
+      title: `${INVESTOR_DEMO_SEED_REPORT_PREFIX}Executive report template — Acme Dental`,
+      summary: "Placeholder seeded by demo:seed; populated when demo:run completes.",
+      report_json: { is_seed_template: true, audience: "Acme Dental leadership" },
+    },
+    {
+      report_type: "business_impact",
+      title: `${INVESTOR_DEMO_SEED_REPORT_PREFIX}Business impact summary template — Acme Dental`,
+      summary: "Placeholder seeded by demo:seed; populated when demo:run completes.",
+      report_json: { is_seed_template: true, audience: "Investors + MSP commercial leadership" },
+    },
+  ],
 } as const;
 

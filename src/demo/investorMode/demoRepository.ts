@@ -34,7 +34,13 @@ import {
   DEMO_SCENARIO_META,
   DEMO_TIMELINE,
 } from "./demoScenario";
-import { getDemoSeed, type DemoSeedSnapshot } from "./demoSeedData";
+import {
+  INVESTOR_DEMO_SCENARIO,
+  INVESTOR_DEMO_SEED_REPORT_PREFIX,
+  getDemoSeed,
+  type DemoSeedSnapshot,
+  type InvestorDemoScenario,
+} from "./demoSeedData";
 
 // ---------------------------------------------------------------------------
 // Row shapes (mirror the SQL schema 1:1)
@@ -613,3 +619,558 @@ export async function upsertDemoMetricsBulk(
 
 /** Re-export the canonical timeline so downstream code can populate Supabase from the same constant. */
 export { DEMO_TIMELINE };
+
+// ===========================================================================
+// Investor demo CLI helpers
+// ---------------------------------------------------------------------------
+// These power `npm run demo:seed`, `npm run demo:reset`, and `npm run demo:run`.
+// Logic lives here (not in the script files) so unit tests can drive the full
+// flow against a stateful in-memory Supabase mock.
+// ===========================================================================
+
+export interface SeedInvestorDemoCounts {
+  scenario: number;
+  client: number;
+  assets: number;
+  events: number;
+  reasoning: number;
+  actions: number;
+  report_templates: number;
+  metrics: number;
+}
+
+export interface SeedInvestorDemoResult {
+  ok: boolean;
+  scenarioKey: string;
+  counts: SeedInvestorDemoCounts;
+  errors: string[];
+}
+
+export interface ResetInvestorDemoResult {
+  ok: boolean;
+  scenarioKey: string;
+  /** Per-step success flags, in execution order. */
+  reset: {
+    scenario_status: boolean;
+    asset_statuses: boolean;
+    event_statuses: boolean;
+    action_statuses: boolean;
+    non_template_reports: boolean;
+  };
+  errors: string[];
+}
+
+export interface RunInvestorDemoLogger {
+  info(message: string, ctx?: Record<string, unknown>): void;
+}
+
+export interface RunInvestorDemoClock {
+  /** Current ms — virtual or wall-clock. */
+  now(): number;
+  /** Advance the (virtual) clock by `ms`; in real-time mode actually sleeps. */
+  sleep(ms: number): Promise<void>;
+}
+
+export interface RunInvestorDemoOptions {
+  /** Defaults to the canonical investor scenario key. */
+  scenarioKey?: string;
+  /** Speed multiplier (1 = real-time). Higher = faster for rehearsals. */
+  speedMultiplier?: number;
+  /** Logger override — defaults to `console`. */
+  logger?: RunInvestorDemoLogger;
+  /** Clock override — defaults to `setTimeout`-backed sleep. */
+  clock?: RunInvestorDemoClock;
+}
+
+export interface RunInvestorDemoResult {
+  ok: boolean;
+  scenarioKey: string;
+  emittedEventCount: number;
+  /** Snapshot of demo_metrics rows at the end of the run. */
+  finalMetrics: DemoMetricRow[];
+  errors: string[];
+}
+
+const defaultLogger: RunInvestorDemoLogger = {
+  info(message, ctx) {
+    if (ctx) console.log(message, ctx);
+    else console.log(message);
+  },
+};
+
+const defaultClock: RunInvestorDemoClock = {
+  now() {
+    return Date.now();
+  },
+  sleep(ms) {
+    if (ms <= 0) return Promise.resolve();
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  },
+};
+
+/** Normalises any thrown value (Error, supabase `{ message }` object, primitive) to a string. */
+function describeError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object" && "message" in err) {
+    return String((err as { message: unknown }).message);
+  }
+  return String(err);
+}
+
+/**
+ * Seed every investor-demo table from {@link INVESTOR_DEMO_SCENARIO}.
+ *
+ * Idempotency strategy per table:
+ *   - `demo_scenarios`           — UPSERT on `scenario_key`
+ *   - `demo_clients`             — DELETE by scenario_key, then INSERT
+ *   - `demo_assets`              — DELETE by scenario_key, then INSERT (status='healthy')
+ *   - `demo_events`              — DELETE by scenario_key, then INSERT (status='pending')
+ *   - `demo_agent_reasoning`     — DELETE by scenario_key, then INSERT
+ *   - `demo_actions`             — DELETE by scenario_key, then INSERT (status='pending')
+ *   - `demo_reports` (templates) — DELETE WHERE scenario_key AND title LIKE 'Seed: %', then INSERT templates only
+ *   - `demo_metrics`             — UPSERT on `(scenario_key, metric_key)`
+ *
+ * Generated reports (those without the "Seed: " title prefix) are NEVER
+ * touched by seed — they only get cleared by reset. This keeps a partially
+ * completed run intact when seed is re-run.
+ */
+export async function seedInvestorDemoScenario(
+  scenario: InvestorDemoScenario = INVESTOR_DEMO_SCENARIO,
+  supabase?: SupabaseClient,
+): Promise<SeedInvestorDemoResult> {
+  const client = getClient(supabase);
+  const scenarioKey = scenario.scenario_key;
+  const errors: string[] = [];
+  const counts: SeedInvestorDemoCounts = {
+    scenario: 0,
+    client: 0,
+    assets: 0,
+    events: 0,
+    reasoning: 0,
+    actions: 0,
+    report_templates: 0,
+    metrics: 0,
+  };
+
+  const recordError = (scope: string, err: unknown): void => {
+    errors.push(`${scope}: ${describeError(err)}`);
+    logFailure(`seedInvestorDemoScenario.${scope}`, err);
+  };
+
+  // 1. demo_scenarios — upsert
+  try {
+    const { data, error } = await client
+      .from("demo_scenarios")
+      .upsert(
+        {
+          scenario_key: scenarioKey,
+          name: scenario.name,
+          description: scenario.description,
+          status: "ready",
+        },
+        { onConflict: "scenario_key" },
+      )
+      .select()
+      .single();
+    if (error) recordError("demo_scenarios", error);
+    else if (data) counts.scenario = 1;
+  } catch (err) {
+    recordError("demo_scenarios", err);
+  }
+
+  // Helper for the delete-then-insert tables.
+  const deleteByScenarioKey = async (table: string): Promise<void> => {
+    try {
+      const { error } = await client.from(table).delete().eq("scenario_key", scenarioKey);
+      if (error) recordError(`${table}.delete`, error);
+    } catch (err) {
+      recordError(`${table}.delete`, err);
+    }
+  };
+
+  // 2. demo_clients
+  await deleteByScenarioKey("demo_clients");
+  try {
+    const { data, error } = await client
+      .from("demo_clients")
+      .insert({
+        scenario_key: scenarioKey,
+        client_name: scenario.client.client_name,
+        industry: scenario.client.industry,
+        employee_count: scenario.client.employee_count,
+        msp_name: scenario.client.msp_name,
+        compliance_frameworks: [...scenario.client.compliance_frameworks],
+        metadata: scenario.client.metadata,
+      })
+      .select();
+    if (error) recordError("demo_clients.insert", error);
+    else counts.client = (data ?? []).length;
+  } catch (err) {
+    recordError("demo_clients.insert", err);
+  }
+
+  // 3. demo_assets — always seeded with status='healthy'
+  await deleteByScenarioKey("demo_assets");
+  try {
+    const rows = scenario.assets.map((a) => ({
+      scenario_key: scenarioKey,
+      client_name: scenario.client.client_name,
+      asset_name: a.asset_name,
+      asset_type: a.asset_type,
+      risk_level: a.risk_level,
+      status: "healthy" as const,
+      metadata: a.metadata,
+    }));
+    const { data, error } = await client.from("demo_assets").insert(rows).select();
+    if (error) recordError("demo_assets.insert", error);
+    else counts.assets = (data ?? []).length;
+  } catch (err) {
+    recordError("demo_assets.insert", err);
+  }
+
+  // 4. demo_events — always seeded with status='pending', emitted_at=null
+  await deleteByScenarioKey("demo_events");
+  try {
+    const rows = scenario.timeline.map((e) => ({
+      scenario_key: scenarioKey,
+      event_order: e.event_order,
+      offset_seconds: e.offset_seconds,
+      event_type: e.event_type,
+      severity: e.severity,
+      title: e.title,
+      description: e.description,
+      agent_name: e.agent_name,
+      status: "pending" as const,
+      payload: e.payload,
+      emitted_at: null,
+    }));
+    const { data, error } = await client.from("demo_events").insert(rows).select();
+    if (error) recordError("demo_events.insert", error);
+    else counts.events = (data ?? []).length;
+  } catch (err) {
+    recordError("demo_events.insert", err);
+  }
+
+  // 5. demo_agent_reasoning
+  await deleteByScenarioKey("demo_agent_reasoning");
+  try {
+    const rows = scenario.reasoning.map((r) => ({
+      scenario_key: scenarioKey,
+      event_type: r.for_event_type,
+      agent_name: r.agent_name,
+      reasoning_summary: r.reasoning_summary,
+      confidence: r.confidence,
+      evidence: [],
+    }));
+    const { data, error } = await client
+      .from("demo_agent_reasoning")
+      .insert(rows)
+      .select();
+    if (error) recordError("demo_agent_reasoning.insert", error);
+    else counts.reasoning = (data ?? []).length;
+  } catch (err) {
+    recordError("demo_agent_reasoning.insert", err);
+  }
+
+  // 6. demo_actions — always seeded as 'pending'
+  await deleteByScenarioKey("demo_actions");
+  try {
+    const rows = scenario.actions.map((a) => ({
+      scenario_key: scenarioKey,
+      action_type: a.action_type,
+      action_label: a.action_label,
+      safety_level: a.safety_level,
+      requires_confirmation: a.requires_confirmation,
+      confirmed: false,
+      status: "pending" as const,
+      result_summary: null,
+      executed_at: null,
+    }));
+    const { data, error } = await client.from("demo_actions").insert(rows).select();
+    if (error) recordError("demo_actions.insert", error);
+    else counts.actions = (data ?? []).length;
+  } catch (err) {
+    recordError("demo_actions.insert", err);
+  }
+
+  // 7. demo_reports — only delete templates (preserve generated reports)
+  try {
+    const { error } = await client
+      .from("demo_reports")
+      .delete()
+      .eq("scenario_key", scenarioKey)
+      .like("title", `${INVESTOR_DEMO_SEED_REPORT_PREFIX}%`);
+    if (error) recordError("demo_reports.deleteTemplates", error);
+  } catch (err) {
+    recordError("demo_reports.deleteTemplates", err);
+  }
+  try {
+    const rows = scenario.report_templates.map((t) => ({
+      scenario_key: scenarioKey,
+      report_type: t.report_type,
+      title: t.title,
+      summary: t.summary,
+      report_json: t.report_json,
+    }));
+    const { data, error } = await client.from("demo_reports").insert(rows).select();
+    if (error) recordError("demo_reports.insertTemplates", error);
+    else counts.report_templates = (data ?? []).length;
+  } catch (err) {
+    recordError("demo_reports.insertTemplates", err);
+  }
+
+  // 8. demo_metrics — upsert on composite key
+  try {
+    const rows = scenario.metrics.map((m) => ({
+      scenario_key: scenarioKey,
+      metric_key: m.metric_key,
+      metric_label: m.metric_label,
+      metric_value: m.metric_value,
+      sort_order: m.sort_order,
+    }));
+    const { data, error } = await client
+      .from("demo_metrics")
+      .upsert(rows, { onConflict: "scenario_key,metric_key" })
+      .select();
+    if (error) recordError("demo_metrics.upsert", error);
+    else counts.metrics = (data ?? []).length;
+  } catch (err) {
+    recordError("demo_metrics.upsert", err);
+  }
+
+  return {
+    ok: errors.length === 0,
+    scenarioKey,
+    counts,
+    errors,
+  };
+}
+
+/**
+ * Reset every per-run mutation while preserving the seed snapshot:
+ *   - `demo_scenarios.status`             → 'ready'
+ *   - `demo_assets.status`                → 'healthy'
+ *   - `demo_events.status`                → 'pending', `emitted_at` → null
+ *   - `demo_actions.status`               → 'pending', `confirmed=false`,
+ *                                            `executed_at=null`, `result_summary=null`
+ *   - `demo_reports`                      → DELETE rows whose `title` does NOT
+ *                                            start with `INVESTOR_DEMO_SEED_REPORT_PREFIX`
+ *   - `demo_metrics`                      → untouched (scenario-static)
+ *   - `demo_agent_reasoning`              → untouched (scenario-static)
+ */
+export async function resetInvestorDemoScenario(
+  scenarioKey: string = INVESTOR_DEMO_SCENARIO.scenario_key,
+  supabase?: SupabaseClient,
+): Promise<ResetInvestorDemoResult> {
+  const client = getClient(supabase);
+  const errors: string[] = [];
+  const reset = {
+    scenario_status: false,
+    asset_statuses: false,
+    event_statuses: false,
+    action_statuses: false,
+    non_template_reports: false,
+  };
+
+  const recordError = (scope: string, err: unknown): void => {
+    errors.push(`${scope}: ${describeError(err)}`);
+    logFailure(`resetInvestorDemoScenario.${scope}`, err);
+  };
+
+  // 1. Restore scenario status to 'ready'
+  try {
+    const { error } = await client
+      .from("demo_scenarios")
+      .update({ status: "ready" })
+      .eq("scenario_key", scenarioKey);
+    if (error) recordError("demo_scenarios", error);
+    else reset.scenario_status = true;
+  } catch (err) {
+    recordError("demo_scenarios", err);
+  }
+
+  // 2. Restore all assets to healthy
+  try {
+    const { error } = await client
+      .from("demo_assets")
+      .update({ status: "healthy" })
+      .eq("scenario_key", scenarioKey);
+    if (error) recordError("demo_assets", error);
+    else reset.asset_statuses = true;
+  } catch (err) {
+    recordError("demo_assets", err);
+  }
+
+  // 3. Reset events to pending, clear emitted_at
+  try {
+    const { error } = await client
+      .from("demo_events")
+      .update({ status: "pending", emitted_at: null })
+      .eq("scenario_key", scenarioKey);
+    if (error) recordError("demo_events", error);
+    else reset.event_statuses = true;
+  } catch (err) {
+    recordError("demo_events", err);
+  }
+
+  // 4. Reset actions to pending
+  try {
+    const { error } = await client
+      .from("demo_actions")
+      .update({
+        status: "pending",
+        confirmed: false,
+        executed_at: null,
+        result_summary: null,
+      })
+      .eq("scenario_key", scenarioKey);
+    if (error) recordError("demo_actions", error);
+    else reset.action_statuses = true;
+  } catch (err) {
+    recordError("demo_actions", err);
+  }
+
+  // 5. Delete generated reports (anything whose title does NOT start with the seed prefix)
+  try {
+    const { error } = await client
+      .from("demo_reports")
+      .delete()
+      .eq("scenario_key", scenarioKey)
+      .not("title", "like", `${INVESTOR_DEMO_SEED_REPORT_PREFIX}%`);
+    if (error) recordError("demo_reports", error);
+    else reset.non_template_reports = true;
+  } catch (err) {
+    recordError("demo_reports", err);
+  }
+
+  return {
+    ok: errors.length === 0,
+    scenarioKey,
+    reset,
+    errors,
+  };
+}
+
+/**
+ * Drive the timeline forward in real time:
+ *   1. UPDATE demo_scenarios SET status='running'
+ *   2. SELECT events ORDER BY event_order ASC
+ *   3. For each event: sleep until offset_seconds * 1000 / speedMultiplier,
+ *      then UPDATE demo_events SET status='emitted', emitted_at=now()
+ *      WHERE (scenario_key, event_order). Log to the injected logger.
+ *   4. UPDATE demo_scenarios SET status='completed'
+ *   5. SELECT * FROM demo_metrics ORDER BY sort_order
+ *
+ * Real wall-clock waits use `setTimeout`; the test suite passes a fake clock
+ * that resolves immediately so the run finishes in microseconds.
+ */
+export async function runInvestorDemoScenario(
+  options: RunInvestorDemoOptions = {},
+  supabase?: SupabaseClient,
+): Promise<RunInvestorDemoResult> {
+  const client = getClient(supabase);
+  const scenarioKey = options.scenarioKey ?? INVESTOR_DEMO_SCENARIO.scenario_key;
+  const speed = options.speedMultiplier ?? 1;
+  if (!Number.isFinite(speed) || speed <= 0) {
+    throw new Error(`[runInvestorDemoScenario] invalid speedMultiplier: ${speed}`);
+  }
+  const logger = options.logger ?? defaultLogger;
+  const clock = options.clock ?? defaultClock;
+  const errors: string[] = [];
+  let emittedEventCount = 0;
+
+  const recordError = (scope: string, err: unknown): void => {
+    errors.push(`${scope}: ${describeError(err)}`);
+    logFailure(`runInvestorDemoScenario.${scope}`, err);
+  };
+
+  // 1. Mark scenario running
+  try {
+    const { error } = await client
+      .from("demo_scenarios")
+      .update({ status: "running" })
+      .eq("scenario_key", scenarioKey);
+    if (error) recordError("demo_scenarios.running", error);
+  } catch (err) {
+    recordError("demo_scenarios.running", err);
+  }
+
+  // 2. Load events in canonical order
+  let events: DemoEventRow[] = [];
+  try {
+    const { data, error } = await client
+      .from("demo_events")
+      .select("*")
+      .eq("scenario_key", scenarioKey)
+      .order("event_order", { ascending: true });
+    if (error) recordError("demo_events.select", error);
+    else events = (data ?? []) as DemoEventRow[];
+  } catch (err) {
+    recordError("demo_events.select", err);
+  }
+
+  // 3. Walk the timeline using the injected clock so virtual clocks (tests)
+  //    and real-wall-clock runs share the same control flow.
+  const startMs = clock.now();
+  for (const event of events) {
+    const targetMs = startMs + (event.offset_seconds * 1000) / speed;
+    const waitMs = Math.max(0, targetMs - clock.now());
+    await clock.sleep(waitMs);
+
+    try {
+      const { error } = await client
+        .from("demo_events")
+        .update({ status: "emitted", emitted_at: nowIso() })
+        .eq("scenario_key", scenarioKey)
+        .eq("event_order", event.event_order);
+      if (error) {
+        recordError(`demo_events.emit.${event.event_order}`, error);
+      } else {
+        emittedEventCount += 1;
+        logger.info(
+          `[demo:run] +${event.offset_seconds}s — ${event.event_type}: ${event.title}`,
+          {
+            event_order: event.event_order,
+            severity: event.severity,
+            agent: event.agent_name,
+          },
+        );
+      }
+    } catch (err) {
+      recordError(`demo_events.emit.${event.event_order}`, err);
+    }
+  }
+
+  // 4. Mark scenario completed
+  try {
+    const { error } = await client
+      .from("demo_scenarios")
+      .update({ status: "completed" })
+      .eq("scenario_key", scenarioKey);
+    if (error) recordError("demo_scenarios.completed", error);
+  } catch (err) {
+    recordError("demo_scenarios.completed", err);
+  }
+
+  // 5. Final metrics snapshot
+  let finalMetrics: DemoMetricRow[] = [];
+  try {
+    const { data, error } = await client
+      .from("demo_metrics")
+      .select("*")
+      .eq("scenario_key", scenarioKey)
+      .order("sort_order", { ascending: true });
+    if (error) recordError("demo_metrics.select", error);
+    else finalMetrics = (data ?? []) as DemoMetricRow[];
+  } catch (err) {
+    recordError("demo_metrics.select", err);
+  }
+
+  return {
+    ok: errors.length === 0 && emittedEventCount === events.length && events.length > 0,
+    scenarioKey,
+    emittedEventCount,
+    finalMetrics,
+    errors,
+  };
+}
