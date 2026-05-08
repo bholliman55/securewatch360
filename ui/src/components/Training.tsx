@@ -196,8 +196,10 @@ export default function Training() {
                       <div className="flex items-center gap-2">
                         <div className="flex-1 bg-slate-200 dark:bg-slate-700 rounded-full h-2 w-24">
                           <div
-                            className="bg-blue-600 h-2 rounded-full"
-                            style={{ width: `${module.completion_rate}%` }}
+                            ref={(el) => {
+                              if (el) el.style.setProperty('--progress', `${module.completion_rate}%`);
+                            }}
+                            className="bg-blue-600 h-2 rounded-full w-[var(--progress)]"
                           />
                         </div>
                         <span className="text-sm text-slate-600 dark:text-slate-400">

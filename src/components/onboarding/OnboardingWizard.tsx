@@ -86,7 +86,12 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
           ))}
         </div>
         <div className="h-1.5 w-full rounded-full bg-gray-200">
-          <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${progressPct}%` }} />
+          <div
+            ref={(el) => {
+              if (el) el.style.setProperty('--progress', `${progressPct}%`);
+            }}
+            className="h-full rounded-full bg-blue-600 transition-all w-[var(--progress)]"
+          />
         </div>
       </div>
 

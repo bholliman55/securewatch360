@@ -40,6 +40,15 @@ function statusTone(status: SimulationDashboardSummaryUi["status"]): string {
   }
 }
 
+const ANIM_HEADER = { animation: "slideIn 0.5s ease-out 40ms both" };
+const ANIM_CARD_1 = { animation: "slideIn 0.5s ease-out 80ms both" };
+const ANIM_CARD_2 = { animation: "slideIn 0.5s ease-out 120ms both" };
+const ANIM_CARD_3 = { animation: "slideIn 0.5s ease-out 160ms both" };
+const ANIM_BANNER = { animation: "slideIn 0.5s ease-out 190ms both" };
+const ANIM_PANEL_1 = { animation: "slideIn 0.55s ease-out 220ms both" };
+const ANIM_PANEL_2 = { animation: "slideIn 0.55s ease-out 260ms both" };
+const ANIM_TIMELINE = { animation: "slideIn 0.6s ease-out 300ms both" };
+
 export default function SimulationDashboard() {
   const [summary, setSummary] = useState<SimulationDashboardSummaryUi | null>(null);
   const [serverDemoMode, setServerDemoMode] = useState(false);
@@ -143,7 +152,7 @@ export default function SimulationDashboard() {
 
       {summary && (
         <div className="space-y-6">
-          <div className="sw-panel p-6 md:p-7 relative overflow-hidden" style={{ animation: "slideIn 0.5s ease-out 40ms both" }}>
+          <div className="sw-panel p-6 md:p-7 relative overflow-hidden" style={ANIM_HEADER}>
             <div className="absolute -left-[5.25rem] top-10 h-40 w-40 rotate-[15deg] rounded-full border border-[var(--sw-border)] opacity-35 pointer-events-none" />
             <div className="flex flex-wrap justify-between gap-6 relative">
               <div>
@@ -169,7 +178,7 @@ export default function SimulationDashboard() {
           </div>
 
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-            <div className="sw-panel p-5 border border-[var(--sw-border)]/80" style={{ animation: "slideIn 0.5s ease-out 80ms both" }}>
+            <div className="sw-panel p-5 border border-[var(--sw-border)]/80" style={ANIM_CARD_1}>
               <div className="flex items-start gap-4">
                 <div className="rounded-xl bg-black/35 border border-[var(--sw-border)] p-3">
                   <Users className="w-6 h-6 text-[var(--sw-accent-bright)]" />
@@ -182,7 +191,7 @@ export default function SimulationDashboard() {
               </div>
             </div>
 
-            <div className="sw-panel p-5 border border-[var(--sw-border)]/80" style={{ animation: "slideIn 0.5s ease-out 120ms both" }}>
+            <div className="sw-panel p-5 border border-[var(--sw-border)]/80" style={ANIM_CARD_2}>
               <div className="flex items-start gap-4">
                 <div className="rounded-xl bg-black/35 border border-[var(--sw-border)] p-3">
                   <ShieldAlert className="w-6 h-6 text-[#fbbf24]" />
@@ -199,7 +208,7 @@ export default function SimulationDashboard() {
 
             <div
               className="sw-panel p-5 border border-[var(--sw-border)]/80 lg:col-span-2"
-              style={{ animation: "slideIn 0.5s ease-out 160ms both" }}
+              style={ANIM_CARD_3}
             >
               <div className="flex items-start gap-4">
                 <div className="rounded-xl bg-black/35 border border-[var(--sw-border)] p-3 shrink-0">
@@ -213,7 +222,7 @@ export default function SimulationDashboard() {
             </div>
           </div>
 
-          <div className="sw-panel p-5 border border-[var(--sw-border)]/80 md:col-span-2 lg:col-span-4" style={{ animation: "slideIn 0.5s ease-out 190ms both" }}>
+          <div className="sw-panel p-5 border border-[var(--sw-border)]/80 md:col-span-2 lg:col-span-4" style={ANIM_BANNER}>
             <div className="flex items-start gap-4">
               <div className="rounded-xl bg-black/35 border border-[var(--sw-border)] p-3 shrink-0">
                 <LineChart className="w-6 h-6 text-[var(--sw-accent-hover)]" />
@@ -226,14 +235,14 @@ export default function SimulationDashboard() {
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <div className="sw-panel p-6 lg:p-7 border-[var(--sw-border)]" style={{ animation: "slideIn 0.55s ease-out 220ms both" }}>
+            <div className="sw-panel p-6 lg:p-7 border-[var(--sw-border)]" style={ANIM_PANEL_1}>
               <div className="flex items-center gap-3 mb-4">
                 <Sparkles className="w-5 h-5 text-[var(--sw-accent-bright)]" />
                 <h5 className="text-lg font-bold text-[var(--sw-text-primary)]">Executive summary</h5>
               </div>
               <p className="text-[var(--sw-text-muted)] leading-relaxed text-[15px]">{summary.executiveSummary}</p>
             </div>
-            <div className="sw-panel p-6 lg:p-7 border-[var(--sw-border)]" style={{ animation: "slideIn 0.55s ease-out 260ms both" }}>
+            <div className="sw-panel p-6 lg:p-7 border-[var(--sw-border)]" style={ANIM_PANEL_2}>
               <div className="flex items-center gap-3 mb-4">
                 <Activity className="w-5 h-5 text-[var(--sw-pulse)]" />
                 <h5 className="text-lg font-bold text-[var(--sw-text-primary)]">Technical synopsis</h5>
@@ -246,7 +255,7 @@ export default function SimulationDashboard() {
             </div>
           </div>
 
-          <div className="sw-panel p-7 border-[var(--sw-border)]" style={{ animation: "slideIn 0.6s ease-out 300ms both" }}>
+          <div className="sw-panel p-7 border-[var(--sw-border)]" style={ANIM_TIMELINE}>
             <div className="flex flex-wrap justify-between gap-4 mb-6">
               <div>
                 <p className="sw-kicker mb-1">Timeline choreography</p>
