@@ -138,7 +138,7 @@ Each policy returns a `results` set with `policy_id`, `severity`, `passed`, `mes
 | **Supabase writes** | `src/lib/quantumAssessmentPersistence.ts` → `persistQuantumReadinessOutput(output)` inserts `quantum_readiness_assessments`, `quantum_crypto_inventory`, `quantum_remediation_tasks`, and `quantum_policy_results` using **`getSupabaseAdminClient()`** (server-only). |
 | **API** | `POST /api/quantum/readiness-assessment` with `{ tenantId, scanId?, scanFindings?, assets?, vendorMetadata?, persist? }`; requires tenant session + `remediationAndScan` role membership. |
 
-**Optional OPA (fail-open)**
+### Optional OPA (fail-open)
 
 When `OPA_BASE_URL` or `QUANTUM_OPA_BASE_URL` is set, each inventory row is evaluated against:
 

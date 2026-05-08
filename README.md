@@ -619,83 +619,109 @@ npm run qa:external-intel -- example.com --persist
 These capabilities were added on top of the v4 platform. Each is independently usable.
 
 ### Feature 2 — SSE Live Findings Feed
+
 Real-time browser push when findings land or change. Bridges Supabase Realtime to `EventSource`.
+
 - **API:** `GET /api/events/findings` — SSE stream, 25s heartbeat
 - **Hook:** `src/hooks/useLiveFindings.ts` — exponential backoff reconnect
 - **Component:** `src/components/LiveFindingsFeed.tsx`
 
 ### Feature 3 — Vendor Risk Assessment
+
 Third-party vendor risk scoring using external intelligence signals.
+
 - **API:** `GET /api/security/vendor-risk` · `POST /api/security/vendor-risk` (triggers scan)
 - **Inngest:** `securewatch/vendor_risk.assessment.requested`
 - **Tables:** `vendor_assessments`, `vendor_risk_signals`
 - **Component:** `src/components/vendor-risk/VendorRiskCard.tsx`
 
 ### Feature 4 — AI-Generated Remediation Playbooks
+
 Claude Haiku generates step-by-step remediation playbooks on demand and stores them on the remediation action.
+
 - **API:** `GET /api/remediation-actions/:id/playbook` · `POST` (triggers Inngest)
 - **Inngest:** `securewatch/remediation.playbook.requested`
 - **Component:** `src/components/remediation/PlaybookPanel.tsx` — polls until ready
 
 ### Feature 5 — Compliance Evidence Package Export
+
 One-click export of a compliance evidence package (HTML report or JSON) covering posture, findings, evidence records, and audit log.
+
 - **API:** `GET /api/compliance/evidence-export?framework=NIST&format=html|json`
 - **API:** `GET /api/compliance/evidence-export/manifest` — active frameworks for tenant
 - **Component:** `src/components/compliance/EvidenceExportButton.tsx`
 
 ### Feature 6 — Risk Acceptance Workflow UI
+
 Full review/approve/reject UI for risk exception requests with SLA-aware queue.
+
 - **Page:** `/risk-exceptions`
 - **Components:** `RiskExceptionForm`, `RiskExceptionCard`, `RiskExceptionQueue`
 - Approve/reject inline; rejection requires reason text
 
 ### Feature 7 — Multi-Framework Gap Analysis
+
 Side-by-side compliance score heatmap across all 11 frameworks.
+
 - **API:** `GET /api/compliance/gap-analysis`
 - **Page:** `/compliance/gap-analysis`
 - **Component:** `src/components/compliance/GapAnalysisHeatmap.tsx`
 
 ### Feature 8 — AI Threat Digest
+
 Claude Haiku generates a weekly AI security briefing: top findings, vendor risk changes, recommended action.
+
 - **API:** `GET /api/threat-digest` · `POST` (on-demand trigger)
 - **Inngest:** cron Monday 08:00 UTC + `securewatch/threat.digest.requested`
 - **Table:** `tenant_threat_digests`
 - **Component:** `src/components/ThreatDigestCard.tsx`
 
 ### Feature 9 — Asset Inventory
+
 Asset catalog built from findings, grouped by asset type with finding severity counts.
+
 - **API:** `GET /api/assets?type=...` · `POST /api/assets` (rebuild from findings)
 - **Page:** `/assets`
 - **Table:** `asset_inventory`
 - **Component:** `src/components/assets/AssetInventoryTable.tsx`
 
 ### Feature 10 — SLA Breach Alerting
+
 Hourly Inngest sweep that emits `securewatch/sla.breach.warning` (4h before) and `securewatch/sla.breach.violated` for pending approvals and risk exceptions past SLA.
+
 - **Inngest:** `sla-breach-sweep` (hourly cron)
 - Writes `sla_breached_at` on first violation
 
 ### Feature 11 — Incident War Room
+
 Collaborative incident response view: status transitions, scrollable audit timeline, and analyst note posting.
+
 - **API:** `GET /api/incidents/:id/timeline` · `POST` (add note)
 - **Component:** `src/components/incidents/IncidentWarRoom.tsx`
 - Transitions: `open → contained → remediated → validated → rejoined`
 
 ### Feature 12 — Policy Simulation Mode
+
 Test policy rule changes against up to 100 historical decisions before applying them. Read-only — nothing is written.
+
 - **API:** `POST /api/policy/simulate` — body: `{ overrides: {...}, sampleSize: 30 }`
 - Returns `changeRate`, `actionFlips` breakdown
 - **Component:** `src/components/policy/PolicySimulator.tsx`
 - Restricted to `owner` / `admin` roles
 
 ### Feature 13 — Scheduled Report Builder
+
 Automated evidence package exports on configurable cron schedules.
+
 - **API:** `GET /api/scheduled-reports` · `POST` (create schedule)
 - **Inngest:** `run-scheduled-reports` (hourly check, runs due reports)
 - **Table:** `scheduled_reports`
 - **Component:** `src/components/reports/ScheduledReportBuilder.tsx`
 
 ### Feature 14 — Integration Hub (Jira / ServiceNow)
+
 Bidirectional sync: push remediation actions to Jira or ServiceNow; store external ticket references.
+
 - **API:** `GET/POST /api/integrations/configs` — configure connector credentials
 - **API:** `POST /api/integrations/sync` — push a remediation action to external ticketing
 - **Tables:** `integration_configs`, `integration_sync_records`
@@ -705,6 +731,130 @@ Bidirectional sync: push remediation actions to Jira or ServiceNow; store extern
 5-step guided setup: scan targets → compliance frameworks → team invite → first scan → done.
 - **Page:** `/onboarding`
 - **Component:** `src/components/onboarding/OnboardingWizard.tsx`
+
+---
+
+## ElevenLabs Voice Layer
+
+SecureWatch360 includes a deterministic voice operating layer fronted by an ElevenLabs Conversational AI agent. Voice utterances are classified server-side, gated by role + safety policy, optionally challenged for verbal confirmation, and audited end-to-end.
+
+- **Gateway:** `src/server/voice/voiceGateway.ts` — `handleVoiceCommand()` is the single entry point.
+- **Webhook:** `src/server/api/elevenlabs/webhook.ts` — accepts ElevenLabs `tool_call` and `post_call_transcription` events, verifies the HMAC signature, and dispatches into the gateway.
+- **Outbound calls:** `src/server/voice/outboundIncidentCallService.ts` — `startOutboundIncidentCall()` for critical-severity briefings via ElevenLabs Twilio.
+- **UI:** `src/components/voice/VoiceCommandCenter.tsx` (status, examples, pipeline timeline, guardrails panel).
+- **Agent prompt:** [`docs/elevenlabs/securewatch360-agent-instructions.md`](docs/elevenlabs/securewatch360-agent-instructions.md).
+- **Migration:** `supabase/migrations/20260508130000_create_voice_tables.sql` — adds `voice_sessions`, `voice_commands`, `voice_audit_events`, `voice_confirmation_requests`.
+
+### Required environment variables
+
+Add the following to `.env.local` (or your secret manager). All five are read at request time, so changes do not require a process restart.
+
+```bash
+# ElevenLabs Conversational AI agent + outbound Twilio
+ELEVENLABS_API_KEY=
+ELEVENLABS_AGENT_ID=
+ELEVENLABS_PHONE_NUMBER_ID=
+
+# HMAC secret for inbound webhooks. When set, signature verification is mandatory.
+ELEVENLABS_WEBHOOK_SECRET=
+
+# Bypass real outbound calls in dev. Always start in dry-run mode.
+VOICE_CALLS_DRY_RUN=true
+```
+
+Optional defaults used by the webhook handler when ElevenLabs `dynamic_variables` are missing (development only — production callers MUST send `tenant_id` / `user_id` / `user_role`):
+
+```bash
+ELEVENLABS_DEFAULT_TENANT_ID=
+ELEVENLABS_DEFAULT_USER_ID=
+ELEVENLABS_DEFAULT_USER_ROLE=analyst   # owner | admin | analyst | viewer
+```
+
+### Local setup
+
+1. **Add env vars** to `.env.local` (the five required variables above plus any optional defaults).
+2. **Run the migration** so the four voice tables exist:
+
+   ```bash
+   supabase db push
+   ```
+
+3. **Start the dev server** (and the Inngest dev server in a second terminal so adapter-dispatched events run):
+
+   ```bash
+   npm run dev
+   npm run inngest:dev
+   ```
+
+4. **Configure the ElevenLabs webhook URL** in the ElevenLabs agent dashboard. Point post-call and tool-call events at:
+
+   ```text
+   https://<your-tunnel-or-host>/api/elevenlabs/webhook
+   ```
+
+   Set the same shared secret in the dashboard and in `ELEVENLABS_WEBHOOK_SECRET`. For local dev, use a tunnel (e.g. `cloudflared` or `ngrok`) since ElevenLabs cannot reach `localhost`.
+
+5. **Run the QA harness** to confirm the gateway, classifier, policy guard, confirmation service, and audit pipeline are all healthy without touching ElevenLabs:
+
+   ```bash
+   npm run qa:voice
+   ```
+
+   The script exits non-zero if any of the six canonical scenarios fails.
+
+6. **Test a read-only command first.** Through the live agent (or via a `tool_call` POST) say:
+
+   > "Show me critical findings for Acme Dental"
+
+   You should hear an answer and see two rows in `voice_audit_events` (`voice.command.received`, `voice.command.executed`). No Inngest event should fire — read-only intents go straight to the data layer.
+
+7. **Test the confirmation flow second.** Say:
+
+   > "Isolate endpoint LAPTOP-123"
+
+   The agent must respond with the canonical confirmation challenge (e.g. *"Say: confirm isolate endpoint LAPTOP-123"*) and `voice_confirmation_requests` must contain a `pending` row with a five-minute TTL. Then say *"Confirm isolate endpoint LAPTOP-123"* — the gateway moves the command to `executed`, dispatches the remediation Inngest event, and writes a `voice.confirmation.accepted` audit row.
+
+### Security notes
+
+- **Do not allow voice commands to bypass RBAC.** The gateway enforces role + safety via `evaluateVoicePolicy`. Tenant + user + role come from `dynamic_variables` (preferred) or env defaults — never from a free-form transcript.
+- **Do not expose internal Inngest, Supabase, or workflow secrets.** The agent prompt (`docs/elevenlabs/securewatch360-agent-instructions.md`) explicitly forbids reading API keys, webhook URLs, or service-role tokens aloud, and the gateway response shape carries only `spokenResponse` plus event names — never payloads.
+- **Do not execute destructive commands without confirmation.** `ISOLATE_ENDPOINT` and `DISABLE_USER_ACCOUNT` require both an admin role *and* a phrase-matching verbal confirmation; non-admins are denied even if the phrase matches.
+- **Log every voice command.** Two audit rows per command are written across both `audit_logs` and `voice_audit_events` — one on receipt, one on resolution. Confirmation challenges add `requested` / `accepted` / `rejected` / `expired` events on top.
+- **Keep `VOICE_CALLS_DRY_RUN=true` until production credentials are verified.** Outbound incident calls fall back to synthetic conversation IDs in dry-run mode but still create session + audit rows so the rest of the platform can be exercised end-to-end.
+
+### Troubleshooting
+
+#### Webhook returns 401
+
+The signature did not verify. Check, in this order:
+
+- `ELEVENLABS_WEBHOOK_SECRET` matches the value in the ElevenLabs dashboard exactly (no trailing whitespace).
+- The `ElevenLabs-Signature` header is present and shaped `t=<unix>,v0=<hex>`. The handler also enforces a ±30-minute timestamp window to defeat replay; clock skew on the server will read as `timestamp_outside_window`.
+- For dev, you may temporarily unset `ELEVENLABS_WEBHOOK_SECRET` to skip verification — the handler will accept the call and audit `signature_verification: "skipped"`. Never ship that to production.
+
+#### Missing transcript ("ignored")
+
+The webhook accepted the payload but found nothing to dispatch. Common causes:
+
+- `data.parameters.transcript` was empty on a `tool_call`. The agent prompt should always pass the user's words into that field.
+- A `post_call_transcription` event contained only `agent` turns. The handler aggregates `user`-role turns into the transcript; if the operator never spoke, there is nothing to classify.
+- Verify the audit row in `voice_audit_events` — its `event_payload` contains the full safe payload for forensic inspection.
+
+#### ElevenLabs API key invalid
+
+The outbound-call client returns `{ ok: false, reason: "http_error", status: 401 }`. The service writes an `OUTBOUND_INCIDENT_CALL_FAILED` audit row (no API key in the payload). Rotate `ELEVENLABS_API_KEY`, then retry. The thin client (`src/server/voice/elevenlabsClient.ts`) reads env at call time, so no restart is needed.
+
+#### Outbound call disabled
+
+If `startOutboundIncidentCall` returns `{ ok: true, skipped: true, reason: "severity_below_threshold" }`, the severity gate fired (only `critical` calls by default). Pass `force: true` for explicit operator overrides. If it returns `{ ok: false, reason: "missing_agent_config" | "missing_phone_number_config" | "missing_api_key" }`, the corresponding env var is unset; the failure is also written to `audit_logs` with `OUTBOUND_INCIDENT_CALL_FAILED`.
+
+#### Command classified as UNKNOWN
+
+The deterministic classifier could not match the utterance against any intent rule. The gateway returns `status: "needs_clarification"` and the agent should ask one clarifying question. To debug:
+
+- Run `npm run qa:voice` to confirm the canonical phrasings still classify correctly (regression check).
+- Check `src/server/voice/voiceIntentClassifier.ts` — every intent has a list of regex patterns and an explicit `reason` string surfaced in the audit payload.
+- Add a new pattern when an intent has multiple natural phrasings. All existing patterns are additive, so new phrasings will not affect prior classifications.
 
 ---
 

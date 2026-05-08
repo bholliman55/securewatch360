@@ -92,9 +92,8 @@ results contains result if {
 # WARN: RSA/ECC/ECDSA/ECDH usage (any key size — quantum-vulnerable)
 results contains result if {
     is_quantum_vulnerable
-    not (is_rsa and rsa_key_length < 2048)   # already covered by critical deny above
-    result := {
-        "policy_id":  "QCP-004",
+    not (is_rsa and rsa_key_length < 2048)
+    result := {        "policy_id":  "QCP-004",
         "severity":   "high",
         "passed":     false,
         "message":    sprintf("Algorithm '%v' is vulnerable to Shor's algorithm on a cryptographically-relevant quantum computer (CRQC).", [input.algorithm]),

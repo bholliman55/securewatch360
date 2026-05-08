@@ -50,8 +50,10 @@ export function VendorRiskCard({ vendor, onScanNow }: { vendor: VendorAssessment
         </div>
         <div className="h-2 w-full rounded-full bg-gray-100">
           <div
-            className={`h-2 rounded-full transition-all ${SCORE_BAR_COLORS[tier] ?? "bg-gray-400"}`}
-            style={{ width: `${score}%` }}
+            ref={(el) => {
+              if (el) el.style.setProperty('--bar-width', `${score}%`);
+            }}
+            className={`h-2 rounded-full transition-all w-[var(--bar-width)] ${SCORE_BAR_COLORS[tier] ?? "bg-gray-400"}`}
           />
         </div>
       </div>

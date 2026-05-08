@@ -16,6 +16,14 @@ const COLORS = {
   success: '#10b981'
 };
 
+const AXIS_TICK = { fontSize: 12 };
+const TOOLTIP_CONTENT_STYLE = {
+  backgroundColor: '#1e293b',
+  border: '1px solid #475569',
+  borderRadius: '8px',
+  color: '#e2e8f0'
+};
+
 const COMPLETION_WIDTH_CLASSES = [
   'w-0',
   'w-[5%]',
@@ -168,9 +176,9 @@ export default function Analytics() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" dark-stroke="#334155" />
-              <XAxis dataKey="date" stroke="#94a3b8" style={{ fontSize: '12px' }} />
-              <YAxis stroke="#94a3b8" style={{ fontSize: '12px' }} />
-              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px', color: '#e2e8f0' }} />
+              <XAxis dataKey="date" stroke="#94a3b8" tick={AXIS_TICK} />
+              <YAxis stroke="#94a3b8" tick={AXIS_TICK} />
+              <Tooltip contentStyle={TOOLTIP_CONTENT_STYLE} />
               <Legend />
               <Area type="monotone" dataKey="threats" stroke={COLORS.critical} fillOpacity={1} fill="url(#colorThreats)" name="Active Threats" />
               <Area type="monotone" dataKey="compliance" stroke={COLORS.success} fillOpacity={1} fill="url(#colorCompliance)" name="Compliance Score" />
@@ -184,9 +192,9 @@ export default function Analytics() {
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={generateSeverityTrend()}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="date" stroke="#94a3b8" style={{ fontSize: '12px' }} />
-              <YAxis stroke="#94a3b8" style={{ fontSize: '12px' }} />
-              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px', color: '#e2e8f0' }} />
+              <XAxis dataKey="date" stroke="#94a3b8" tick={AXIS_TICK} />
+              <YAxis stroke="#94a3b8" tick={AXIS_TICK} />
+              <Tooltip contentStyle={TOOLTIP_CONTENT_STYLE} />
               <Legend />
               <Area type="monotone" dataKey="critical" stackId="1" stroke={COLORS.critical} fill={COLORS.critical} name="Critical" />
               <Area type="monotone" dataKey="high" stackId="1" stroke={COLORS.high} fill={COLORS.high} name="High" />
@@ -205,9 +213,9 @@ export default function Analytics() {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={generateComplianceFramework()}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="name" stroke="#94a3b8" style={{ fontSize: '12px' }} />
-              <YAxis stroke="#94a3b8" style={{ fontSize: '12px' }} domain={[0, 100]} />
-              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px', color: '#e2e8f0' }} />
+              <XAxis dataKey="name" stroke="#94a3b8" tick={AXIS_TICK} />
+              <YAxis stroke="#94a3b8" tick={AXIS_TICK} domain={[0, 100]} />
+              <Tooltip contentStyle={TOOLTIP_CONTENT_STYLE} />
               <Bar dataKey="value" fill={COLORS.success} radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -219,9 +227,9 @@ export default function Analytics() {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={generateIncidentResolution()}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="severity" stroke="#94a3b8" style={{ fontSize: '12px' }} />
-              <YAxis stroke="#94a3b8" style={{ fontSize: '12px' }} />
-              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px', color: '#e2e8f0' }} />
+              <XAxis dataKey="severity" stroke="#94a3b8" tick={AXIS_TICK} />
+              <YAxis stroke="#94a3b8" tick={AXIS_TICK} />
+              <Tooltip contentStyle={TOOLTIP_CONTENT_STYLE} />
               <Bar dataKey="avgHours" fill={COLORS.critical} radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

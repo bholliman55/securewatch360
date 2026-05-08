@@ -145,8 +145,10 @@ export default function SecurityPosture({ data: securityPostureData }: SecurityP
             >
               <div className="flex items-center space-x-3">
                 <div
-                  className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: item.color }}
+                  ref={(el) => {
+                    if (el) el.style.setProperty('--dot-color', item.color);
+                  }}
+                  className="w-4 h-4 rounded-full bg-[var(--dot-color)]"
                 />
                 <span className="font-medium text-[var(--sw-text-primary)]">
                   {item.name}
