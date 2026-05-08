@@ -2,7 +2,7 @@ name: Security Scans
 
 on:
   pull_request:
-    branches: [develop]
+    branches: [main]
   workflow_dispatch:
     inputs:
       target_url:
@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   baseline-security:
-    name: Baseline SCA/SAST/Infra
+    name: PR Dependency Audit + Semgrep
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
@@ -48,20 +48,10 @@ jobs:
       - name: SAST scan with Semgrep
         run: npm run security:sast
 
-      - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@0.16.1
-        with:
-          scan-type: fs
-          scan-ref: .
-          scanners: vuln,misconfig,secret
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: "1"
-
-  policy-gate:
-    name: Policy Gate (OPA Required)
+  nightly-infra-tools:
+    name: Nightly Tooling (Trivy + OPA)
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -74,6 +64,16 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.16.1
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,misconfig,secret
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
 
       - name: Install OPA CLI
         run: |
@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     env:
-      TARGET_URL: ${{ inputs.target_url || secrets.ZAP_TARGET_URL }}
+      TARGET_URL: ${{ github.event.inputs.target_url || secrets.ZAP_TARGET_URL }}
     steps:
       - name: Validate target URL is configured
         run: |
