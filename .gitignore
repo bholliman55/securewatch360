@@ -17,6 +17,8 @@
 .env.local
 .env.*.local
 .env.protonrefs.local
+# auto-generated from root .env.local by scripts/prep-ui-env.mjs
+ui/.env.local
 
 # logs / debug
 npm-debug.log*
