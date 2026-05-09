@@ -62,14 +62,17 @@ export function DemoControlPanel({
         Reset Demo
       </PrimaryButton>
 
-      <span aria-hidden className="mx-1 h-6 w-px bg-gray-200" />
+      <span
+        aria-hidden
+        style={{ width: 1, height: 20, background: "rgba(41,182,246,0.2)", display: "inline-block", margin: "0 4px" }}
+      />
 
       <PrimaryButton
         onClick={onStart}
         disabled={disabled || !canStart}
         tone="primary"
       >
-        Start Simulation
+        ▶ Start Simulation
       </PrimaryButton>
 
       <PrimaryButton
@@ -77,7 +80,7 @@ export function DemoControlPanel({
         disabled={disabled || !canStart}
         tone="primary-soft"
       >
-        Run Fast
+        ⚡ Run Fast
       </PrimaryButton>
 
       {isRunning && (
@@ -96,30 +99,51 @@ export function DemoControlPanel({
         </PrimaryButton>
       )}
 
-      <span aria-hidden className="mx-1 h-6 w-px bg-gray-200" />
+      <span
+        aria-hidden
+        style={{ width: 1, height: 20, background: "rgba(41,182,246,0.2)", display: "inline-block", margin: "0 4px" }}
+      />
 
       <PrimaryButton onClick={onGenerateReport} disabled={disabled} tone="neutral">
         Generate Report
       </PrimaryButton>
 
-      <div className="ml-auto flex items-center gap-3 text-xs text-gray-500">
+      <div
+        className="ml-auto flex items-center gap-3"
+        style={{ fontSize: "0.75rem", color: "#8ab4d4" }}
+      >
         {busy && (
           <span className="inline-flex items-center gap-1.5">
             <span
               aria-hidden
-              className="inline-block h-2 w-2 animate-pulse rounded-full bg-sky-500"
+              style={{
+                display: "inline-block",
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: "#29b6f6",
+                animation: "pulse 1.2s ease-in-out infinite",
+              }}
             />
-            <span>{busy}…</span>
+            <span style={{ color: "#29b6f6" }}>{busy}…</span>
           </span>
         )}
         {!busy && replayState && (
           <span>
-            Replay: <span className="font-medium text-gray-700">{replayState}</span>
+            Replay:{" "}
+            <span style={{ fontWeight: 600, color: "#e2e8f0" }}>{replayState}</span>
           </span>
         )}
         {lastError && (
           <span
-            className="rounded border border-rose-200 bg-rose-50 px-2 py-0.5 text-rose-700"
+            style={{
+              borderRadius: 6,
+              border: "1px solid rgba(248,113,113,0.35)",
+              background: "rgba(248,113,113,0.1)",
+              padding: "0.15rem 0.5rem",
+              color: "#f87171",
+              fontSize: "0.72rem",
+            }}
             role="alert"
           >
             {lastError}
@@ -139,17 +163,45 @@ interface PrimaryButtonProps {
   children: React.ReactNode;
 }
 
-const TONE_CLASS: Record<PrimaryButtonProps["tone"], string> = {
-  neutral:
-    "border-gray-300 bg-white text-gray-800 hover:bg-gray-50 disabled:bg-gray-50 disabled:text-gray-400",
-  primary:
-    "border-sky-700 bg-sky-700 text-white hover:bg-sky-800 disabled:bg-sky-300 disabled:border-sky-300",
-  "primary-soft":
-    "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 disabled:bg-sky-50/50 disabled:text-sky-300",
-  warn:
-    "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 disabled:bg-amber-50/50 disabled:text-amber-400",
-  danger:
-    "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 disabled:bg-rose-50/50 disabled:text-rose-400",
+const TONE_STYLE: Record<
+  PrimaryButtonProps["tone"],
+  { bg: string; color: string; border: string; disabledBg: string; disabledColor: string }
+> = {
+  neutral: {
+    bg: "rgba(176,196,222,0.08)",
+    color: "#b0c4de",
+    border: "rgba(176,196,222,0.2)",
+    disabledBg: "rgba(176,196,222,0.04)",
+    disabledColor: "rgba(176,196,222,0.3)",
+  },
+  primary: {
+    bg: "#1565c0",
+    color: "#fff",
+    border: "#1e88e5",
+    disabledBg: "rgba(21,101,192,0.3)",
+    disabledColor: "rgba(255,255,255,0.35)",
+  },
+  "primary-soft": {
+    bg: "rgba(0,229,255,0.08)",
+    color: "#00e5ff",
+    border: "rgba(0,229,255,0.35)",
+    disabledBg: "rgba(0,229,255,0.03)",
+    disabledColor: "rgba(0,229,255,0.3)",
+  },
+  warn: {
+    bg: "rgba(251,191,36,0.1)",
+    color: "#fbbf24",
+    border: "rgba(251,191,36,0.35)",
+    disabledBg: "rgba(251,191,36,0.04)",
+    disabledColor: "rgba(251,191,36,0.3)",
+  },
+  danger: {
+    bg: "rgba(248,113,113,0.1)",
+    color: "#f87171",
+    border: "rgba(248,113,113,0.35)",
+    disabledBg: "rgba(248,113,113,0.04)",
+    disabledColor: "rgba(248,113,113,0.3)",
+  },
 };
 
 function PrimaryButton({
@@ -158,6 +210,7 @@ function PrimaryButton({
   tone,
   children,
 }: PrimaryButtonProps): React.JSX.Element {
+  const s = TONE_STYLE[tone];
   return (
     <button
       type="button"
@@ -165,7 +218,22 @@ function PrimaryButton({
         void onClick();
       }}
       disabled={disabled}
-      className={`inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium shadow-sm transition-colors disabled:cursor-not-allowed ${TONE_CLASS[tone]}`}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "0.35rem",
+        borderRadius: 7,
+        border: `1px solid ${disabled ? "rgba(176,196,222,0.12)" : s.border}`,
+        background: disabled ? s.disabledBg : s.bg,
+        color: disabled ? s.disabledColor : s.color,
+        padding: "0.4rem 0.85rem",
+        fontSize: "0.8rem",
+        fontWeight: 600,
+        cursor: disabled ? "not-allowed" : "pointer",
+        transition: "all 0.2s",
+        letterSpacing: "0.015em",
+        boxShadow: !disabled && tone === "primary" ? "0 2px 12px rgba(21,101,192,0.35)" : "none",
+      }}
     >
       {children}
     </button>

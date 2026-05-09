@@ -264,20 +264,49 @@ export function InvestorDemoShell({
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen"
+      style={{
+        background:
+          "radial-gradient(circle at 15% 12%, rgba(0,229,255,0.07) 0%, transparent 40%), " +
+          "radial-gradient(circle at 85% 8%, rgba(41,182,246,0.10) 0%, transparent 35%), " +
+          "#07111f",
+        fontFamily: "'Inter', system-ui, sans-serif",
+        color: "#fff",
+      }}
+    >
       {/* ----- Top header ----- */}
       <header
         aria-labelledby="investor-demo-title"
-        className="border-b border-gray-200 bg-white"
+        style={{
+          background: "#0d1e33",
+          borderBottom: "1px solid rgba(41,182,246,0.25)",
+        }}
       >
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 px-6 py-4">
           <div className="flex items-baseline gap-4">
-            <span className="text-base font-semibold tracking-tight text-gray-900">
-              SecureWatch360
+            <span
+              style={{
+                fontFamily: "'Rajdhani', sans-serif",
+                fontWeight: 700,
+                fontSize: "1.2rem",
+                letterSpacing: "0.04em",
+                color: "#29b6f6",
+              }}
+            >
+              SecureWatch<span style={{ color: "#00e5ff" }}>360</span>
             </span>
             <h1
               id="investor-demo-title"
-              className="text-sm font-medium uppercase tracking-wider text-gray-500"
+              style={{
+                fontFamily: "'Rajdhani', sans-serif",
+                fontWeight: 600,
+                fontSize: "0.82rem",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "#8ab4d4",
+                margin: 0,
+              }}
             >
               Investor Demo Mode
             </h1>
@@ -285,20 +314,20 @@ export function InvestorDemoShell({
           </div>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
             <div>
-              <span className="text-gray-500">Client:</span>{" "}
-              <span className="font-medium text-gray-900">
+              <span style={{ color: "#8ab4d4" }}>Client: </span>
+              <span style={{ fontWeight: 600, color: "#e2e8f0" }}>
                 {state.client?.client_name ?? "Acme Dental"}
               </span>
             </div>
             <div>
-              <span className="text-gray-500">MSP:</span>{" "}
-              <span className="font-medium text-gray-900">
+              <span style={{ color: "#8ab4d4" }}>MSP: </span>
+              <span style={{ fontWeight: 600, color: "#e2e8f0" }}>
                 {state.client?.msp_name ?? "Northstar Managed IT"}
               </span>
             </div>
           </div>
         </div>
-        <div className="border-t border-gray-100 bg-white">
+        <div style={{ borderTop: "1px solid rgba(176,196,222,0.12)", background: "#07111f" }}>
           <div className="mx-auto max-w-[1400px] px-6 py-3">
             <DemoControlPanel
               busy={busy}
@@ -319,7 +348,7 @@ export function InvestorDemoShell({
       </header>
 
       {/* ----- Three-column body ----- */}
-      <main className="mx-auto max-w-[1400px] px-6 py-6">
+      <main className="mx-auto max-w-[1400px] px-6 py-6" style={{ color: "#e2e8f0" }}>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           {/* Left column */}
           <div className="space-y-6 lg:col-span-3">
@@ -408,15 +437,31 @@ function ScenarioStatusBadge({
 }: {
   status: "ready" | "running" | "completed" | "archived";
 }): React.JSX.Element {
-  const cls: Record<typeof status, string> = {
-    ready: "bg-gray-100 text-gray-700 border-gray-200",
-    running: "bg-sky-50 text-sky-700 border-sky-200",
-    completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    archived: "bg-gray-50 text-gray-500 border-gray-200",
+  const styles: Record<
+    typeof status,
+    { bg: string; color: string; border: string }
+  > = {
+    ready: { bg: "rgba(176,196,222,0.1)", color: "#8ab4d4", border: "rgba(176,196,222,0.2)" },
+    running: { bg: "rgba(41,182,246,0.12)", color: "#29b6f6", border: "rgba(41,182,246,0.35)" },
+    completed: { bg: "rgba(34,197,94,0.12)", color: "#22c55e", border: "rgba(34,197,94,0.3)" },
+    archived: { bg: "rgba(176,196,222,0.06)", color: "#8ab4d4", border: "rgba(176,196,222,0.15)" },
   };
+  const s = styles[status];
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide ${cls[status]}`}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        background: s.bg,
+        color: s.color,
+        border: `1px solid ${s.border}`,
+        borderRadius: 9999,
+        padding: "0.18rem 0.65rem",
+        fontSize: "0.68rem",
+        fontWeight: 700,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+      }}
     >
       {status}
     </span>
