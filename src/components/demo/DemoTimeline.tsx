@@ -17,26 +17,52 @@ export interface DemoTimelineProps {
 }
 
 export function DemoTimeline({ events }: DemoTimelineProps): React.JSX.Element {
+  const emittedCount = events.filter((e) => e.status === "emitted").length;
   return (
     <section
       aria-labelledby="demo-timeline-title"
-      className="rounded-xl border border-gray-200 bg-white shadow-sm"
+      style={{
+        borderRadius: 12,
+        border: "1px solid rgba(41,182,246,0.2)",
+        background: "#0d1e33",
+        boxShadow: "0 14px 34px -20px rgba(0,0,0,0.55)",
+        overflow: "hidden",
+      }}
     >
-      <header className="border-b border-gray-100 px-5 py-4">
+      <header
+        style={{
+          borderBottom: "1px solid rgba(176,196,222,0.12)",
+          padding: "0.85rem 1.25rem",
+          display: "flex",
+          alignItems: "baseline",
+          gap: "0.75rem",
+        }}
+      >
         <h2
           id="demo-timeline-title"
-          className="text-base font-semibold text-gray-900"
+          style={{
+            fontFamily: "'Rajdhani', sans-serif",
+            fontWeight: 600,
+            fontSize: "0.75rem",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "#8ab4d4",
+            margin: 0,
+          }}
         >
-          Live timeline
+          Live Timeline
         </h2>
-        <p className="mt-0.5 text-xs text-gray-500">
-          {events.length} events · {events.filter((e) => e.status === "emitted").length} emitted
+        <p style={{ fontSize: "0.7rem", color: "#8ab4d4", margin: 0 }}>
+          {events.length} events ·{" "}
+          <span style={{ color: emittedCount > 0 ? "#22c55e" : "#8ab4d4" }}>
+            {emittedCount} emitted
+          </span>
         </p>
       </header>
-      <ol className="divide-y divide-gray-100">
+      <ol style={{ maxHeight: 420, overflowY: "auto" }}>
         {events.length === 0 && (
-          <li className="px-5 py-6 text-sm text-gray-500">
-            No events seeded yet. Click <span className="font-medium">Seed Demo</span> to load the scenario.
+          <li style={{ padding: "1.25rem", fontSize: "0.82rem", color: "#8ab4d4", fontStyle: "italic" }}>
+            No events seeded yet. Click <span style={{ fontWeight: 600, color: "#29b6f6" }}>Seed Demo</span> to load the scenario.
           </li>
         )}
         {events.map((event) => (
@@ -49,53 +75,89 @@ export function DemoTimeline({ events }: DemoTimelineProps): React.JSX.Element {
 
 // ---------------------------------------------------------------------------
 
-const SEVERITY_CLASS: Record<DemoEventRow["severity"], string> = {
-  info: "bg-gray-50 text-gray-700 border-gray-200",
-  low: "bg-sky-50 text-sky-700 border-sky-200",
-  medium: "bg-amber-50 text-amber-800 border-amber-200",
-  high: "bg-orange-50 text-orange-800 border-orange-200",
-  critical: "bg-rose-50 text-rose-700 border-rose-200",
+const SEVERITY_STYLE: Record<
+  DemoEventRow["severity"],
+  { bg: string; color: string; border: string }
+> = {
+  info: { bg: "rgba(176,196,222,0.08)", color: "#8ab4d4", border: "rgba(176,196,222,0.2)" },
+  low: { bg: "rgba(41,182,246,0.08)", color: "#29b6f6", border: "rgba(41,182,246,0.25)" },
+  medium: { bg: "rgba(251,191,36,0.1)", color: "#fbbf24", border: "rgba(251,191,36,0.3)" },
+  high: { bg: "rgba(251,146,60,0.1)", color: "#fb923c", border: "rgba(251,146,60,0.3)" },
+  critical: { bg: "rgba(248,113,113,0.1)", color: "#f87171", border: "rgba(248,113,113,0.3)" },
 };
 
-const STATUS_CLASS: Record<DemoEventRow["status"], string> = {
-  pending: "text-gray-400",
-  emitted: "text-emerald-700",
-  skipped: "text-gray-400 line-through",
+const STATUS_STYLE: Record<DemoEventRow["status"], { color: string; extra?: string }> = {
+  pending: { color: "#8ab4d4" },
+  emitted: { color: "#22c55e" },
+  skipped: { color: "#8ab4d4", extra: "line-through" },
 };
 
 function TimelineRow({ event }: { event: DemoEventRow }): React.JSX.Element {
   const isPending = event.status === "pending";
   const timestamp = formatTime(event.emitted_at, event.offset_seconds);
+  const sev = SEVERITY_STYLE[event.severity];
+  const sta = STATUS_STYLE[event.status];
   return (
     <li
-      className={`flex gap-4 px-5 py-3 transition-opacity ${
-        isPending ? "opacity-50" : "opacity-100"
-      }`}
+      style={{
+        display: "flex",
+        gap: "1rem",
+        padding: "0.7rem 1.25rem",
+        borderBottom: "1px solid rgba(176,196,222,0.08)",
+        opacity: isPending ? 0.45 : 1,
+        transition: "opacity 0.4s ease",
+      }}
     >
-      <div className="w-20 shrink-0 text-xs text-gray-500" aria-hidden>
-        <div className="font-mono">{timestamp}</div>
-        <div className="mt-0.5 text-[10px] uppercase tracking-wider text-gray-400">
+      <div style={{ width: 72, flexShrink: 0 }} aria-hidden>
+        <div style={{ fontFamily: "monospace", fontSize: "0.72rem", color: "#8ab4d4" }}>
+          {timestamp}
+        </div>
+        <div style={{ marginTop: 2, fontSize: "0.62rem", letterSpacing: "0.07em", textTransform: "uppercase", color: "#8ab4d4", opacity: 0.7 }}>
           T+{event.offset_seconds}s
         </div>
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.4rem" }}>
           <span
-            className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${SEVERITY_CLASS[event.severity]}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              borderRadius: 4,
+              border: `1px solid ${sev.border}`,
+              background: sev.bg,
+              padding: "0.1rem 0.45rem",
+              fontSize: "0.62rem",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: sev.color,
+            }}
           >
             {event.severity}
           </span>
           {event.agent_name && (
-            <span className="text-xs text-gray-600">{event.agent_name}</span>
+            <span style={{ fontSize: "0.72rem", color: "#8ab4d4" }}>{event.agent_name}</span>
           )}
           <span
-            className={`ml-auto text-[10px] font-medium uppercase tracking-wide ${STATUS_CLASS[event.status]}`}
+            style={{
+              marginLeft: "auto",
+              fontSize: "0.62rem",
+              fontWeight: 700,
+              letterSpacing: "0.07em",
+              textTransform: "uppercase",
+              color: sta.color,
+              textDecoration: sta.extra,
+            }}
           >
             {event.status}
           </span>
         </div>
-        <h3 className="mt-1 text-sm font-medium text-gray-900">{event.title}</h3>
-        <p className="mt-0.5 text-sm text-gray-600">{event.description}</p>
+        <h3 style={{ margin: "0.3rem 0 0", fontSize: "0.82rem", fontWeight: 600, color: "#e2e8f0" }}>
+          {event.title}
+        </h3>
+        <p style={{ margin: "0.2rem 0 0", fontSize: "0.78rem", color: "#8ab4d4", lineHeight: 1.4 }}>
+          {event.description}
+        </p>
       </div>
     </li>
   );

@@ -35,55 +35,105 @@ export function DemoCompliancePanel({
   return (
     <section
       aria-labelledby="compliance-title"
-      className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+      style={{
+        borderRadius: 12,
+        border: "1px solid rgba(41,182,246,0.2)",
+        background: "#0d1e33",
+        padding: "1rem 1.1rem",
+        boxShadow: "0 14px 34px -20px rgba(0,0,0,0.55)",
+      }}
     >
       <header>
         <h2
           id="compliance-title"
-          className="text-base font-semibold text-gray-900"
+          style={{
+            fontFamily: "'Rajdhani', sans-serif",
+            fontWeight: 600,
+            fontSize: "0.75rem",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "#8ab4d4",
+            margin: 0,
+          }}
         >
-          Compliance impact
+          Compliance Impact
         </h2>
       </header>
 
-      <ul className="mt-4 flex flex-wrap gap-2">
+      <ul
+        style={{
+          marginTop: "0.75rem",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "0.4rem",
+          padding: 0,
+          listStyle: "none",
+        }}
+      >
         {frameworks.map((fw) => (
           <li
             key={fw}
-            className="inline-flex items-center rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-700"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              borderRadius: 6,
+              border: "1px solid rgba(41,182,246,0.25)",
+              background: "rgba(41,182,246,0.07)",
+              padding: "0.15rem 0.5rem",
+              fontSize: "0.7rem",
+              fontWeight: 600,
+              color: "#29b6f6",
+              letterSpacing: "0.04em",
+            }}
           >
             {fw}
           </li>
         ))}
       </ul>
 
-      <div className="mt-5 rounded-lg border border-gray-100 bg-gray-50/60 p-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-          Agent 3 impact assessment
+      <div
+        style={{
+          marginTop: "0.9rem",
+          borderRadius: 8,
+          border: "1px solid rgba(176,196,222,0.12)",
+          background: "rgba(176,196,222,0.04)",
+          padding: "0.65rem 0.85rem",
+        }}
+      >
+        <h3
+          style={{
+            fontSize: "0.65rem",
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "#8ab4d4",
+            margin: 0,
+          }}
+        >
+          Agent 3 Impact Assessment
         </h3>
         {complianceReasoning ? (
           <>
-            <p className="mt-1.5 text-sm text-gray-800">
+            <p style={{ marginTop: "0.5rem", fontSize: "0.8rem", color: "#cbd5e1", lineHeight: 1.5 }}>
               {complianceReasoning.reasoning_summary}
             </p>
             {complianceReasoning.confidence != null && (
-              <p className="mt-1 text-xs text-gray-500">
+              <p style={{ marginTop: "0.35rem", fontSize: "0.7rem", color: "#8ab4d4" }}>
                 Confidence{" "}
-                {Math.round(
-                  (complianceReasoning.confidence as number) * 100,
-                )}
-                %
+                <span style={{ color: "#22c55e", fontWeight: 600 }}>
+                  {Math.round((complianceReasoning.confidence as number) * 100)}%
+                </span>
               </p>
             )}
           </>
         ) : (
-          <p className="mt-1.5 text-sm text-gray-500">
+          <p style={{ marginTop: "0.5rem", fontSize: "0.8rem", color: "#8ab4d4", fontStyle: "italic" }}>
             Awaiting compliance impact assessment…
           </p>
         )}
       </div>
 
-      <p className="mt-4 text-xs text-gray-500">
+      <p style={{ marginTop: "0.75rem", fontSize: "0.7rem", color: "#8ab4d4", lineHeight: 1.45 }}>
         Containment events, voice approvals, and isolation actions are
         captured as evidence with timestamps and actor IDs (simulated).
       </p>

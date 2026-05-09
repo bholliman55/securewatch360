@@ -28,18 +28,32 @@ export function DemoClientRiskPanel({
   return (
     <section
       aria-labelledby="client-risk-title"
-      className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+      style={{
+        borderRadius: 12,
+        border: "1px solid rgba(41,182,246,0.2)",
+        background: "#0d1e33",
+        padding: "1rem 1.1rem",
+        boxShadow: "0 14px 34px -20px rgba(0,0,0,0.55)",
+      }}
     >
       <header>
         <h2
           id="client-risk-title"
-          className="text-base font-semibold text-gray-900"
+          style={{
+            fontFamily: "'Rajdhani', sans-serif",
+            fontWeight: 600,
+            fontSize: "0.75rem",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "#8ab4d4",
+            margin: 0,
+          }}
         >
-          Client risk
+          Client Risk
         </h2>
       </header>
 
-      <dl className="mt-4 space-y-2 text-sm">
+      <dl style={{ marginTop: "0.75rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
         <Row label="Client" value={client?.client_name ?? "Acme Dental"} />
         <Row label="Industry" value={client?.industry ?? "Healthcare"} />
         <Row
@@ -61,26 +75,38 @@ export function DemoClientRiskPanel({
         />
       </dl>
 
-      <div className="mt-5 border-t border-gray-100 pt-4">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-          Asset posture
+      <div style={{ marginTop: "1rem", borderTop: "1px solid rgba(176,196,222,0.12)", paddingTop: "0.85rem" }}>
+        <h3
+          style={{
+            fontSize: "0.65rem",
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "#8ab4d4",
+            margin: 0,
+          }}
+        >
+          Asset Posture
         </h3>
-        <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-          <RiskMetric
-            label="Critical"
-            count={counts.byRisk.critical}
-            tone="critical"
-          />
+        <div style={{ marginTop: "0.75rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
+          <RiskMetric label="Critical" count={counts.byRisk.critical} tone="critical" />
           <RiskMetric label="High" count={counts.byRisk.high} tone="high" />
-          <RiskMetric
-            label="Medium"
-            count={counts.byRisk.medium}
-            tone="medium"
-          />
+          <RiskMetric label="Medium" count={counts.byRisk.medium} tone="medium" />
           <RiskMetric label="Low" count={counts.byRisk.low} tone="low" />
         </div>
         {compromisedOrAtRisk > 0 && (
-          <p className="mt-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800">
+          <p
+            style={{
+              marginTop: "0.75rem",
+              borderRadius: 7,
+              border: "1px solid rgba(248,113,113,0.3)",
+              background: "rgba(248,113,113,0.08)",
+              padding: "0.5rem 0.7rem",
+              fontSize: "0.72rem",
+              color: "#fca5a5",
+              lineHeight: 1.4,
+            }}
+          >
             {compromisedOrAtRisk} asset
             {compromisedOrAtRisk === 1 ? "" : "s"} currently flagged in this run
             (simulated).
@@ -127,18 +153,25 @@ function Row({
   value: string;
 }): React.JSX.Element {
   return (
-    <div className="flex items-baseline justify-between gap-3">
-      <dt className="text-xs uppercase tracking-wide text-gray-500">{label}</dt>
-      <dd className="text-right text-sm text-gray-900">{value}</dd>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.5rem" }}>
+      <dt style={{ fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.07em", color: "#8ab4d4" }}>
+        {label}
+      </dt>
+      <dd style={{ fontSize: "0.8rem", fontWeight: 500, color: "#e2e8f0", textAlign: "right" }}>
+        {value}
+      </dd>
     </div>
   );
 }
 
-const TONE_CLASS: Record<"critical" | "high" | "medium" | "low", string> = {
-  critical: "border-rose-200 bg-rose-50 text-rose-700",
-  high: "border-orange-200 bg-orange-50 text-orange-800",
-  medium: "border-amber-200 bg-amber-50 text-amber-800",
-  low: "border-gray-200 bg-gray-50 text-gray-700",
+const TONE_STYLE: Record<
+  "critical" | "high" | "medium" | "low",
+  { border: string; bg: string; color: string }
+> = {
+  critical: { border: "rgba(248,113,113,0.3)", bg: "rgba(248,113,113,0.08)", color: "#f87171" },
+  high: { border: "rgba(251,146,60,0.3)", bg: "rgba(251,146,60,0.08)", color: "#fb923c" },
+  medium: { border: "rgba(251,191,36,0.3)", bg: "rgba(251,191,36,0.07)", color: "#fbbf24" },
+  low: { border: "rgba(34,197,94,0.25)", bg: "rgba(34,197,94,0.06)", color: "#22c55e" },
 };
 
 function RiskMetric({
@@ -148,15 +181,25 @@ function RiskMetric({
 }: {
   label: string;
   count: number;
-  tone: keyof typeof TONE_CLASS;
+  tone: keyof typeof TONE_STYLE;
 }): React.JSX.Element {
+  const s = TONE_STYLE[tone];
   return (
     <div
-      className={`rounded-md border px-3 py-2 ${TONE_CLASS[tone]}`}
+      style={{
+        borderRadius: 7,
+        border: `1px solid ${s.border}`,
+        background: s.bg,
+        padding: "0.5rem 0.65rem",
+      }}
       aria-label={`${label} risk: ${count}`}
     >
-      <div className="text-xs uppercase tracking-wide opacity-70">{label}</div>
-      <div className="mt-0.5 text-xl font-semibold">{count}</div>
+      <div style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.07em", color: s.color, opacity: 0.8 }}>
+        {label}
+      </div>
+      <div style={{ marginTop: 2, fontSize: "1.4rem", fontWeight: 700, color: s.color, fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>
+        {count}
+      </div>
     </div>
   );
 }

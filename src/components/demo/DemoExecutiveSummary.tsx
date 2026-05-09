@@ -27,55 +27,75 @@ export function DemoExecutiveSummary({
   const fallback = pickExecutive(seedTemplates);
   const headline = latestGenerated ?? fallback;
 
+  const panelStyle: React.CSSProperties = {
+    borderRadius: 12,
+    border: "1px solid rgba(41,182,246,0.2)",
+    background: "#0d1e33",
+    padding: "1rem 1.1rem",
+    boxShadow: "0 14px 34px -20px rgba(0,0,0,0.55)",
+  };
+  const kicker: React.CSSProperties = {
+    fontFamily: "'Rajdhani', sans-serif",
+    fontWeight: 600,
+    fontSize: "0.75rem",
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    color: "#8ab4d4",
+  };
   return (
-    <section
-      aria-labelledby="executive-summary-title"
-      className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
-    >
-      <header className="flex items-baseline justify-between gap-3">
-        <h2
-          id="executive-summary-title"
-          className="text-base font-semibold text-gray-900"
-        >
-          Executive summary
+    <section aria-labelledby="executive-summary-title" style={panelStyle}>
+      <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "0.75rem" }}>
+        <h2 id="executive-summary-title" style={{ ...kicker, margin: 0 }}>
+          Executive Summary
         </h2>
         {latestGenerated ? (
-          <span className="text-[10px] font-medium uppercase tracking-wider text-emerald-700">
+          <span style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#22c55e" }}>
             Live run
           </span>
         ) : fallback ? (
-          <span className="text-[10px] font-medium uppercase tracking-wider text-gray-500">
+          <span style={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#8ab4d4" }}>
             Template
           </span>
         ) : null}
       </header>
 
       {headline ? (
-        <article className="mt-3">
-          <h3 className="text-sm font-semibold text-gray-900">{headline.title}</h3>
-          <p className="mt-2 whitespace-pre-line text-sm text-gray-700">
+        <article style={{ marginTop: "0.75rem" }}>
+          <h3 style={{ fontSize: "0.85rem", fontWeight: 600, color: "#29b6f6", margin: 0 }}>
+            {headline.title}
+          </h3>
+          <p style={{ marginTop: "0.5rem", whiteSpace: "pre-line", fontSize: "0.78rem", color: "#cbd5e1", lineHeight: 1.5 }}>
             {headline.summary}
           </p>
-          <footer className="mt-3 text-[11px] text-gray-500">
+          <footer style={{ marginTop: "0.6rem", fontSize: "0.68rem", color: "#8ab4d4" }}>
             Generated {formatTimestamp(headline.created_at)} · {humanizeReportType(headline.report_type)}
           </footer>
         </article>
       ) : (
-        <p className="mt-3 text-sm text-gray-500">
+        <p style={{ marginTop: "0.75rem", fontSize: "0.8rem", color: "#8ab4d4", fontStyle: "italic", lineHeight: 1.4 }}>
           Seed the demo to load the report templates, or run the simulation
           to generate a live executive report.
         </p>
       )}
 
       {generatedReports.length > 1 && (
-        <details className="mt-4 rounded-md border border-gray-200 bg-gray-50/60 p-3 text-xs">
-          <summary className="cursor-pointer font-medium text-gray-700">
+        <details
+          style={{
+            marginTop: "0.85rem",
+            borderRadius: 7,
+            border: "1px solid rgba(176,196,222,0.15)",
+            background: "rgba(176,196,222,0.04)",
+            padding: "0.6rem 0.75rem",
+            fontSize: "0.75rem",
+          }}
+        >
+          <summary style={{ cursor: "pointer", fontWeight: 600, color: "#8ab4d4" }}>
             Earlier runs ({generatedReports.length - 1})
           </summary>
-          <ul className="mt-2 space-y-1">
+          <ul style={{ marginTop: "0.4rem", listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: "0.25rem" }}>
             {generatedReports.slice(1).map((report) => (
-              <li key={report.id} className="text-gray-600">
-                <span className="font-medium text-gray-800">{report.title}</span>{" "}
+              <li key={report.id} style={{ color: "#8ab4d4" }}>
+                <span style={{ fontWeight: 600, color: "#b0c4de" }}>{report.title}</span>{" "}
                 · {formatTimestamp(report.created_at)}
               </li>
             ))}
