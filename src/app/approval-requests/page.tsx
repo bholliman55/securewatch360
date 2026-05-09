@@ -74,10 +74,7 @@ export default async function ApprovalRequestsPage({ searchParams }: PageProps) 
       <p>Operational queue for human-in-the-loop decisions.</p>
 
       <form method="GET" action="/approval-requests" className="sw-form">
-        <label className="sw-field">
-          Tenant ID
-          <input name="tenantId" defaultValue={tenantId} placeholder="uuid" className="sw-input" />
-        </label>
+        <input type="hidden" name="tenantId" value={tenantId} />
 
         <label className="sw-field">
           Status
@@ -97,7 +94,7 @@ export default async function ApprovalRequestsPage({ searchParams }: PageProps) 
       </form>
 
       {!tenantId ? (
-        <p>Enter a tenant ID to load approval requests.</p>
+        <p>Select a tenant from the sidebar to view approval requests.</p>
       ) : !data.ok ? (
         <p className="sw-error">{data.error ?? "Failed to load approval requests."}</p>
       ) : approvalRequests.length === 0 ? (

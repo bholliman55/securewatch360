@@ -74,18 +74,9 @@ export default async function CvesPage({ searchParams }: PageProps) {
       </p>
 
       <form method="GET" action="/cves" className="sw-form">
+        <input type="hidden" name="tenantId" value={tenantId} />
         <label className="sw-field">
-          Tenant ID
-          <input
-            name="tenantId"
-            defaultValue={tenantId}
-            placeholder="uuid"
-            className="sw-input"
-            required
-          />
-        </label>
-        <label className="sw-field">
-          CVE (optional)
+          Search CVE
           <input
             name="cveId"
             defaultValue={cveId}
@@ -94,11 +85,11 @@ export default async function CvesPage({ searchParams }: PageProps) {
           />
         </label>
         <button type="submit" className="sw-button">
-          Load
+          Search
         </button>
       </form>
 
-      {!tenantId ? <p>Enter a tenant ID to list CVE link rows.</p> : null}
+      {!tenantId ? <p>Select a tenant from the sidebar to view CVEs.</p> : null}
       {tenantId && !data.ok ? <p className="sw-error">{data.error ?? "Failed to load CVEs."}</p> : null}
       {tenantId && data.ok && rows.length === 0 ? <p>No CVE links for this filter.</p> : null}
       {tenantId && data.ok && rows.length > 0 ? (

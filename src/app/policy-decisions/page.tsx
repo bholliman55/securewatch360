@@ -71,10 +71,7 @@ export default async function PolicyDecisionsPage({ searchParams }: PageProps) {
       <p>Operational explainability view for policy outcomes and linked entities.</p>
 
       <form method="GET" action="/policy-decisions" className="sw-form">
-        <label className="sw-field">
-          Tenant ID
-          <input name="tenantId" defaultValue={tenantId} placeholder="uuid" className="sw-input" />
-        </label>
+        <input type="hidden" name="tenantId" value={tenantId} />
 
         <label className="sw-field">
           Decision Result
@@ -93,7 +90,7 @@ export default async function PolicyDecisionsPage({ searchParams }: PageProps) {
       </form>
 
       {!tenantId ? (
-        <p>Enter a tenant ID to load policy decisions.</p>
+        <p>Select a tenant from the sidebar to view policy decisions.</p>
       ) : !data.ok ? (
         <p className="sw-error">{data.error ?? "Failed to load policy decisions."}</p>
       ) : decisions.length === 0 ? (

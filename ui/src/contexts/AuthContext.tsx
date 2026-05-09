@@ -157,7 +157,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    setTenants([]);
+    // Navigate to the Next.js login page immediately — this unmounts the Vite
+    // SPA before the auth-state-change event fires, avoiding the race where
+    // tenants=[]/user=set briefly shows the "No tenant access" screen.
+    window.location.href = "/login";
   };
 
   const resetPassword = async (email: string) => {

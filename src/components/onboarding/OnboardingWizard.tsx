@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import styles from "./OnboardingWizard.module.css";
 
 const STEPS = ["Scan Targets", "Frameworks", "Invite Team", "First Scan", "Done"];
 
-const FRAMEWORKS = ["NIST", "HIPAA", "PCI-DSS", "ISO 27001", "SOC 2", "CMMC", "CIS", "GDPR", "FedRAMP", "CCPA", "COBIT"];
+const FRAMEWORKS = [
+  "NIST", "HIPAA", "PCI-DSS", "ISO 27001", "SOC 2",
+  "CMMC", "CIS", "GDPR", "FedRAMP", "CCPA", "COBIT",
+];
 const FRAMEWORK_DESCRIPTIONS: Record<string, string> = {
-  NIST: "NIST Cybersecurity Framework — broad risk management",
+  NIST: "Broad risk management framework",
   HIPAA: "Healthcare data protection & PHI security",
   "PCI-DSS": "Payment card data security standards",
   "ISO 27001": "Information security management systems",
@@ -19,9 +23,33 @@ const FRAMEWORK_DESCRIPTIONS: Record<string, string> = {
   COBIT: "Governance & management of enterprise IT",
 };
 
-export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
+// Map wizard-friendly labels to the values the API accepts.
+const TARGET_TYPE_OPTIONS = [
+  { label: "Web app", value: "webapp" },
+  { label: "URL / endpoint", value: "url" },
+  { label: "Domain", value: "domain" },
+  { label: "Cloud account", value: "cloud_account" },
+  { label: "Code repo", value: "repo" },
+  { label: "IP / hostname", value: "hostname" },
+] as const;
+
+type TargetType = (typeof TARGET_TYPE_OPTIONS)[number]["value"];
+
+interface ScanTargetInput {
+  name: string;
+  url: string;
+  type: TargetType;
+}
+
+export function OnboardingWizard({
+  onComplete,
+}: {
+  onComplete?: (tenantId: string) => void;
+}) {
   const [step, setStep] = useState(0);
-  const [scanTargets, setScanTargets] = useState([{ name: "", url: "", type: "web" }]);
+  const [scanTargets, setScanTargets] = useState<ScanTargetInput[]>([
+    { name: "", url: "", type: "webapp" },
+  ]);
   const [selectedFrameworks, setSelectedFrameworks] = useState<string[]>(["NIST"]);
   const [inviteEmails, setInviteEmails] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -29,30 +57,65 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const addTarget = () => setScanTargets([...scanTargets, { name: "", url: "", type: "web" }]);
-  const updateTarget = (i: number, field: string, value: string) => {
-    setScanTargets(scanTargets.map((t, idx) => idx === i ? { ...t, [field]: value } : t));
-  };
+  // Set after /api/onboarding/complete; needed by all subsequent API calls.
+  const [tenantId, setTenantId] = useState<string | null>(null);
+  // IDs returned by /api/scan-targets POST; used to trigger scans.
+  const [savedTargetIds, setSavedTargetIds] = useState<string[]>([]);
 
-  const toggleFramework = (fw: string) => {
-    setSelectedFrameworks((prev) =>
-      prev.includes(fw) ? prev.filter((f) => f !== fw) : [...prev, fw]
+  const addTarget = () =>
+    setScanTargets([...scanTargets, { name: "", url: "", type: "webapp" }]);
+
+  const updateTarget = (i: number, field: keyof ScanTargetInput, value: string) =>
+    setScanTargets(
+      scanTargets.map((t, idx) => (idx === i ? { ...t, [field]: value } : t))
     );
-  };
 
+  /**
+   * Step 0 → 1 transition:
+   * 1. Provision tenant via /api/onboarding/complete (idempotent).
+   * 2. Save each valid scan target via /api/scan-targets.
+   */
   const saveTargetsAndFrameworks = async () => {
     setSaving(true);
     setError(null);
     try {
-      // Save scan targets
-      const validTargets = scanTargets.filter((t) => t.url.trim());
+      // 1. Provision tenant (or recover existing owner tenant).
+      const provisionRes = await fetch("/api/onboarding/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const provision = (await provisionRes.json()) as { ok: boolean; tenantId?: string; error?: string };
+      if (!provision.ok || !provision.tenantId) {
+        throw new Error(provision.error ?? "Failed to provision tenant");
+      }
+      const tid = provision.tenantId;
+      setTenantId(tid);
+
+      // 2. Save valid scan targets with the shape /api/scan-targets expects.
+      const validTargets = scanTargets.filter((t) => t.url.trim().length > 0);
+      const targetIds: string[] = [];
       for (const t of validTargets) {
-        await fetch("/api/scan-targets", {
+        const res = await fetch("/api/scan-targets", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: t.name || t.url, targetType: t.type, targetIdentifier: t.url }),
+          body: JSON.stringify({
+            tenantId: tid,
+            targetName: t.name.trim() || t.url.trim(),
+            targetType: t.type,
+            targetValue: t.url.trim(),
+          }),
         });
+        const json = (await res.json()) as { ok: boolean; scanTarget?: { id: string }; error?: string };
+        if (json.ok && json.scanTarget?.id) {
+          targetIds.push(json.scanTarget.id);
+        }
+        // Non-fatal: log but continue so a single bad target doesn't block the wizard.
+        if (!json.ok) {
+          console.warn("[onboarding] scan-target save failed:", json.error);
+        }
       }
+      setSavedTargetIds(targetIds);
       setStep(1);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed");
@@ -61,169 +124,260 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
     }
   };
 
+  /**
+   * Step 3: request a scan for every saved target via /api/scans/request.
+   */
   const triggerFirstScan = async () => {
+    if (!tenantId || savedTargetIds.length === 0) {
+      setScanDone(true);
+      return;
+    }
     setScanning(true);
-    await fetch("/api/scans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
-    setTimeout(() => { setScanDone(true); setScanning(false); }, 2000);
+    try {
+      await Promise.all(
+        savedTargetIds.map((scanTargetId) =>
+          fetch("/api/scans/request", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tenantId, scanTargetId }),
+          })
+        )
+      );
+    } catch {
+      // Non-fatal — scan queueing can be retried from the dashboard.
+    } finally {
+      setScanDone(true);
+      setScanning(false);
+    }
   };
 
+  const toggleFramework = (fw: string) =>
+    setSelectedFrameworks((prev) =>
+      prev.includes(fw) ? prev.filter((f) => f !== fw) : [...prev, fw]
+    );
+
   const progressPct = Math.round((step / (STEPS.length - 1)) * 100);
+  const progressFillRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    progressFillRef.current?.style.setProperty("width", `${progressPct}%`);
+  }, [progressPct]);
 
   return (
     <div className="mx-auto max-w-2xl">
-      {/* Progress */}
-      <div className="mb-8">
-        <div className="flex justify-between mb-2">
+      {/* ── Stepper ─────────────────────────────────── */}
+      <div className={styles.stepper}>
+        <div className={styles.stepRow}>
           {STEPS.map((s, i) => (
-            <div key={s} className="flex flex-col items-center gap-1">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-                i < step ? "bg-blue-600 text-white" : i === step ? "bg-blue-100 text-blue-700 ring-2 ring-blue-600" : "bg-gray-100 text-gray-400"
-              }`}>
+            <div key={s} className={styles.stepItem}>
+              <div
+                className={[
+                  styles.stepCircle,
+                  i < step ? styles.done : "",
+                  i === step ? styles.active : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
                 {i < step ? "✓" : i + 1}
               </div>
-              <span className={`text-xs ${i === step ? "font-semibold text-blue-700" : "text-gray-400"}`}>{s}</span>
+              <span
+                className={[styles.stepLabel, i === step ? styles.active : ""]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                {s}
+              </span>
             </div>
           ))}
         </div>
-        <div className="h-1.5 w-full rounded-full bg-gray-200">
-          <div
-            ref={(el) => {
-              if (el) el.style.setProperty('--progress', `${progressPct}%`);
-            }}
-            className="h-full rounded-full bg-blue-600 transition-all w-[var(--progress)]"
-          />
+        <div className={styles.progressTrack}>
+          <div ref={progressFillRef} className={styles.progressFill} />
         </div>
       </div>
 
-      {/* Step content */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
+      {/* ── Card ────────────────────────────────────── */}
+      <div className={styles.card}>
+
+        {/* Step 0 — Scan Targets */}
         {step === 0 && (
-          <div className="flex flex-col gap-4">
-            <h2 className="text-lg font-bold text-gray-900">Add your scan targets</h2>
-            <p className="text-sm text-gray-500">Tell SecureWatch360 what to monitor — websites, APIs, cloud accounts, or code repos.</p>
+          <div className={styles.stepContent}>
+            <h2 className={styles.stepTitle}>Add your scan targets</h2>
+            <p className={styles.stepDesc}>
+              Tell SecureWatch360 what to monitor — websites, APIs, cloud accounts, or code repos.
+            </p>
             {scanTargets.map((t, i) => (
-              <div key={i} className="flex gap-2">
+              // suppressHydrationWarning: password managers inject data-* attrs on
+              // form containers after SSR, causing a benign hydration mismatch.
+              <div key={i} className={styles.targetRow} suppressHydrationWarning>
                 <input
+                  className={styles.inputName}
                   value={t.name}
                   onChange={(e) => updateTarget(i, "name", e.target.value)}
                   placeholder="Name (optional)"
-                  className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <input
+                  className={styles.inputUrl}
                   value={t.url}
                   onChange={(e) => updateTarget(i, "url", e.target.value)}
                   placeholder="URL or identifier"
-                  className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <select value={t.type} onChange={(e) => updateTarget(i, "type", e.target.value)}
-                  className="rounded-lg border border-gray-300 px-2 py-2 text-sm focus:outline-none">
-                  <option value="web">Web</option>
-                  <option value="api">API</option>
-                  <option value="cloud">Cloud</option>
-                  <option value="code">Code</option>
+                <select
+                  className={styles.inputSelect}
+                  aria-label="Target type"
+                  value={t.type}
+                  onChange={(e) => updateTarget(i, "type", e.target.value as TargetType)}
+                >
+                  {TARGET_TYPE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             ))}
-            <button onClick={addTarget} className="text-sm text-blue-600 hover:underline self-start">+ Add another</button>
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <button onClick={() => void saveTargetsAndFrameworks()} disabled={saving}
-              className="self-end rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
-              {saving ? "Saving…" : "Continue →"}
+            <button className={styles.addLink} onClick={addTarget}>
+              + Add another
             </button>
+            {error && <p className={styles.errorMsg}>{error}</p>}
+            <div className={`${styles.navRow} ${styles.end}`}>
+              <button
+                className={styles.btnPrimary}
+                onClick={() => void saveTargetsAndFrameworks()}
+                disabled={saving}
+              >
+                {saving ? "Setting up…" : "Continue →"}
+              </button>
+            </div>
           </div>
         )}
 
+        {/* Step 1 — Frameworks */}
         {step === 1 && (
-          <div className="flex flex-col gap-4">
-            <h2 className="text-lg font-bold text-gray-900">Select compliance frameworks</h2>
-            <p className="text-sm text-gray-500">Choose the frameworks you need to comply with. You can change this later.</p>
-            <div className="grid gap-2 sm:grid-cols-2">
+          <div className={styles.stepContent}>
+            <h2 className={styles.stepTitle}>Select compliance frameworks</h2>
+            <p className={styles.stepDesc}>
+              Choose the frameworks you need to comply with. You can change this later.
+            </p>
+            <div className={styles.frameworkGrid}>
               {FRAMEWORKS.map((fw) => (
                 <button
                   key={fw}
+                  className={[
+                    styles.frameworkCard,
+                    selectedFrameworks.includes(fw) ? styles.selected : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                   onClick={() => toggleFramework(fw)}
-                  className={`flex flex-col items-start rounded-lg border p-3 text-left transition-colors ${
-                    selectedFrameworks.includes(fw)
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
                 >
-                  <span className="text-sm font-semibold text-gray-800">{fw}</span>
-                  <span className="text-xs text-gray-400 mt-0.5">{FRAMEWORK_DESCRIPTIONS[fw]}</span>
+                  <span className={styles.frameworkName}>{fw}</span>
+                  <span className={styles.frameworkDesc}>
+                    {FRAMEWORK_DESCRIPTIONS[fw]}
+                  </span>
                 </button>
               ))}
             </div>
-            <div className="flex gap-2 justify-between">
-              <button onClick={() => setStep(0)} className="text-sm text-gray-500 hover:underline">← Back</button>
-              <button onClick={() => setStep(2)} disabled={selectedFrameworks.length === 0}
-                className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+            <div className={styles.navRow}>
+              <button className={styles.btnBack} onClick={() => setStep(0)}>
+                ← Back
+              </button>
+              <button
+                className={styles.btnPrimary}
+                onClick={() => setStep(2)}
+                disabled={selectedFrameworks.length === 0}
+              >
                 Continue →
               </button>
             </div>
           </div>
         )}
 
+        {/* Step 2 — Invite Team */}
         {step === 2 && (
-          <div className="flex flex-col gap-4">
-            <h2 className="text-lg font-bold text-gray-900">Invite your team</h2>
-            <p className="text-sm text-gray-500">Enter email addresses (comma-separated) to invite teammates. You can skip this step.</p>
+          <div className={styles.stepContent}>
+            <h2 className={styles.stepTitle}>Invite your team</h2>
+            <p className={styles.stepDesc}>
+              Enter email addresses (comma-separated) to invite teammates. You can skip this step.
+            </p>
             <textarea
+              className={styles.inputEmails}
               value={inviteEmails}
               onChange={(e) => setInviteEmails(e.target.value)}
               rows={3}
               placeholder="alice@company.com, bob@company.com"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <div className="flex gap-2 justify-between">
-              <button onClick={() => setStep(1)} className="text-sm text-gray-500 hover:underline">← Back</button>
-              <button onClick={() => setStep(3)}
-                className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            <div className={styles.navRow}>
+              <button className={styles.btnBack} onClick={() => setStep(1)}>
+                ← Back
+              </button>
+              <button className={styles.btnPrimary} onClick={() => setStep(3)}>
                 {inviteEmails.trim() ? "Invite & Continue →" : "Skip →"}
               </button>
             </div>
           </div>
         )}
 
+        {/* Step 3 — First Scan */}
         {step === 3 && (
-          <div className="flex flex-col gap-4">
-            <h2 className="text-lg font-bold text-gray-900">Run your first scan</h2>
-            <p className="text-sm text-gray-500">
-              SecureWatch360 will scan your targets against {selectedFrameworks.join(", ")} and surface the first findings.
+          <div className={styles.stepContent}>
+            <h2 className={styles.stepTitle}>Run your first scan</h2>
+            <p className={styles.stepDesc}>
+              SecureWatch360 will scan your targets against{" "}
+              {selectedFrameworks.join(", ")} and surface the first findings.
             </p>
+            {savedTargetIds.length === 0 && (
+              <p className={styles.stepDesc}>
+                No targets were saved — you can add them from the dashboard after setup.
+              </p>
+            )}
             {!scanDone ? (
-              <button onClick={() => void triggerFirstScan()} disabled={scanning}
-                className="self-start rounded-lg bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">
+              <button
+                className={styles.btnGreen}
+                onClick={() => void triggerFirstScan()}
+                disabled={scanning}
+              >
                 {scanning ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span className={styles.spinnerRow}>
+                    <span className={styles.spinner} />
                     Scanning…
                   </span>
-                ) : "Start First Scan"}
+                ) : (
+                  "Start First Scan"
+                )}
               </button>
             ) : (
-              <div className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800">
+              <p className={styles.scanQueued}>
                 Scan queued! Results will appear in your dashboard within minutes.
-              </div>
+              </p>
             )}
-            <div className="flex gap-2 justify-between">
-              <button onClick={() => setStep(2)} className="text-sm text-gray-500 hover:underline">← Back</button>
-              <button onClick={() => setStep(4)} disabled={!scanDone && !scanning}
-                className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+            <div className={styles.navRow}>
+              <button className={styles.btnBack} onClick={() => setStep(2)}>
+                ← Back
+              </button>
+              <button
+                className={styles.btnPrimary}
+                onClick={() => setStep(4)}
+                disabled={!scanDone}
+              >
                 Continue →
               </button>
             </div>
           </div>
         )}
 
+        {/* Step 4 — Done */}
         {step === 4 && (
-          <div className="flex flex-col items-center gap-4 py-4 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl">✓</div>
-            <h2 className="text-lg font-bold text-gray-900">You&apos;re all set!</h2>
-            <p className="text-sm text-gray-500 max-w-sm">
-              SecureWatch360 is scanning your targets and mapping findings to {selectedFrameworks.join(", ")}. Check your dashboard for results.
+          <div className={styles.doneState}>
+            <div className={styles.doneIcon}>✓</div>
+            <h2 className={styles.doneTitle}>You&apos;re all set!</h2>
+            <p className={styles.doneDesc}>
+              SecureWatch360 is scanning your targets and mapping findings to{" "}
+              {selectedFrameworks.join(", ")}. Check your dashboard for results.
             </p>
-            <button onClick={onComplete}
-              className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            <button
+              className={styles.btnPrimary}
+              onClick={() => onComplete?.(tenantId ?? "")}
+            >
               Go to Dashboard
             </button>
           </div>

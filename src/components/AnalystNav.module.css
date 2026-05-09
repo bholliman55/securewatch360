@@ -1,0 +1,110 @@
+/* AnalystNav component styles */
+
+.logo {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin-bottom: 0.4rem;
+}
+
+.groupSep {
+  margin: 0.6rem 0 0.4rem;
+  border-top: 1px solid rgba(41, 182, 246, 0.18);
+  padding-top: 0.5rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(41, 182, 246, 0.6);
+}
+
+/* ── Tenant selector ─────────────────────────────────────────── */
+
+.tenantSection {
+  margin-top: 1.25rem;
+  padding: 0 0.35rem;
+}
+
+.tenantLabel {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sw-blue-electric);
+  margin-bottom: 0.35rem;
+}
+
+.tenantSelect {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid rgba(41, 182, 246, 0.28);
+  border-radius: 6px;
+  background: rgba(7, 17, 31, 0.85);
+  color: #e2e8f0;
+  font-size: 0.78rem;
+  cursor: pointer;
+  appearance: none;
+  /* custom caret */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2329b6f6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.55rem center;
+  padding-right: 1.75rem;
+}
+
+.tenantSelect:focus {
+  outline: none;
+  border-color: var(--sw-blue-electric);
+  box-shadow: 0 0 0 2px rgba(41, 182, 246, 0.15);
+}
+
+.tenantLoading {
+  font-size: 0.72rem;
+  color: var(--sw-text-muted);
+  padding: 0.25rem 0;
+}
+
+.tenantEmpty {
+  font-size: 0.72rem;
+  color: var(--sw-text-muted);
+  padding: 0.25rem 0;
+  font-style: italic;
+}
+
+.tenantNoMatch {
+  margin-top: 0.4rem;
+  font-size: 0.68rem;
+  color: rgba(251, 191, 36, 0.8);
+  line-height: 1.35;
+}
+
+/* ── Sign-out ────────────────────────────────────────────────── */
+
+.signOutSection {
+  margin-top: 1rem;
+  padding: 0.75rem 0.35rem 1rem;
+  border-top: 1px solid rgba(41, 182, 246, 0.12);
+}
+
+.signOutBtn {
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: rgba(252, 165, 165, 0.9);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.signOutBtn:hover {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.signOutBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

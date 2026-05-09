@@ -60,16 +60,7 @@ export default async function IncidentsPage({ searchParams }: PageProps) {
       </p>
 
       <form method="GET" action="/incidents" className="sw-form">
-        <label className="sw-field">
-          Tenant ID
-          <input
-            name="tenantId"
-            defaultValue={tenantId}
-            placeholder="uuid"
-            className="sw-input"
-            required
-          />
-        </label>
+        <input type="hidden" name="tenantId" value={tenantId} />
         <label className="sw-field">
           State
           <select name="state" defaultValue={state} className="sw-input">
@@ -82,11 +73,11 @@ export default async function IncidentsPage({ searchParams }: PageProps) {
           </select>
         </label>
         <button type="submit" className="sw-button">
-          Load
+          Filter
         </button>
       </form>
 
-      {!tenantId ? <p>Enter a tenant ID to list incident records.</p> : null}
+      {!tenantId ? <p>Select a tenant from the sidebar to view incidents.</p> : null}
       {tenantId && !data.ok ? <p className="sw-error">{data.error ?? "Failed to load incidents."}</p> : null}
       {tenantId && data.ok && rows.length === 0 ? <p>No incident records for this filter.</p> : null}
       {tenantId && data.ok && rows.length > 0 ? (

@@ -52,33 +52,28 @@ export default async function CompliancePage({ searchParams }: PageProps) {
       <p>Basic control pass/fail view from finding-to-control mappings.</p>
 
       <form method="GET" action="/compliance" className="sw-form">
-        <label className="sw-field">
-          Tenant ID
-          <input
-            name="tenantId"
-            defaultValue={tenantId}
-            placeholder="required tenant uuid"
-            className="sw-input"
-          />
-        </label>
+        <input type="hidden" name="tenantId" value={tenantId} />
 
         <label className="sw-field">
           Framework
           <select name="framework" defaultValue={framework} className="sw-input">
-            <option value="">All</option>
-            <option value="SOC2">SOC2</option>
+            <option value="">All Frameworks</option>
+            <option value="SOC2">SOC 2</option>
             <option value="NIST">NIST</option>
             <option value="HIPAA">HIPAA</option>
             <option value="CMMC">CMMC</option>
+            <option value="PCI-DSS">PCI-DSS</option>
+            <option value="ISO27001">ISO 27001</option>
+            <option value="GDPR">GDPR</option>
           </select>
         </label>
 
         <button type="submit" className="sw-button">
-          Load Status
+          Filter
         </button>
       </form>
 
-      {!tenantId ? <p>Enter a tenant ID to view control status.</p> : null}
+      {!tenantId ? <p>Select a tenant from the sidebar to view compliance status.</p> : null}
       {tenantId && !data.ok ? <p className="sw-error">{data.error ?? "Failed to load status."}</p> : null}
 
       {tenantId && data.ok && controls.length === 0 ? <p>No control records found.</p> : null}

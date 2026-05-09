@@ -1,4 +1,5 @@
 import { serverApiFetch } from "@/lib/serverApi";
+import { LoadDemoDataButton } from "@/components/demo/LoadDemoDataButton";
 
 type CommandCenterSummary = {
   tenantId: string;
@@ -58,24 +59,13 @@ export default async function CommandCenterPage({ searchParams }: PageProps) {
       <h1>SecureWatch360 Command Center</h1>
       <p>Operational summary for findings, remediation, and scan activity.</p>
 
-      <form method="GET" action="/command-center" className="sw-form">
-        <label className="sw-field">
-          Tenant ID
-          <input
-            name="tenantId"
-            defaultValue={tenantId}
-            placeholder="required tenant uuid"
-            className="sw-input"
-          />
-        </label>
-        <button type="submit" className="sw-button">
-          Load Command Center
-        </button>
-      </form>
-
-      {!tenantId ? <p>Enter a tenant ID to view command center metrics.</p> : null}
+      {!tenantId ? <p>Select a tenant from the sidebar to view command center metrics.</p> : null}
 
       {tenantId && !data.ok ? <p className="sw-error">{data.error ?? "Failed to load command center."}</p> : null}
+
+      {tenantId && data.ok && !summary && recentScans.length === 0 ? (
+        <LoadDemoDataButton tenantId={tenantId} />
+      ) : null}
 
       {tenantId && data.ok && summary ? (
         <section className="sw-kpi-grid">

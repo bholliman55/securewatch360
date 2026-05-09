@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { TenantProvider } from "./contexts/TenantContext";
+import { supabase } from "./services/supabaseClient";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import TopNav from "./components/TopNav";
 import Sidebar from "./components/Sidebar";
@@ -55,11 +56,25 @@ function AppContent() {
     return (
       <div className="min-h-screen bg-[var(--sw-bg)] flex items-center justify-center p-6">
         <div className="max-w-md rounded-lg border border-[var(--sw-border)] bg-[var(--sw-surface)] p-8 text-center shadow-lg">
-          <h1 className="text-xl font-bold text-[var(--sw-text-primary)] mb-2">No tenant access</h1>
+          <h1 className="text-xl font-bold text-[var(--sw-text-primary)] mb-2">No organization yet</h1>
           <p className="text-[var(--sw-text-muted)] text-sm mb-6">
-            Your account is signed in, but you are not a member of any organization yet. Ask an administrator to add
-            you to a tenant in Supabase (<code className="text-xs">tenant_users</code>).
+            Your account is signed in but not linked to an organization.
+            Complete setup to create yours, or ask an administrator to add you.
           </p>
+          <div className="flex flex-col gap-3">
+            <a
+              href="/onboarding"
+              className="block w-full py-2 px-4 rounded-lg font-semibold text-sm text-white bg-[linear-gradient(135deg,#1565c0,#1e88e5)]"
+            >
+              Complete setup →
+            </a>
+            <button
+              onClick={() => { void supabase.auth.signOut().then(() => { window.location.href = "/login"; }); }}
+              className="block w-full py-2 px-4 rounded-lg text-sm text-[var(--sw-text-muted)] hover:text-[var(--sw-text-primary)] border border-[var(--sw-border)] transition-colors"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </div>
     );

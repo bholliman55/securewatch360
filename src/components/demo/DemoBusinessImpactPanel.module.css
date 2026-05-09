@@ -1,0 +1,59 @@
+/* DemoBusinessImpactPanel component styles */
+
+.section {
+  border-radius: 12px;
+  border: 1px solid rgba(41, 182, 246, 0.2);
+  background: #0d1e33;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 14px 34px -20px rgba(0, 0, 0, 0.55);
+}
+
+.header {
+  margin-bottom: 0.75rem;
+}
+
+.title {
+  font-family: "Rajdhani", sans-serif;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8ab4d4;
+  margin: 0;
+}
+
+.subtitle {
+  margin-top: 2px;
+  font-size: 0.7rem;
+  color: #8ab4d4;
+}
+
+.metricList {
+  display: flex;
+  flex-direction: column;
+}
+
+.metricRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(176, 196, 222, 0.08);
+}
+
+.metricLabel {
+  font-size: 0.78rem;
+  color: #8ab4d4;
+}
+
+.metricValue {
+  text-align: right;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #8ab4d4;
+}
+
+.metricValue.hasValue {
+  color: #e2e8f0;
+}

@@ -54,15 +54,7 @@ export default async function ScanRunsPage({ searchParams }: PageProps) {
       <p>Simple scan run history for development and troubleshooting.</p>
 
       <form method="GET" action="/scan-runs" className="sw-form">
-        <label className="sw-field">
-          Tenant ID
-          <input
-            name="tenantId"
-            defaultValue={tenantId}
-            placeholder="uuid (optional)"
-            className="sw-input"
-          />
-        </label>
+        <input type="hidden" name="tenantId" value={tenantId} />
 
         <label className="sw-field">
           Status
@@ -82,7 +74,7 @@ export default async function ScanRunsPage({ searchParams }: PageProps) {
       </form>
 
       {!tenantId ? (
-        <p>Enter a tenant ID to load scan runs.</p>
+        <p>Select a tenant from the sidebar to view scan runs.</p>
       ) : !data.ok ? (
         <p className="sw-error">{data.error ?? "Failed to load scan runs."}</p>
       ) : scanRuns.length === 0 ? (

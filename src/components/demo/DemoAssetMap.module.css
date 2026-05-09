@@ -1,0 +1,134 @@
+/* DemoAssetMap component styles */
+
+.section {
+  border-radius: 12px;
+  border: 1px solid rgba(41, 182, 246, 0.2);
+  background: #0d1e33;
+  box-shadow: 0 14px 34px -20px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+.header {
+  border-bottom: 1px solid rgba(176, 196, 222, 0.12);
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+}
+
+.title {
+  font-family: "Rajdhani", sans-serif;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8ab4d4;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.7rem;
+  color: #8ab4d4;
+  margin: 0;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.emptyItem {
+  padding: 1rem 1.25rem;
+  font-size: 0.8rem;
+  color: #8ab4d4;
+  font-style: italic;
+}
+
+.assetRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1.25rem;
+  border-bottom: 1px solid rgba(176, 196, 222, 0.07);
+}
+
+.assetInfo {
+  min-width: 0;
+  flex: 1;
+}
+
+.assetName {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.assetMeta {
+  font-size: 0.7rem;
+  color: #8ab4d4;
+  margin-top: 1px;
+}
+
+/* Status badge — shared base */
+.badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.12rem 0.5rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+/* Status variants */
+.badgeHealthy {
+  background: rgba(34, 197, 94, 0.08);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.badgeSuspicious {
+  background: rgba(251, 191, 36, 0.08);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.badgeAtRisk {
+  background: rgba(251, 146, 60, 0.08);
+  color: #fb923c;
+  border: 1px solid rgba(251, 146, 60, 0.3);
+}
+
+.badgeCompromised {
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.badgeIsolated {
+  background: rgba(41, 182, 246, 0.08);
+  color: #29b6f6;
+  border: 1px solid rgba(41, 182, 246, 0.25);
+}
+
+.badgeRemediated {
+  background: rgba(34, 197, 94, 0.08);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+/* Asset type icon */
+.icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  border: 1px solid rgba(41, 182, 246, 0.25);
+  background: rgba(41, 182, 246, 0.07);
+  padding: 5px;
+  color: #29b6f6;
+  display: inline-flex;
+}

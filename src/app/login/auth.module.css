@@ -1,0 +1,183 @@
+/* Shared styles for login / signup pages */
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: var(--sw-navy-deep);
+}
+
+/* Brand lockup above the card */
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  margin-bottom: 1.75rem;
+  text-align: center;
+}
+
+.brandEyebrow {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sw-blue-electric);
+  margin: 0;
+}
+
+.brandName {
+  font-family: "Rajdhani", sans-serif;
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  line-height: 1;
+}
+
+.brandTagline {
+  font-size: 0.72rem;
+  color: var(--sw-text-muted);
+  margin: 0.25rem 0 0;
+  letter-spacing: 0.05em;
+}
+
+/* Card */
+.card {
+  width: 100%;
+  max-width: 380px;
+  border-radius: 14px;
+  border: 1px solid rgba(41, 182, 246, 0.22);
+  background: var(--sw-navy-dark);
+  box-shadow: 0 20px 48px -16px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(41, 182, 246, 0.06) inset;
+  padding: 2rem 2rem 1.75rem;
+}
+
+.cardTitle {
+  font-family: "Rajdhani", sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.25rem;
+}
+
+.cardSubtitle {
+  font-size: 0.8rem;
+  color: var(--sw-text-muted);
+  margin: 0 0 1.5rem;
+}
+
+/* Form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sw-silver);
+  letter-spacing: 0.04em;
+}
+
+.input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(30, 136, 229, 0.35);
+  border-radius: 7px;
+  background: rgba(7, 17, 31, 0.9);
+  color: #fff;
+  font-size: 0.85rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+
+.input::placeholder {
+  color: rgba(138, 180, 212, 0.45);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--sw-blue-electric);
+  box-shadow: 0 0 0 3px rgba(41, 182, 246, 0.12);
+}
+
+/* Submit button */
+.submitBtn {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid rgba(41, 182, 246, 0.4);
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--sw-blue-primary), var(--sw-blue-bright));
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s, opacity 0.15s;
+  letter-spacing: 0.03em;
+}
+
+.submitBtn:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Feedback messages */
+.error {
+  font-size: 0.78rem;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+.success {
+  font-size: 0.78rem;
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.07);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+/* Footer link */
+.footer {
+  margin-top: 1.25rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--sw-text-muted);
+}
+
+.footerLink {
+  color: var(--sw-blue-electric);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.footerLink:hover {
+  text-decoration: underline;
+}
+
+/* Divider */
+.divider {
+  border: none;
+  border-top: 1px solid rgba(41, 182, 246, 0.1);
+  margin: 1.25rem 0;
+}
