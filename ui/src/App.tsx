@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { TenantProvider } from "./contexts/TenantContext";
+import { TenantProvider, useTenant } from "./contexts/TenantContext";
 import { supabase } from "./services/supabaseClient";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import TopNav from "./components/TopNav";
@@ -13,6 +13,41 @@ import { useDashboardData } from "./hooks/useDashboardData";
 function AuthenticatedApp() {
   const [activeView, setActiveView] = useState("dashboard");
   const { metrics, alerts, timeline, posture, agents, loading, error, refresh } = useDashboardData(30000);
+  const { selectedTenantId } = useTenant();
+  const [seedState, setSeedState] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [seedMsg, setSeedMsg] = useState("");
+
+  const handleLoadDemoData = async () => {
+    if (!selectedTenantId) return;
+    setSeedState("loading");
+    setSeedMsg("");
+    try {
+      const res = await fetch("/api/seed/demo-data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenantId: selectedTenantId }),
+      });
+      const data = await res.json() as { ok: boolean; message?: string; error?: string };
+      if (data.ok) {
+        setSeedState("done");
+        setSeedMsg(data.message ?? "Demo data loaded!");
+        setTimeout(() => void refresh(), 800);
+      } else {
+        setSeedState("error");
+        setSeedMsg(data.error ?? "Failed to load demo data.");
+      }
+    } catch {
+      setSeedState("error");
+      setSeedMsg("Network error — please try again.");
+    }
+  };
+
+  const isEmpty =
+    !loading &&
+    metrics !== null &&
+    metrics.activeThreats === 0 &&
+    metrics.openIncidents === 0 &&
+    metrics.complianceScore === 0;
 
   return (
     <div className="min-h-screen bg-[var(--sw-bg)] transition-colors duration-200">
@@ -28,6 +63,10 @@ function AuthenticatedApp() {
           agents={agents}
           loading={loading}
           error={error}
+          isEmpty={isEmpty}
+          seedState={seedState}
+          seedMsg={seedMsg}
+          onLoadDemoData={handleLoadDemoData}
         />
       </div>
     </div>

@@ -28,6 +28,10 @@ interface DashboardProps {
   agents: any[];
   loading: boolean;
   error: string | null;
+  isEmpty?: boolean;
+  seedState?: "idle" | "loading" | "done" | "error";
+  seedMsg?: string;
+  onLoadDemoData?: () => void;
 }
 
 export default function Dashboard({
@@ -38,7 +42,11 @@ export default function Dashboard({
   posture,
   agents,
   loading,
-  error
+  error,
+  isEmpty = false,
+  seedState = "idle",
+  seedMsg = "",
+  onLoadDemoData,
 }: DashboardProps) {
   const getViewTitle = () => {
     switch (activeView) {
@@ -164,6 +172,30 @@ export default function Dashboard({
             ) : (
               <>
                 <HeroMetrics metrics={metrics} />
+
+                {isEmpty && onLoadDemoData && (
+                  <div className="sw-panel p-6 border border-dashed border-[var(--sw-border)] flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div>
+                      <p className="font-semibold text-[var(--sw-text-primary)] mb-1">No data yet — load demo findings to see the platform in action</p>
+                      <p className="text-sm text-[var(--sw-text-muted)]">
+                        Populates scan runs, findings, remediation actions, and approval requests for your tenant.
+                      </p>
+                      {seedMsg && (
+                        <p className={`text-sm mt-1 font-medium ${seedState === "error" ? "text-red-400" : "text-green-400"}`}>
+                          {seedMsg}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={onLoadDemoData}
+                      disabled={seedState === "loading" || seedState === "done"}
+                      className="shrink-0 px-5 py-2.5 rounded-lg font-semibold text-sm text-white bg-[linear-gradient(135deg,#0284c7,#0ea5e9)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                    >
+                      {seedState === "loading" ? "Loading…" : seedState === "done" ? "Loaded! ✓" : "Load Demo Data"}
+                    </button>
+                  </div>
+                )}
+
                 <SystemStatus agents={agents} alerts={alerts} />
                 <SecurityPosture data={posture} />
                 <ActivityTimeline activities={timeline} />
