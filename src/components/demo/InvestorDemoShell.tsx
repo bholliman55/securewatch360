@@ -19,6 +19,7 @@
  * this client component.
  */
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { getSupabaseBrowserClient } from "@/lib/supabase";
@@ -284,18 +285,15 @@ export function InvestorDemoShell({
         }}
       >
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 px-6 py-4">
-          <div className="flex items-baseline gap-4">
-            <span
-              style={{
-                fontFamily: "'Rajdhani', sans-serif",
-                fontWeight: 700,
-                fontSize: "1.2rem",
-                letterSpacing: "0.04em",
-                color: "#29b6f6",
-              }}
-            >
-              SecureWatch<span style={{ color: "#00e5ff" }}>360</span>
-            </span>
+          <div className="flex items-center gap-4">
+            <Image
+              src="/logo.png"
+              alt="SecureWatch360"
+              width={120}
+              height={64}
+              priority
+              style={{ height: 44, width: "auto", borderRadius: 6 }}
+            />
             <h1
               id="investor-demo-title"
               style={{

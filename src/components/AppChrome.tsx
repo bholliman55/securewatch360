@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { AnalystNav } from "./AnalystNav";
 
-const BARE_PATHS = new Set(["/login", "/signup"]);
+const BARE_PATHS = new Set(["/login", "/signup", "/investor-demo", "/cmmc-demo"]);
 
 type AppChromeProps = {
   children: ReactNode;

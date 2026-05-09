@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 /**
  * CmmcDemoShell — Self-contained CMMC Level 2 compliance drift + recovery demo.
  *
@@ -403,17 +405,14 @@ export function CmmcDemoShell(): React.JSX.Element {
         >
           {/* Brand + title */}
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-            <span
-              style={{
-                fontFamily: "'Rajdhani', sans-serif",
-                fontWeight: 700,
-                fontSize: "1.25rem",
-                letterSpacing: "0.04em",
-                color: "#29b6f6",
-              }}
-            >
-              SecureWatch<span style={{ color: "#00e5ff" }}>360</span>
-            </span>
+            <Image
+              src="/logo.png"
+              alt="SecureWatch360"
+              width={120}
+              height={64}
+              priority
+              style={{ height: 44, width: "auto", borderRadius: 6 }}
+            />
             <span
               style={{
                 width: 1,
