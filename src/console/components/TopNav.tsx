@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { Sun, Moon, Settings, User, LogOut, RefreshCw, Building2, ShieldCheck } from "lucide-react";
+import { Sun, Moon, Settings, User, LogOut, RefreshCw, Building2, ShieldCheck, DatabaseZap } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useTenant } from "../contexts/TenantContext";
@@ -10,9 +10,13 @@ const secureWatchLogo = '/images/securewatch360-logo.png';
 export default function TopNav({
   onRefresh,
   onOpenSettings,
+  onLoadDemoData,
+  seedState = "idle",
 }: {
   onRefresh?: () => void;
   onOpenSettings?: () => void;
+  onLoadDemoData?: () => void;
+  seedState?: "idle" | "loading" | "done" | "error";
 }) {
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
@@ -75,6 +79,18 @@ export default function TopNav({
           </div>
 
           <div className="flex items-center gap-1">
+            {onLoadDemoData && (
+              <button
+                onClick={onLoadDemoData}
+                disabled={seedState === "loading" || seedState === "done"}
+                title={seedState === "done" ? "Demo data loaded" : "Load demo data into your tenant"}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--sw-accent-bright)] border border-[color:color-mix(in_srgb,var(--sw-accent)_35%,transparent)] bg-[color:color-mix(in_srgb,var(--sw-accent)_8%,transparent)] hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <DatabaseZap className="w-3.5 h-3.5 shrink-0" />
+                {seedState === "loading" ? "Loading…" : seedState === "done" ? "Loaded ✓" : "Demo Data"}
+              </button>
+            )}
+
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg hover:bg-[var(--sw-surface-elevated)] transition-all duration-200"

@@ -1,0 +1,48 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SecureWatch360 — local staging / demo stack
+#
+# Dev workflow (no Docker needed):
+#   npm run dev:all          ← starts Next.js + Inngest in one terminal
+#
+# Staging / demo (production-like containers):
+#   cp .env.local .env       ← copy your env file
+#   docker compose up --build
+#
+# Services:
+#   app      → http://localhost:3000  (Next.js, production build)
+#   inngest  → http://localhost:8288  (Inngest dev server UI)
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      # Point Inngest at the container service name, not localhost
+      INNGEST_BASE_URL: http://inngest:8288
+    depends_on:
+      inngest:
+        condition: service_healthy
+    restart: unless-stopped
+
+  inngest:
+    image: inngest/inngest:latest
+    command: ["inngest", "dev", "-u", "http://app:3000/api/inngest", "--no-poll"]
+    ports:
+      - "8288:8288"
+    environment:
+      INNGEST_DEV: "1"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8288/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped

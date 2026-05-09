@@ -41,11 +41,10 @@ type ControlRow = {
 };
 
 export const complianceService = {
-  async getAudits(tenantId?: string | null): Promise<ComplianceAudit[]> {
+  async getAudits(tenantId?: string | null, frameworkCode?: string | null): Promise<ComplianceAudit[]> {
     const tid = requireTenant(tenantId);
-    const res = await apiJson<{ ok: boolean; controls?: ControlRow[] }>(
-      `/api/compliance/control-status?tenantId=${encodeURIComponent(tid)}`
-    );
+    const url = `/api/compliance/control-status?tenantId=${encodeURIComponent(tid)}${frameworkCode ? `&framework=${encodeURIComponent(frameworkCode)}` : ""}`;
+    const res = await apiJson<{ ok: boolean; controls?: ControlRow[] }>(url);
     const now = new Date().toISOString();
     return (res.controls ?? []).map((c) => ({
       id: c.controlRequirementId,
@@ -63,8 +62,8 @@ export const complianceService = {
     }));
   },
 
-  async getMetrics(tenantId?: string | null): Promise<ComplianceMetrics> {
-    const audits = await this.getAudits(tenantId);
+  async getMetrics(tenantId?: string | null, frameworkCode?: string | null): Promise<ComplianceMetrics> {
+    const audits = await this.getAudits(tenantId, frameworkCode);
 
     const statusCounts = audits.reduce(
       (acc, audit) => {

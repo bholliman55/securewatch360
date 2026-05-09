@@ -76,6 +76,11 @@ export function useScannerData(): UseScannerDataReturn {
   useEffect(() => {
     initialLoadDone.current = false;
     refresh();
+    // Poll every 15 s so scan results appear automatically after Inngest finishes
+    const interval = setInterval(() => {
+      void refresh();
+    }, 15_000);
+    return () => clearInterval(interval);
   }, [refresh]);
 
   return {

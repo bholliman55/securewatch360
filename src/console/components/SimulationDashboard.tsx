@@ -56,6 +56,7 @@ export default function SimulationDashboard() {
   const [serverDemoMode, setServerDemoMode] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [running, setRunning] = useState(false);
 
   const refresh = useCallback(async () => {
     const ac = new AbortController();
@@ -68,11 +69,35 @@ export default function SimulationDashboard() {
       ]);
       setSummary(next);
       setServerDemoMode(demoSrv);
-      if (!next) setError("No lab run on disk yet, or summary field missing.");
+      // Only show "no runs" error when not about to run a demo
+      if (!next && !running) setError('No simulation runs yet — click "Run Demo Simulation" to generate one.');
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load simulation summary.");
     } finally {
       setLoading(false);
+    }
+  }, [running]);
+
+  const runDemo = useCallback(async () => {
+    setRunning(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/simulation/run-demo", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = (await res.json()) as { ok: boolean; summary?: SimulationDashboardSummaryUi; error?: string };
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error ?? "Demo simulation failed");
+      }
+      if (data.summary) {
+        setSummary(data.summary);
+        setServerDemoMode(true);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to run demo simulation.");
+    } finally {
+      setRunning(false);
     }
   }, []);
 
@@ -104,14 +129,25 @@ export default function SimulationDashboard() {
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => void refresh()}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[linear-gradient(125deg,var(--sw-accent-hover),var(--sw-accent)_45%)] text-white font-semibold text-sm hover:brightness-110 active:brightness-95 shadow-[var(--sw-card-shadow)] border border-[var(--sw-border)]"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          Refresh summary
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => void runDemo()}
+            disabled={running}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[linear-gradient(125deg,#0f5cb8,#1e88e5_45%)] text-white font-semibold text-sm hover:brightness-110 active:brightness-95 shadow-[var(--sw-card-shadow)] border border-[var(--sw-border)] disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <FlaskConical className={`w-4 h-4 ${running ? "animate-pulse" : ""}`} />
+            {running ? "Simulating…" : "Run Demo Simulation"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void refresh()}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[linear-gradient(125deg,var(--sw-accent-hover),var(--sw-accent)_45%)] text-white font-semibold text-sm hover:brightness-110 active:brightness-95 shadow-[var(--sw-card-shadow)] border border-[var(--sw-border)]"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {(serverDemoMode || summary?.simulation_demo_mode) && (
