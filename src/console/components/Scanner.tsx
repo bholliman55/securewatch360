@@ -33,8 +33,17 @@ export default function Scanner() {
   const [viewMode, setViewMode] = useState<'vulnerabilities' | 'assets' | 'scans'>('vulnerabilities');
   const [scanPage, setScanPage] = useState(1);
   const [vulnerabilityPage, setVulnerabilityPage] = useState(1);
+  // Shown after launching a scan so the user knows work is in progress
+  const [scanQueued, setScanQueued] = useState(false);
   const scansPerPage = 5;
   const vulnerabilitiesPerPage = 5;
+
+  // Auto-dismiss the "scan queued" banner when a running scan appears in the list
+  useEffect(() => {
+    if (scanQueued && scans.some(s => s.status === 'running' || s.status === 'completed')) {
+      setScanQueued(false);
+    }
+  }, [scans, scanQueued]);
 
   const getSeverityColor = (severity: string) => {
     if (!severity) return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
@@ -124,6 +133,28 @@ export default function Scanner() {
 
   return (
     <div className="space-y-6 pb-6">
+      {/* Scan-queued / in-progress banner */}
+      {(scanQueued || scans.some(s => s.status === 'running')) && (
+        <div className="flex items-center gap-4 px-5 py-4 rounded-xl border border-[color:color-mix(in_srgb,var(--sw-accent)_40%,transparent)] bg-[color:color-mix(in_srgb,var(--sw-accent)_8%,transparent)]">
+          <div className="flex-shrink-0">
+            <Activity className="w-5 h-5 text-[var(--sw-accent-bright)] animate-pulse" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-[var(--sw-text-primary)] text-sm">
+              {scans.some(s => s.status === 'running') ? 'Scan in progress' : 'Scan queued — Inngest is processing'}
+            </p>
+            <p className="text-xs text-[var(--sw-text-muted)] mt-0.5">
+              Results appear automatically every 15 seconds. You can stay on this page or navigate away — the scan continues in the background.
+            </p>
+          </div>
+          <div className="flex-shrink-0 flex gap-2">
+            <div className="w-2 h-2 rounded-full bg-[var(--sw-accent)] animate-ping" />
+            <div className="w-2 h-2 rounded-full bg-[var(--sw-accent)] animate-ping [animation-delay:0.3s]" />
+            <div className="w-2 h-2 rounded-full bg-[var(--sw-accent)] animate-ping [animation-delay:0.6s]" />
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
@@ -575,7 +606,11 @@ export default function Scanner() {
       <NewScanModal
         isOpen={isNewScanModalOpen}
         onClose={() => setIsNewScanModalOpen(false)}
-        onScanCreated={refresh}
+        onScanCreated={() => {
+          setScanQueued(true);
+          setViewMode('scans');
+          void refresh();
+        }}
       />
 
       <UnifiedVulnerabilityModal

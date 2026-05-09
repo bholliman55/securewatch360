@@ -44,16 +44,22 @@ function AuthenticatedApp() {
     }
   };
 
+  // complianceScore is 100 (all controls pass) when there are no findings — not a meaningful
+  // "empty" signal. Only gate the demo-data banner on real activity metrics.
   const isEmpty =
     !loading &&
     metrics !== null &&
     metrics.activeThreats === 0 &&
-    metrics.openIncidents === 0 &&
-    metrics.complianceScore === 0;
+    metrics.openIncidents === 0;
 
   return (
     <div className="min-h-screen bg-[var(--sw-bg)] transition-colors duration-200">
-      <TopNav onRefresh={refresh} onOpenSettings={() => setActiveView("settings")} />
+      <TopNav
+        onRefresh={refresh}
+        onOpenSettings={() => setActiveView("settings")}
+        onLoadDemoData={handleLoadDemoData}
+        seedState={seedState}
+      />
       <div className="flex h-[calc(100vh-73px)]">
         <Sidebar activeView={activeView} onViewChange={setActiveView} />
         <Dashboard

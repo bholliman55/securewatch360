@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { complianceService, ComplianceAudit, ComplianceMetrics } from "../services/complianceService";
 import { useTenant } from "../contexts/TenantContext";
 
-export function useCompliance() {
+export function useCompliance(frameworkCode?: string | null) {
   const { selectedTenantId } = useTenant();
   const [audits, setAudits] = useState<ComplianceAudit[]>([]);
   const [metrics, setMetrics] = useState<ComplianceMetrics | null>(null);
@@ -31,8 +31,8 @@ export function useCompliance() {
 
     try {
       const [auditsData, metricsData] = await Promise.all([
-        complianceService.getAudits(selectedTenantId),
-        complianceService.getMetrics(selectedTenantId),
+        complianceService.getAudits(selectedTenantId, frameworkCode),
+        complianceService.getMetrics(selectedTenantId, frameworkCode),
       ]);
       setAudits(auditsData);
       setMetrics(metricsData);
@@ -44,7 +44,7 @@ export function useCompliance() {
         setLoading(false);
       }
     }
-  }, [selectedTenantId]);
+  }, [selectedTenantId, frameworkCode]);
 
   useEffect(() => {
     initialLoadDone.current = false;

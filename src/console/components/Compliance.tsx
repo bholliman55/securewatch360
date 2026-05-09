@@ -1,12 +1,29 @@
 'use client';
 
+import { useState } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, RefreshCw, BarChart3 } from 'lucide-react';
 import { useCompliance } from '../hooks/useCompliance';
 import { formatDistanceToNow } from '../utils/formatters';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
+const FRAMEWORKS = [
+  { code: '', label: 'All Frameworks' },
+  { code: 'NIST_CSF', label: 'NIST CSF' },
+  { code: 'HIPAA', label: 'HIPAA' },
+  { code: 'PCI_DSS', label: 'PCI-DSS' },
+  { code: 'SOC2', label: 'SOC 2' },
+  { code: 'ISO27001', label: 'ISO 27001' },
+  { code: 'CMMC', label: 'CMMC' },
+  { code: 'CIS', label: 'CIS Controls' },
+  { code: 'GDPR', label: 'GDPR' },
+  { code: 'FEDRAMP', label: 'FedRAMP' },
+  { code: 'CCPA', label: 'CCPA' },
+  { code: 'COBIT', label: 'COBIT' },
+];
+
 export default function Compliance() {
-  const { audits, metrics, loading, error, refresh } = useCompliance();
+  const [selectedFramework, setSelectedFramework] = useState('');
+  const { audits, metrics, loading, error, refresh } = useCompliance(selectedFramework || null);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -51,6 +68,23 @@ export default function Compliance() {
           <RefreshCw className="w-4 h-4" />
           Refresh
         </button>
+      </div>
+
+      {/* Framework filter tabs */}
+      <div className="flex flex-wrap gap-2">
+        {FRAMEWORKS.map(fw => (
+          <button
+            key={fw.code}
+            onClick={() => setSelectedFramework(fw.code)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+              selectedFramework === fw.code
+                ? 'bg-[var(--sw-accent)] text-white border-[var(--sw-accent)]'
+                : 'bg-[var(--sw-surface)] text-[var(--sw-text-muted)] border-[var(--sw-border)] hover:text-[var(--sw-text-primary)] hover:border-[var(--sw-accent)]'
+            }`}
+          >
+            {fw.label}
+          </button>
+        ))}
       </div>
 
       {metrics && (
