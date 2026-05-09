@@ -6,9 +6,10 @@ import { useCompliance } from '../hooks/useCompliance';
 import { formatDistanceToNow } from '../utils/formatters';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
+// Codes must exactly match framework_code values in the control_frameworks DB table
 const FRAMEWORKS = [
   { code: '', label: 'All Frameworks' },
-  { code: 'NIST_CSF', label: 'NIST CSF' },
+  { code: 'NIST', label: 'NIST CSF' },
   { code: 'HIPAA', label: 'HIPAA' },
   { code: 'PCI_DSS', label: 'PCI-DSS' },
   { code: 'SOC2', label: 'SOC 2' },
