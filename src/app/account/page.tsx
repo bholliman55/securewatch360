@@ -14,7 +14,8 @@ export default async function AccountPage() {
       .eq("user_id", user.id);
 
     if (data) {
-      tenants = data.map((row: { role: string; tenants: { id: string; name: string } | null }) => ({
+      const rows = (data as unknown) as { role: string; tenants: { id: string; name: string } | null }[];
+      tenants = rows.map((row) => ({
         id: row.tenants?.id ?? "",
         name: row.tenants?.name ?? "Unnamed",
         role: row.role,
