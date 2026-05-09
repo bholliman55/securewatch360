@@ -46,8 +46,8 @@ export default function SignupPage() {
       }
 
       if (data.session) {
-        // Auto-confirmed — go to MFA setup, then onboarding.
-        router.push("/mfa/setup?next=/onboarding");
+        // Auto-confirmed — go straight to onboarding (MFA is optional).
+        router.push("/onboarding");
         router.refresh();
         return;
       }

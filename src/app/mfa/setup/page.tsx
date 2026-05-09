@@ -27,13 +27,23 @@ function MfaSetupForm() {
     let cancelled = false;
     async function startEnroll() {
       const supabase = getSupabaseBrowserClient();
+
+      // Clean up any existing unverified TOTP factors first so enrollment succeeds
+      const { data: listData } = await supabase.auth.mfa.listFactors();
+      const unverified = listData?.totp?.filter((f) => f.status === "unverified") ?? [];
+      for (const f of unverified) {
+        await supabase.auth.mfa.unenroll({ factorId: f.id });
+      }
+
       const { data, error: enrollError } = await supabase.auth.mfa.enroll({
         factorType: "totp",
         friendlyName: "Authenticator app",
       });
       if (cancelled) return;
       if (enrollError || !data) {
-        setLoadError(enrollError?.message ?? "Failed to start MFA enrollment.");
+        setLoadError(
+          "MFA setup is not available right now. You can skip this and enable it later from your account settings."
+        );
         return;
       }
       setEnroll({
@@ -89,7 +99,19 @@ function MfaSetupForm() {
 
   return (
     <>
-      {loadError && <p className={styles.error}>{loadError}</p>}
+      {loadError && (
+        <>
+          <p className={styles.error}>{loadError}</p>
+          <div style={{ marginTop: "1rem", textAlign: "center" }}>
+            <button
+              className={styles.skipBtn}
+              onClick={() => router.push(nextPath)}
+            >
+              Skip for now →
+            </button>
+          </div>
+        </>
+      )}
 
       {!enroll && !loadError && (
         <div className={styles.qrWrap}>
@@ -150,6 +172,15 @@ function MfaSetupForm() {
               {loading ? "Verifying…" : "Confirm & enable MFA"}
             </button>
           </form>
+
+          <div style={{ marginTop: "1rem", textAlign: "center" }}>
+            <button
+              className={styles.skipBtn}
+              onClick={() => router.push(nextPath)}
+            >
+              Skip for now →
+            </button>
+          </div>
         </>
       )}
     </>

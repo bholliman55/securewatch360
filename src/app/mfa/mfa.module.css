@@ -261,3 +261,17 @@
   font-size: 0.75rem;
   color: var(--sw-text-muted);
 }
+
+.skipBtn {
+  background: none;
+  border: none;
+  color: rgba(226, 232, 240, 0.5);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: color 0.15s;
+}
+
+.skipBtn:hover {
+  color: rgba(226, 232, 240, 0.8);
+}
