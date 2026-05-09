@@ -264,6 +264,9 @@ export function CmmcDemoShell(): React.JSX.Element {
         });
 
         // Phase: detecting (after last drift)
+        // lastDrift = 19000ms; detecting window = 20500ms → 24000ms (3500ms).
+        // Each agent analysis is staggered 600ms apart so all 5 complete
+        // before remediating begins — regardless of speed multiplier.
         const lastDrift = Math.max(...INITIAL_CONTROLS.map((c) => c.driftOffsetMs));
         schedule(lastDrift + 1500, () => {
           setPhase("detecting");
@@ -271,8 +274,10 @@ export function CmmcDemoShell(): React.JSX.Element {
             type: "detection",
             message: "AI agents dispatched — analyzing 5 control violations across access control, cryptography, audit, identity, and configuration domains.",
           });
-          INITIAL_CONTROLS.forEach((ctrl) => {
-            schedule(ctrl.driftOffsetMs + 2500, () => {
+          INITIAL_CONTROLS.forEach((ctrl, idx) => {
+            // Stagger relative to when the detecting phase callback fires (now),
+            // not relative to simulation start.
+            schedule(400 + idx * 600, () => {
               setControls((prev) =>
                 prev.map((c) =>
                   c.id === ctrl.id ? { ...c, status: "detecting" } : c,
