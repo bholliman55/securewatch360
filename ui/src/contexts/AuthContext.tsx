@@ -51,10 +51,10 @@ function buildDemoTenant(): TenantOption {
 }
 
 function isLocalDemoMode(): boolean {
+  // Only use demo mode when EXPLICITLY configured — never auto-enable on localhost,
+  // because that injects a fake tenant ID that breaks all real API calls.
   const configured = import.meta.env.VITE_DEMO_MODE;
-  if (configured === "1" || configured === "true") return true;
-  if (configured === "0" || configured === "false") return false;
-  return window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  return configured === "1" || configured === "true";
 }
 
 async function fetchMe(): Promise<TenantOption[]> {
@@ -86,19 +86,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session: s } }: { data: { session: Session | null } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
       if (s?.user) {
+        setSession(s);
+        setUser(s.user);
         await refreshTenants();
+        setLoading(false);
+      } else if (isLocalDemoMode()) {
+        setUser(buildDemoUser());
+        setTenants([buildDemoTenant()]);
+        setLoading(false);
       } else {
-        if (isLocalDemoMode()) {
-          setUser(buildDemoUser());
-          setTenants([buildDemoTenant()]);
-        } else {
-          setTenants([]);
-        }
+        // No real session — send user through the Next.js auth flow.
+        window.location.href = "/login";
       }
-      setLoading(false);
     });
 
     const {
@@ -109,13 +109,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(s?.user ?? null);
         if (s?.user) {
           await refreshTenants();
+        } else if (isLocalDemoMode()) {
+          setUser(buildDemoUser());
+          setTenants([buildDemoTenant()]);
         } else {
-          if (isLocalDemoMode()) {
-            setUser(buildDemoUser());
-            setTenants([buildDemoTenant()]);
-          } else {
-            setTenants([]);
-          }
+          setTenants([]);
         }
       })();
     });
