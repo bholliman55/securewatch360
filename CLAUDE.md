@@ -10,7 +10,7 @@ SecureWatch360 is a multi-tenant security operations platform (v4). It scans ass
 - **Supabase** (Postgres + Auth + RLS) — client factories in `src/lib/supabase.ts`
 - **Inngest** — event-driven workflow orchestration (`src/inngest/`); no separate low-code workflow engine in the product architecture
 - **OPA** (optional) — external policy evaluation; fail-open by default
-- **UI sub-app** — separate Vite + React + Tailwind app in `ui/`, proxies `/api` to Next.js on `:3000`
+- **Console UI** — analyst console at `/console`, built as a Next.js client page in `src/console/` using React + Tailwind CSS
 
 ## Commands
 
@@ -22,8 +22,6 @@ npm run lint          # next lint
 npm run build         # production build
 
 # UI sub-app (separate terminal)
-npm run ui:dev        # Vite dev server for ui/
-
 # Database
 supabase db push      # apply migrations in supabase/migrations/
 
@@ -51,7 +49,7 @@ src/
   types/          # shared TypeScript domain models
 supabase/
   migrations/     # 28+ timestamped SQL migrations
-ui/               # Vite React sub-app (served at /console/)
+  console/        # Analyst console UI — Next.js client page at /console
 policies/         # OPA Rego policy files
 iac/              # Terraform + Ansible modules; securewatch360-policy-pack (Ansible+Terraform stubs from `npm run generate:policy-pack-iac`)
 docs/             # engineering guardrails, simulator runbooks (`docs/simulator/`), ITSM docs
