@@ -5,6 +5,7 @@ import { X, Loader2, AlertTriangle, Clock, Server, Shield } from 'lucide-react';
 import { Scan, Vulnerability } from '../services/scannerService';
 import { scannerService } from '../services/scannerService';
 import { formatDistanceToNow } from '../utils/formatters';
+import { useTenant } from '../contexts/TenantContext';
 
 interface ScanDetailModalProps {
   scan: Scan | null;
@@ -13,21 +14,23 @@ interface ScanDetailModalProps {
 }
 
 export default function ScanDetailModal({ scan, isOpen, onClose }: ScanDetailModalProps) {
+  const { selectedTenantId } = useTenant();
   const [vulnerabilities, setVulnerabilities] = useState<Vulnerability[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (scan && isOpen) {
+    if (scan && isOpen && selectedTenantId) {
       loadVulnerabilities();
     }
-  }, [scan, isOpen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scan, isOpen, selectedTenantId]);
 
   const loadVulnerabilities = async () => {
-    if (!scan) return;
+    if (!scan || !selectedTenantId) return;
 
     setLoading(true);
     try {
-      const vulns = await scannerService.getVulnerabilitiesByScan(scan.scan_results_id);
+      const vulns = await scannerService.getVulnerabilitiesByScan(scan.scan_results_id, selectedTenantId);
       setVulnerabilities(vulns);
     } catch (error) {
       console.error('Failed to load vulnerabilities:', error);
