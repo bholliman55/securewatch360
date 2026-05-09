@@ -2,9 +2,11 @@
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +21,7 @@ export default function SignupPage() {
 
     try {
       const supabase = getSupabaseBrowserClient();
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
       });
@@ -29,7 +31,15 @@ export default function SignupPage() {
         return;
       }
 
-      setSuccess("Signup submitted. Check your email if confirmation is enabled.");
+      // If the session is set the user is auto-confirmed — go straight to onboarding.
+      if (data.session) {
+        router.push("/onboarding");
+        router.refresh();
+        return;
+      }
+
+      // Email confirmation required.
+      setSuccess("Account created! Check your email to confirm, then sign in.");
     } finally {
       setLoading(false);
     }
@@ -38,7 +48,7 @@ export default function SignupPage() {
   return (
     <main>
       <h1>Sign Up</h1>
-      <p>Starter auth page for SecureWatch360 v1.</p>
+      <p>Create your SecureWatch360 account.</p>
 
       <form onSubmit={onSubmit} className="sw-form">
         <label className="sw-field">
@@ -73,7 +83,7 @@ export default function SignupPage() {
       {error ? <p className="sw-error">{error}</p> : null}
 
       <p>
-        Already have an account? <Link href="/login">Login</Link>
+        Already have an account? <Link href="/login">Sign in</Link>
       </p>
     </main>
   );

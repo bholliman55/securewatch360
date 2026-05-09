@@ -66,10 +66,9 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Authenticated users visiting auth pages → send to account so they can see
-  // their tenant status and navigate accordingly (no DB query needed here).
+  // Authenticated users visiting auth pages → send straight to the console.
   if (user && (pathname === "/login" || pathname === "/signup")) {
-    return NextResponse.redirect(new URL("/account", request.url));
+    return NextResponse.redirect(new URL("/console", request.url));
   }
 
   // Unauthenticated requests to protected paths → login with return URL.
