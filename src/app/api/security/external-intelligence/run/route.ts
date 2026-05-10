@@ -5,6 +5,7 @@ import { inngest } from "@/inngest/client";
 import { requireTenantAccess } from "@/lib/tenant-guard";
 import { API_TENANT_ROLES } from "@/lib/apiRoleMatrix";
 import { isBlockedExternalTarget, normalizeDomain } from "@/lib/externalTargetSafety";
+import { getSupabaseAdminClient } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
@@ -70,6 +71,26 @@ export async function POST(req: NextRequest) {
   const scanId = rawScanId ?? randomUUID();
   const triggered: string[] = [];
   const events = [];
+
+  // Create scan_run record immediately so the Scanner UI can show it as pending.
+  const supabase = getSupabaseAdminClient();
+  const agentLabel =
+    runAgent1 && runAgent2
+      ? "Agent 1+2: External Intelligence"
+      : runAgent1
+        ? "Agent 1: External Discovery"
+        : "Agent 2: OSINT Collection";
+  await supabase.from("scan_runs").upsert(
+    {
+      id: scanId,
+      tenant_id: tenantId.trim(),
+      workflow_run_id: `ext-intel-${scanId}`,
+      status: "pending",
+      scanner_name: agentLabel,
+      started_at: new Date().toISOString(),
+    },
+    { onConflict: "id" }
+  );
 
   if (runAgent1) {
     events.push({
