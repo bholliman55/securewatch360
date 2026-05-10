@@ -19,6 +19,7 @@
     "sim:run-all": "npx tsx simulator/cli/runAll.ts",
     "sim:report": "npx tsx simulator/cli/generateReport.ts",
     "sim:replay": "npx tsx simulator/cli/replayScenario.ts",
+    "sim:chaos": "npx tsx simulator/cli/runChaos.ts",
     "demo:stack": "node scripts/demo-stack.mjs",
     "demo:stack:staging": "node scripts/demo-stack-staging.mjs",
     "demo:seed": "tsx scripts/demo/seed-investor-demo.ts",

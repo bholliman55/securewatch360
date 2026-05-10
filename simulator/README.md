@@ -24,7 +24,8 @@ All events are **metadata-level fixtures** (shapes compatible with findings, ale
 | `validators/` | `AgentResponseValidator` — compare observed behavior to expectations per agent |
 | `reports/` | `reportGenerator`, `autonomyScorecard`, `dashboardSummary` — human and machine-readable outputs |
 | `fixtures/` | `demoMode`, `demoClients`, `demoAssets` — fictitious MSSP client fixtures for demo rehearsals |
-| `cli/` | `runScenario`, `runAll`, `listScenarios`, `generateReport` — invoked via `npm run sim:*` |
+| `chaos/` | Chaos scheduler, injector, metrics, resilience score — synthetic fault stress tests |
+| `cli/` | `runScenario`, `runAll`, `listScenarios`, `generateReport`, `runChaos` — invoked via `npm run sim:*` |
 | `tests/` | Vitest smoke / contract tests for the lab module |
 
 ---
@@ -109,6 +110,7 @@ Tests live under `simulator/tests/`. They cover:
 | `npm run sim:run-all` | Run every scenario in `simulator/scenarios/` |
 | `npm run sim:report -- --runId <uuid>` | Regenerate Markdown + JSON reports for a persisted run (artifacts under `.simulation-results/`) |
 | `npm run sim:replay -- --runId <uuid>` | Forensic timeline reconstruction: writes `{runId}-forensic-timeline.json`, `{runId}-forensic-timeline.md`, `{runId}-incident-reconstruction.md` (optional `--outDir` / `--resultsDir` for results folder) |
+| `npm run sim:chaos` | Chaos engineering lab: schedules synthetic faults (delays, drops, outages, malformed payloads, …), aggregates metrics, computes resilience score; writes `{lab_run_id}-chaos-lab-report.json` (optional `--ticks`, `--seed`, `--shuffle`, `--outDir`; `CHAOS_LAB_SKIP_DELAY=true` skips wall-clock delays) |
 
 ### Example: run a golden-path scenario
 

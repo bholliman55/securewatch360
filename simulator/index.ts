@@ -105,6 +105,25 @@ export {
   exportTimelineAsMarkdown,
   persistForensicTimelineArtifacts,
 } from "./forensics";
+
+export {
+  CHAOS_SCENARIO_KINDS,
+  buildChaosSchedule,
+  applyChaosInjection,
+  emptyChaosMetrics,
+  mergeSideEffectsIntoMetrics,
+  computeResilienceScore,
+  runChaosLab,
+  runChaosTicksOnEvents,
+} from "./chaos";
+export type {
+  ChaosScenarioKind,
+  ChaosTickPlan,
+  ChaosScheduleOptions,
+  ChaosMetrics,
+  ResilienceScoreBreakdown,
+  ChaosLabReport,
+} from "./chaos";
 export type {
   ForensicTimelineDocument,
   ForensicTimelineEvent,
