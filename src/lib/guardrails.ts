@@ -11,7 +11,7 @@ export type GuardrailOutcome = (typeof GUARDRAIL_OUTCOMES)[number];
 
 export type GuardrailInput = {
   targetType: string;
-  environment: "dev" | "staging" | "prod" | "unknown";
+  environment: "dev" | "staging" | "prod" | "simulation" | "demo" | "unknown";
   severity: "info" | "low" | "medium" | "high" | "critical";
   actionType: RemediationActionType;
   exposure?: "internet" | "external" | "partner" | "internal" | "isolated" | "unknown";
@@ -82,6 +82,20 @@ const rules: GuardrailRule[] = [
       reasons: ["critical_public_asset_requires_human_review"],
       policyAllowsAutomation: true,
       metadata: { ruleId: "critical-public-production-high-risk-actions" },
+    }),
+  },
+  {
+    id: "simulation-demo-destructive-classes",
+    match: (input) =>
+      (input.environment === "simulation" || input.environment === "demo") &&
+      (input.actionType === "isolate" ||
+        input.actionType === "config_change" ||
+        input.actionType === "auto_fix"),
+    apply: () => ({
+      outcome: "approval_required",
+      reasons: ["simulation_or_demo_requires_manual_gate_for_destructive_remediation_classes"],
+      policyAllowsAutomation: false,
+      metadata: { ruleId: "simulation-demo-destructive-classes" },
     }),
   },
   {
