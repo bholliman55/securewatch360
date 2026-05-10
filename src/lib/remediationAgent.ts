@@ -1,5 +1,8 @@
 import { writeAuditLog } from "@/lib/audit";
-import { evaluateGuardrails } from "@/lib/guardrails";
+import {
+  evaluateRemediationSafety,
+  resolveRemediationDeploymentEnvironment,
+} from "@/core/safety/remediationGuardrails";
 import { buildRemediationContextBundle } from "@/lib/token-optimization/context-builders/remediationContextBuilder";
 import { MockLlmProviderAdapter } from "@/lib/token-optimization/mockLlmProviderAdapter";
 import { optimizedLlmGateway } from "@/lib/token-optimization/optimizedLlmGateway";
@@ -206,12 +209,15 @@ function buildExecutionPayload(
 function determineExecutionPlan(candidate: RemediationCandidate): RemediationRoutingPlan {
   const { actionType, adapterKey, ruleId } = determineAction(candidate);
   const humanInLoopEnabled = isHumanInTheLoopEnabled();
-  const guardrail = evaluateGuardrails({
-    targetType: candidate.targetType,
-    environment: "prod",
-    severity: candidate.severity,
+  const deployment = resolveRemediationDeploymentEnvironment();
+  const safety = evaluateRemediationSafety({
+    deploymentEnvironment: deployment,
     actionType,
+    severity: candidate.severity,
     exposure: candidate.exposure,
+    targetType: candidate.targetType,
+    title: candidate.title,
+    category: candidate.category,
     policyDecision: {
       action: candidate.decisionOutput.action,
       requiresApproval: candidate.decisionOutput.requiresApproval,
@@ -220,6 +226,12 @@ function determineExecutionPlan(candidate: RemediationCandidate): RemediationRou
     },
   });
 
+  const guardrailOutcome = safety.blocked
+    ? ("blocked" as const)
+    : safety.approval_required
+      ? ("approval_required" as const)
+      : ("allowed" as const);
+
   let executionMode: RemediationExecutionMode = "manual";
   let executionStatus: RemediationExecutionStatus = "pending";
   let actionStatus: "proposed" | "approved" = "proposed";
@@ -227,13 +239,13 @@ function determineExecutionPlan(candidate: RemediationCandidate): RemediationRou
 
   if (
     candidate.requiresApproval ||
-    guardrail.outcome === "approval_required" ||
+    guardrailOutcome === "approval_required" ||
     (humanInLoopEnabled && highRiskAction)
   ) {
     executionMode = "manual";
     executionStatus = "pending";
     actionStatus = "proposed";
-  } else if (guardrail.outcome === "blocked") {
+  } else if (guardrailOutcome === "blocked") {
     executionMode = "manual";
     executionStatus = "cancelled";
     actionStatus = "proposed";
@@ -255,10 +267,11 @@ function determineExecutionPlan(candidate: RemediationCandidate): RemediationRou
   const notes = [
     "Routed by remediation agent (rules-based).",
     `rule=${ruleId}`,
-    `guardrailOutcome=${guardrail.outcome}`,
+    `guardrailOutcome=${guardrailOutcome}`,
     `humanInLoop=${humanInLoopEnabled}`,
     `decisionAction=${candidate.decisionOutput.action}`,
     `executionMode=${executionMode}`,
+    `remediationRisk=${safety.remediation_risk_score}`,
   ].join(" ");
 
   return {
@@ -270,9 +283,25 @@ function determineExecutionPlan(candidate: RemediationCandidate): RemediationRou
     executionPayload: {
       ...executionPayload,
       guardrails: {
-        outcome: guardrail.outcome,
-        reasons: guardrail.reasons,
-        metadata: guardrail.metadata,
+        outcome: guardrailOutcome,
+        reasons: safety.reasons,
+        metadata: {
+          deployment_environment: safety.deployment_environment,
+          matrix_decision: safety.matrix_decision,
+          matched_high_risk_categories: safety.matched_high_risk_categories,
+          policy_gate_outcome: safety.policy_gate_outcome,
+        },
+      },
+      remediation_safety: {
+        approval_required: safety.approval_required,
+        rollback_supported: safety.rollback_supported,
+        remediation_risk_score: safety.remediation_risk_score,
+        remediation_timeout_seconds: safety.remediation_timeout_seconds,
+        matrix_decision: safety.matrix_decision,
+        matched_high_risk_categories: safety.matched_high_risk_categories,
+        deployment_environment: safety.deployment_environment,
+        simulation_live_execution_blocked: safety.simulation_live_execution_blocked,
+        blocked: safety.blocked,
       },
     },
     notes,

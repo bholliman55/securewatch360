@@ -1,4 +1,8 @@
 import { inngest } from "@/inngest/client";
+import {
+  assertLiveRemediationExecutionAllowed,
+  resolveRemediationDeploymentEnvironment,
+} from "@/core/safety/remediationGuardrails";
 import { writeAuditLog } from "@/lib/audit";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { execFile as execFileShell } from "node:child_process";
@@ -282,6 +286,14 @@ export async function executeRemediationActionById(input: {
   }
 
   const payload = (remediation.execution_payload ?? {}) as Record<string, unknown>;
+  const findingPayload = (payload.finding ?? {}) as { title?: string; category?: string | null };
+  assertLiveRemediationExecutionAllowed({
+    deployment: resolveRemediationDeploymentEnvironment(),
+    dryRun,
+    actionType: String(remediation.action_type),
+    title: typeof findingPayload.title === "string" ? findingPayload.title : undefined,
+    category: typeof findingPayload.category === "string" ? findingPayload.category : null,
+  });
   const containment = (payload.containment ?? null) as Record<string, unknown> | null;
   const execution = (payload.execution ?? {}) as Record<string, unknown>;
   const integration = (payload.integration ?? null) as Record<string, unknown> | null;
