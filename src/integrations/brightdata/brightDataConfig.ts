@@ -1,5 +1,12 @@
 import type { BrightDataConfig } from "./brightDataTypes";
 
+/**
+ * MCP integration (see `brightDataMcpClient.ts`, `brightDataSourceAdapter.ts`):
+ * - `BRIGHTDATA_MCP_MOCK` — when true, skips live MCP and returns fixtures (local tests).
+ * - `BRIGHTDATA_MCP_SERVER` — MCP server id (default `user-brightdata-mcp`).
+ * - `BRIGHTDATA_MCP_SEARCH_TOOL`, `BRIGHTDATA_MCP_SCRAPE_TOOL`, `BRIGHTDATA_MCP_SCREENSHOT_TOOL` — tool names.
+ */
+
 /** Bright Data public super-proxy HTTPS port (override with zone-specific host if Bright Data assigns one). */
 export const DEFAULT_BRIGHTDATA_GATEWAY = "https://brd.superproxy.io:22225";
 
