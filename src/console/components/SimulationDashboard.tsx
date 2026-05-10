@@ -51,12 +51,31 @@ const ANIM_PANEL_1 = { animation: "slideIn 0.55s ease-out 220ms both" };
 const ANIM_PANEL_2 = { animation: "slideIn 0.55s ease-out 260ms both" };
 const ANIM_TIMELINE = { animation: "slideIn 0.6s ease-out 300ms both" };
 
+type ScenarioKey =
+  | "external_surface"
+  | "ransomware"
+  | "supply_chain"
+  | "credential_stuffing"
+  | "zero_day"
+  | "data_exfiltration";
+
+const SCENARIO_OPTIONS: { key: ScenarioKey; label: string; description: string; icon: string }[] = [
+  { key: "external_surface", label: "External Surface Scan", description: "Full SOC autonomy — discovery, compliance closure", icon: "🔍" },
+  { key: "ransomware", label: "Ransomware Attack", description: "Detection, containment, BCP notification & recovery", icon: "💀" },
+  { key: "supply_chain", label: "Supply Chain Compromise", description: "Third-party software integrity & vendor notification", icon: "🔗" },
+  { key: "credential_stuffing", label: "Credential Stuffing", description: "Auth anomaly detection & account protection", icon: "🔐" },
+  { key: "zero_day", label: "Zero-Day Response", description: "Unpatched CVE emergency virtual patching protocol", icon: "⚡" },
+  { key: "data_exfiltration", label: "Data Exfiltration", description: "DLP detection, forensic response & regulatory assessment", icon: "📤" },
+];
+
 export default function SimulationDashboard() {
   const [summary, setSummary] = useState<SimulationDashboardSummaryUi | null>(null);
   const [serverDemoMode, setServerDemoMode] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+  const [selectedScenario, setSelectedScenario] = useState<ScenarioKey>("external_surface");
+  const [showScenarioPicker, setShowScenarioPicker] = useState(false);
 
   const refresh = useCallback(async () => {
     const ac = new AbortController();
@@ -78,13 +97,16 @@ export default function SimulationDashboard() {
     }
   }, [running]);
 
-  const runDemo = useCallback(async () => {
+  const runDemo = useCallback(async (scenario: ScenarioKey) => {
     setRunning(true);
     setError(null);
+    setShowScenarioPicker(false);
     try {
       const res = await fetch("/api/simulation/run-demo", {
         method: "POST",
         credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenario }),
       });
       const data = (await res.json()) as { ok: boolean; summary?: SimulationDashboardSummaryUi; error?: string };
       if (!res.ok || !data.ok) {
@@ -129,16 +151,49 @@ export default function SimulationDashboard() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => void runDemo()}
-            disabled={running}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[linear-gradient(125deg,#0f5cb8,#1e88e5_45%)] text-white font-semibold text-sm hover:brightness-110 active:brightness-95 shadow-[var(--sw-card-shadow)] border border-[var(--sw-border)] disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <FlaskConical className={`w-4 h-4 ${running ? "animate-pulse" : ""}`} />
-            {running ? "Simulating…" : "Run Demo Simulation"}
-          </button>
+        <div className="flex items-center gap-3 relative">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowScenarioPicker((v) => !v)}
+              disabled={running}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[linear-gradient(125deg,#0f5cb8,#1e88e5_45%)] text-white font-semibold text-sm hover:brightness-110 active:brightness-95 shadow-[var(--sw-card-shadow)] border border-[var(--sw-border)] disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <FlaskConical className={`w-4 h-4 ${running ? "animate-pulse" : ""}`} />
+              {running ? "Simulating…" : "Run Simulation ▾"}
+            </button>
+
+            {showScenarioPicker && !running && (
+              <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-xl bg-[var(--sw-surface-elevated)] border border-[var(--sw-border)] shadow-[var(--sw-card-shadow)] overflow-hidden">
+                <div className="px-4 py-3 border-b border-[var(--sw-border)]">
+                  <p className="text-xs uppercase tracking-[0.15em] text-[var(--sw-text-muted)] font-semibold">
+                    Choose scenario
+                  </p>
+                </div>
+                <div className="py-2">
+                  {SCENARIO_OPTIONS.map((s) => (
+                    <button
+                      key={s.key}
+                      type="button"
+                      onClick={() => {
+                        setSelectedScenario(s.key);
+                        void runDemo(s.key);
+                      }}
+                      className={`w-full text-left px-4 py-3 hover:bg-[var(--sw-surface)] transition-colors flex items-start gap-3 ${
+                        selectedScenario === s.key ? "bg-[var(--sw-surface)]" : ""
+                      }`}
+                    >
+                      <span className="text-xl shrink-0 mt-0.5">{s.icon}</span>
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--sw-text-primary)]">{s.label}</p>
+                        <p className="text-xs text-[var(--sw-text-muted)] mt-0.5">{s.description}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => void refresh()}
