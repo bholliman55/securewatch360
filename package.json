@@ -28,6 +28,7 @@
     "demo:run": "tsx scripts/demo/run-investor-demo.ts",
     "seed:v4": "npx tsx scripts/seed-v4.ts",
     "seed:cve-catalog": "node scripts/seed-cve-catalog.mjs",
+    "seed:posture-roadmap": "node scripts/seed-posture-roadmap.mjs",
     "generate:policy-pack-iac": "node scripts/generate-policy-pack-iac.mjs",
     "generate:compliance-templates": "node scripts/generate-framework-org-template-stubs.mjs",
     "generate:compliance-templates:all": "node scripts/generate-framework-org-template-stubs.mjs --all",
