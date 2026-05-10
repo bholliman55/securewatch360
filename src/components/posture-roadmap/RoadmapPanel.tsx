@@ -7,6 +7,7 @@ import { ROADMAP_CATEGORY_LABELS } from "@/types/posture-roadmap";
 interface Props {
   items: PostureRoadmapItem[];
   tenantId: string;
+  onAutomate?: (item: PostureRoadmapItem) => void;
 }
 
 const PRIORITY_STYLES: Record<string, { bg: string; color: string; border: string }> = {
@@ -117,10 +118,12 @@ function RoadmapCard({
   item,
   tenantId,
   onStatusUpdate,
+  onAutomate,
 }: {
   item: PostureRoadmapItem;
   tenantId: string;
   onStatusUpdate: (id: string, status: RoadmapStatus) => void;
+  onAutomate?: (item: PostureRoadmapItem) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const auto = AUTOMATION_STYLES[item.automation_level];
@@ -254,7 +257,7 @@ function RoadmapCard({
               style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)" }}
             >
               <span className="text-lg shrink-0">⚡</span>
-              <div>
+              <div className="flex-1">
                 <p className="text-xs font-bold" style={{ color: "#22c55e" }}>
                   SecureWatch360 Can Automate This Now
                 </p>
@@ -263,6 +266,36 @@ function RoadmapCard({
                   Mark as In Progress and assign to the automation engine to begin.
                 </p>
               </div>
+              {onAutomate && (
+                <button
+                  onClick={() => onAutomate(item)}
+                  className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+                  style={{
+                    background: "linear-gradient(135deg, #00bcd4, #0097a7)",
+                    color: "#fff",
+                    border: "none",
+                    boxShadow: "0 2px 12px rgba(0,229,255,0.25)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  ⚡ Automate
+                </button>
+              )}
+            </div>
+          )}
+          {item.automation_level === "later" && onAutomate && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => onAutomate(item)}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+                style={{
+                  background: "rgba(234,179,8,0.1)",
+                  color: "#eab308",
+                  border: "1px solid rgba(234,179,8,0.3)",
+                }}
+              >
+                🔮 Automate with SecureWatch360
+              </button>
             </div>
           )}
         </div>
@@ -274,7 +307,7 @@ function RoadmapCard({
 const ALL_STATUSES: RoadmapStatus[] = ["not_started", "in_progress", "completed", "deferred"];
 const ALL_CATEGORIES = Object.keys(ROADMAP_CATEGORY_LABELS) as RoadmapCategory[];
 
-export function RoadmapPanel({ items: initialItems, tenantId }: Props) {
+export function RoadmapPanel({ items: initialItems, tenantId, onAutomate }: Props) {
   const [items, setItems] = useState<PostureRoadmapItem[]>(initialItems);
   const [filterStatus, setFilterStatus] = useState<RoadmapStatus | "">("");
   const [filterCategory, setFilterCategory] = useState<RoadmapCategory | "">("");
@@ -412,6 +445,7 @@ export function RoadmapPanel({ items: initialItems, tenantId }: Props) {
               item={item}
               tenantId={tenantId}
               onStatusUpdate={handleStatusUpdate}
+              onAutomate={onAutomate}
             />
           ))}
         </div>

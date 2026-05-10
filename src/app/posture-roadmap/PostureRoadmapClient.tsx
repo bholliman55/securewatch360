@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type {
   PostureCurrentState,
   PostureTargetState,
@@ -11,19 +11,31 @@ import { CurrentStatePanel } from "@/components/posture-roadmap/CurrentStatePane
 import { TargetStatePanel } from "@/components/posture-roadmap/TargetStatePanel";
 import { GapAnalysisPanel } from "@/components/posture-roadmap/GapAnalysisPanel";
 import { RoadmapPanel } from "@/components/posture-roadmap/RoadmapPanel";
+import { LoadingState } from "@/components/posture-roadmap/LoadingState";
+import { EmptyState } from "@/components/posture-roadmap/EmptyState";
+import { ErrorState } from "@/components/posture-roadmap/ErrorState";
+import { AutomationModal } from "@/components/posture-roadmap/AutomationModal";
+import type { ExecutionMode } from "@/components/posture-roadmap/AutomationModal";
 
 type Tab = "current" | "target" | "gaps" | "roadmap";
 
+interface ErrorInfo {
+  code?: string;
+  message: string;
+  hint?: string;
+}
+
 interface Props {
   tenantId: string;
-  currentState: PostureCurrentState;
-  targetState: PostureTargetState;
+  currentState: PostureCurrentState | null;
+  targetState: PostureTargetState | null;
   gaps: GapItem[];
   roadmapItems: PostureRoadmapItem[];
   initialTargetFramework: string;
   totalRoadmapItems: number;
   criticalItems: number;
   automationAvailableCount: number;
+  error?: string;
 }
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
@@ -35,7 +47,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 
 export function PostureRoadmapClient({
   tenantId,
-  currentState,
+  currentState: initialCurrentState,
   targetState: initialTargetState,
   gaps: initialGaps,
   roadmapItems,
@@ -43,12 +55,82 @@ export function PostureRoadmapClient({
   totalRoadmapItems,
   criticalItems,
   automationAvailableCount,
+  error: initialError,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("current");
   const [targetFramework, setTargetFramework] = useState(initialTargetFramework);
   const [targetState, setTargetState] = useState(initialTargetState);
   const [gaps, setGaps] = useState(initialGaps);
+  const [currentState, setCurrentState] = useState(initialCurrentState);
   const [loadingTarget, setLoadingTarget] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<ErrorInfo | null>(
+    initialError ? { message: initialError } : null
+  );
+
+  // Automation modal state
+  const [automationItem, setAutomationItem] = useState<PostureRoadmapItem | null>(null);
+
+  // Toast state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function showToast(msg: string) {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToastMessage(msg);
+    toastTimer.current = setTimeout(() => setToastMessage(null), 4000);
+  }
+
+  function handleRequestApproval(item: PostureRoadmapItem, _mode: ExecutionMode) {
+    showToast(`Approval request submitted for "${item.title}"`);
+  }
+
+  const hasData = !!(currentState || targetState || roadmapItems.length > 0);
+
+  async function loadData() {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/posture-roadmap/summary?tenantId=${encodeURIComponent(tenantId)}&targetFramework=${encodeURIComponent(targetFramework)}`
+      );
+      const data = await res.json();
+      if (!data.ok) {
+        setError({ code: data.code, message: data.error ?? "Failed to load posture data.", hint: data.hint });
+      } else {
+        setCurrentState(data.currentState);
+        setTargetState(data.targetState);
+        setGaps(data.gaps ?? []);
+      }
+    } catch {
+      setError({ message: "Failed to load posture assessment. Please try again." });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleRunAssessment() {
+    setIsGenerating(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/posture-roadmap/assessment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenantId, targetFramework }),
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        setError({ code: json.code, message: json.error ?? "Failed to generate assessment.", hint: json.hint });
+      } else {
+        window.location.reload();
+      }
+    } catch {
+      setError({ message: "Failed to generate assessment. Please try again." });
+    } finally {
+      setIsGenerating(false);
+    }
+  }
 
   async function handleFrameworkChange(fw: string) {
     if (fw === targetFramework || loadingTarget) return;
@@ -56,7 +138,6 @@ export function PostureRoadmapClient({
     setLoadingTarget(true);
 
     try {
-      // Persist the choice and reload summary for new target
       await fetch("/api/posture-roadmap/target", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -78,10 +159,52 @@ export function PostureRoadmapClient({
     }
   }
 
+  // — Loading state
+  if (isLoading) {
+    return <LoadingState message="Loading posture assessment..." />;
+  }
+
+  // — Error state
+  if (error) {
+    return (
+      <ErrorState
+        code={error.code}
+        message={error.message}
+        hint={error.hint}
+        onRetry={() => {
+          setError(null);
+          loadData();
+        }}
+      />
+    );
+  }
+
+  // — Empty / no-data state
+  if (!hasData) {
+    return (
+      <EmptyState
+        tenantId={tenantId}
+        onRunAssessment={handleRunAssessment}
+        isGenerating={isGenerating}
+      />
+    );
+  }
+
+  // — Guard: type narrowing for fully-populated data
+  if (!currentState || !targetState) {
+    return (
+      <EmptyState
+        tenantId={tenantId}
+        onRunAssessment={handleRunAssessment}
+        isGenerating={isGenerating}
+      />
+    );
+  }
+
   const completedPct =
     totalRoadmapItems > 0
       ? Math.round(
-          ((roadmapItems.filter((i) => i.status === "completed").length) /
+          (roadmapItems.filter((i) => i.status === "completed").length /
             totalRoadmapItems) *
             100
         )
@@ -184,9 +307,35 @@ export function PostureRoadmapClient({
         )}
         {activeTab === "gaps" && <GapAnalysisPanel gaps={gaps} />}
         {activeTab === "roadmap" && (
-          <RoadmapPanel items={roadmapItems} tenantId={tenantId} />
+          <RoadmapPanel
+            items={roadmapItems}
+            tenantId={tenantId}
+            onAutomate={(item) => setAutomationItem(item)}
+          />
         )}
       </div>
+
+      {/* Automation modal */}
+      <AutomationModal
+        item={automationItem}
+        onClose={() => setAutomationItem(null)}
+        onRequestApproval={handleRequestApproval}
+      />
+
+      {/* Toast notification */}
+      {toastMessage && (
+        <div
+          className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl text-sm font-semibold animate-slide-in"
+          style={{
+            background: "linear-gradient(135deg,#1565c0,#0d1e33)",
+            border: "1px solid #29b6f6",
+            color: "#fff",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+          }}
+        >
+          ✓ {toastMessage}
+        </div>
+      )}
     </div>
   );
 }

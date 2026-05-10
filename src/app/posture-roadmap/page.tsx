@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { serverApiFetch } from "@/lib/serverApi";
 import { PostureRoadmapClient } from "./PostureRoadmapClient";
+import { LoadingState } from "@/components/posture-roadmap/LoadingState";
 import type { PostureRoadmapSummary } from "@/types/posture-roadmap";
 
 type PageProps = {
@@ -12,7 +14,7 @@ type PageProps = {
 async function loadSummary(
   tenantId: string,
   targetFramework?: string
-): Promise<PostureRoadmapSummary & { ok: boolean; error?: string }> {
+): Promise<PostureRoadmapSummary & { ok: boolean; error?: string; code?: string; hint?: string }> {
   const params = new URLSearchParams({ tenantId });
   if (targetFramework) params.set("targetFramework", targetFramework);
   const res = await serverApiFetch(`/api/posture-roadmap/summary?${params.toString()}`);
@@ -25,6 +27,33 @@ async function loadRoadmapItems(tenantId: string) {
   );
   const data = await res.json();
   return data.items ?? [];
+}
+
+async function PostureRoadmapContent({ tenantId, targetFramework }: { tenantId: string; targetFramework?: string }) {
+  const [summary, roadmapItems] = await Promise.all([
+    loadSummary(tenantId, targetFramework),
+    loadRoadmapItems(tenantId),
+  ]);
+
+  const hasData =
+    summary.ok &&
+    ((summary.currentState?.maturityScore ?? 0) > 0 ||
+      (summary.totalRoadmapItems ?? 0) > 0);
+
+  return (
+    <PostureRoadmapClient
+      tenantId={tenantId}
+      currentState={summary.ok ? (summary.currentState ?? null) : null}
+      targetState={summary.ok ? (summary.targetState ?? null) : null}
+      gaps={summary.ok ? (summary.gaps ?? []) : []}
+      roadmapItems={roadmapItems}
+      initialTargetFramework={summary.ok ? (summary.targetState?.targetFramework ?? "") : ""}
+      totalRoadmapItems={summary.ok ? (summary.totalRoadmapItems ?? 0) : 0}
+      criticalItems={summary.ok ? (summary.criticalItems ?? 0) : 0}
+      automationAvailableCount={summary.ok ? (summary.automationAvailableCount ?? 0) : 0}
+      hasData={hasData}
+    />
+  );
 }
 
 export default async function PostureRoadmapPage({ searchParams }: PageProps) {
@@ -68,42 +97,11 @@ export default async function PostureRoadmapPage({ searchParams }: PageProps) {
     );
   }
 
-  const [summary, roadmapItems] = await Promise.all([
-    loadSummary(tenantId, targetFramework),
-    loadRoadmapItems(tenantId),
-  ]);
-
-  if (!summary.ok) {
-    return (
-      <main>
-        <div
-          className="rounded-2xl p-6"
-          style={{ background: "#0d1e33", border: "1px solid rgba(239,68,68,0.3)" }}
-        >
-          <p className="text-sm font-semibold" style={{ color: "#ef4444" }}>
-            Failed to load posture roadmap
-          </p>
-          <p className="text-xs mt-1" style={{ color: "#8ab4d4" }}>
-            {summary.error ?? "Unknown error. Check that the tenant ID is valid and you have access."}
-          </p>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main style={{ maxWidth: "1100px" }}>
-      <PostureRoadmapClient
-        tenantId={tenantId}
-        currentState={summary.currentState}
-        targetState={summary.targetState}
-        gaps={summary.gaps}
-        roadmapItems={roadmapItems}
-        initialTargetFramework={summary.targetState.targetFramework}
-        totalRoadmapItems={summary.totalRoadmapItems}
-        criticalItems={summary.criticalItems}
-        automationAvailableCount={summary.automationAvailableCount}
-      />
+      <Suspense fallback={<LoadingState message="Loading posture assessment..." />}>
+        <PostureRoadmapContent tenantId={tenantId} targetFramework={targetFramework} />
+      </Suspense>
     </main>
   );
 }
