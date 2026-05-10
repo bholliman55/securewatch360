@@ -22,9 +22,19 @@ const FRAMEWORKS = [
   { code: 'COBIT', label: 'COBIT' },
 ];
 
+type StatusFilter = 'compliant' | 'non_compliant' | 'partial' | '';
+
 export default function Compliance() {
   const [selectedFramework, setSelectedFramework] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
   const { audits, metrics, loading, error, refresh } = useCompliance(selectedFramework || null);
+
+  const visibleAudits = statusFilter
+    ? audits.filter(a => a.status.toLowerCase() === statusFilter)
+    : audits;
+
+  const toggleStatus = (s: StatusFilter) =>
+    setStatusFilter(prev => (prev === s ? '' : s));
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -107,11 +117,21 @@ export default function Compliance() {
               </div>
             </div>
 
-            <div className="bg-[var(--sw-surface)] rounded-lg shadow-lg p-6 border border-[var(--sw-border)]">
+            <button
+              onClick={() => toggleStatus('compliant')}
+              className={`bg-[var(--sw-surface)] rounded-lg shadow-lg p-6 border transition-all text-left w-full ${
+                statusFilter === 'compliant'
+                  ? 'border-green-500 ring-2 ring-green-500/40'
+                  : 'border-[var(--sw-border)] hover:border-green-400'
+              }`}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
                     Compliant
+                    {statusFilter === 'compliant' && (
+                      <span className="ml-2 text-xs text-green-500">(filtered)</span>
+                    )}
                   </p>
                   <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">
                     {metrics.compliant}
@@ -121,13 +141,23 @@ export default function Compliance() {
                   <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
               </div>
-            </div>
+            </button>
 
-            <div className="bg-[var(--sw-surface)] rounded-lg shadow-lg p-6 border border-[var(--sw-border)]">
+            <button
+              onClick={() => toggleStatus('non_compliant')}
+              className={`bg-[var(--sw-surface)] rounded-lg shadow-lg p-6 border transition-all text-left w-full ${
+                statusFilter === 'non_compliant'
+                  ? 'border-red-500 ring-2 ring-red-500/40'
+                  : 'border-[var(--sw-border)] hover:border-red-400'
+              }`}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
                     Non-Compliant
+                    {statusFilter === 'non_compliant' && (
+                      <span className="ml-2 text-xs text-red-500">(filtered)</span>
+                    )}
                   </p>
                   <p className="text-3xl font-bold text-red-600 dark:text-red-400 mt-2">
                     {metrics.non_compliant}
@@ -137,13 +167,23 @@ export default function Compliance() {
                   <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
                 </div>
               </div>
-            </div>
+            </button>
 
-            <div className="bg-[var(--sw-surface)] rounded-lg shadow-lg p-6 border border-[var(--sw-border)]">
+            <button
+              onClick={() => toggleStatus('partial')}
+              className={`bg-[var(--sw-surface)] rounded-lg shadow-lg p-6 border transition-all text-left w-full ${
+                statusFilter === 'partial'
+                  ? 'border-yellow-500 ring-2 ring-yellow-500/40'
+                  : 'border-[var(--sw-border)] hover:border-yellow-400'
+              }`}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
                     Partial
+                    {statusFilter === 'partial' && (
+                      <span className="ml-2 text-xs text-yellow-500">(filtered)</span>
+                    )}
                   </p>
                   <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mt-2">
                     {metrics.partial}
@@ -153,7 +193,7 @@ export default function Compliance() {
                   <AlertTriangle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
                 </div>
               </div>
-            </div>
+            </button>
           </div>
 
           {metrics.frameworkScores.length > 0 && (
@@ -184,10 +224,25 @@ export default function Compliance() {
       )}
 
       <div className="bg-[var(--sw-surface)] rounded-lg shadow-lg border border-[var(--sw-border)]">
-        <div className="p-6 border-b border-[var(--sw-border)]">
-          <h3 className="text-lg font-bold text-[var(--sw-text-primary)]">
-            Compliance Audits
-          </h3>
+        <div className="p-6 border-b border-[var(--sw-border)] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h3 className="text-lg font-bold text-[var(--sw-text-primary)]">
+              Compliance Audits
+            </h3>
+            {statusFilter && (
+              <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(statusFilter)}`}>
+                {statusFilter.replace('_', ' ')} · {visibleAudits.length} of {audits.length}
+              </span>
+            )}
+          </div>
+          {statusFilter && (
+            <button
+              onClick={() => setStatusFilter('')}
+              className="text-xs text-[var(--sw-text-muted)] hover:text-[var(--sw-text-primary)] underline"
+            >
+              Clear filter
+            </button>
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -214,14 +269,16 @@ export default function Compliance() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--sw-border)]">
-              {audits.length === 0 ? (
+              {visibleAudits.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
-                    No compliance audits configured yet
+                    {statusFilter
+                      ? `No ${statusFilter.replace('_', '-')} controls found`
+                      : 'No compliance audits configured yet'}
                   </td>
                 </tr>
               ) : (
-                audits.map((audit) => (
+                visibleAudits.map((audit) => (
                   <tr key={audit.id} className="hover:bg-[var(--sw-surface-elevated)] transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
