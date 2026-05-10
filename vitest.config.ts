@@ -10,6 +10,7 @@ export default defineConfig({
       "src/**/*.test.ts",
       "simulator/**/*.test.ts",
       "policy/**/*.test.ts",
+      "visualization/**/*.test.ts",
     ],
     exclude: ["src/agents/agent6-quantum-readiness/tests/**"],
     coverage: {
