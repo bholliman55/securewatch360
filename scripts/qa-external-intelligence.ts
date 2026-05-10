@@ -74,7 +74,11 @@ async function main() {
   console.log("\n[Agent 2] OSINT & Threat Intelligence Collection");
   let agent2Result;
   try {
-    agent2Result = await runOsintCollection({ domain: domain!, scanId });
+    agent2Result = await runOsintCollection({
+      domain: domain!,
+      scanId,
+      tenantId: process.env.OSINT_QA_TENANT_ID ?? "00000000-0000-4000-8000-000000000001",
+    });
 
     console.log(`  ${PASS} Collection completed`);
     console.log(`  ${INFO}  Total events:  ${agent2Result.totalEvents}`);

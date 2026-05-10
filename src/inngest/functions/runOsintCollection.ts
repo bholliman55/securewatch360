@@ -57,6 +57,7 @@ export const runOsintCollectionFunction = inngest.createFunction(
           knownEmails,
           clientId,
           scanId: resolvedScanId,
+          tenantId,
         });
       })) as unknown as OsintCollectionResult;
     } catch (err) {

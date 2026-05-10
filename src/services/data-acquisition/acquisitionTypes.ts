@@ -20,6 +20,7 @@ export type OsintEventType =
   | "compromised_account"
   | "vendor_advisory"
   | "risky_page"
+  | "bright_data_mcp_intel"
   | "unknown";
 
 export type IntelligenceSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
@@ -67,6 +68,8 @@ export interface DomainDiscoveryInput {
 
 export interface OsintCollectionInput {
   clientId?: string;
+  /** Tenant scope for Bright Data MCP enrichment, rate limits, and evidence correlation. */
+  tenantId?: string;
   domain: string;
   companyName?: string;
   knownEmails?: string[];

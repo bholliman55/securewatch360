@@ -1,6 +1,7 @@
 import { BrightDataAcquisitionProvider } from "@/services/data-acquisition/BrightDataAcquisitionProvider";
 import type { DataAcquisitionProvider } from "@/services/data-acquisition/DataAcquisitionProvider";
 import { collectCredentialExposure } from "./credentialExposureService";
+import { collectBrightDataMcpOsintEnrichment } from "./brightDataMcpOsintEnrichment";
 import { rescore } from "./threatSignalScoring";
 import { normalizeToOsintEvent, buildSeverityBreakdown } from "./osintNormalizer";
 import type { OsintCollectionInput, OsintCollectionResult } from "./osintTypes";
@@ -28,10 +29,19 @@ export async function runOsintCollection(
       knownEmails: input.knownEmails,
       clientId: input.clientId,
       scanId: input.scanId,
+      tenantId: input.tenantId,
     });
     allEvents.push(...osintEvents.map(normalizeToOsintEvent));
   } catch (err) {
     errors.push(`OSINT signal collection failed: ${(err as Error).message}`);
+  }
+
+  // Bright Data MCP — public web intelligence, OSINT enrichment, exposure-style signals (optional / mock)
+  try {
+    const mcpIntel = await collectBrightDataMcpOsintEnrichment(input);
+    allEvents.push(...mcpIntel.map(normalizeToOsintEvent));
+  } catch (err) {
+    errors.push(`Bright Data MCP OSINT enrichment failed: ${(err as Error).message}`);
   }
 
   // Apply consistent threat scoring across all events

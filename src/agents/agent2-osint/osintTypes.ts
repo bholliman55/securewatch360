@@ -2,6 +2,8 @@ export type OsintSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
 export interface OsintCollectionInput {
   clientId?: string;
+  /** When set, enables Bright Data MCP enrichment (see `brightDataMcpOsintEnrichment.ts`). */
+  tenantId?: string;
   domain: string;
   companyName?: string;
   knownEmails?: string[];

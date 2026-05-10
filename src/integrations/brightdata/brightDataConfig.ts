@@ -3,6 +3,7 @@ import type { BrightDataConfig } from "./brightDataTypes";
 /**
  * MCP integration (see `brightDataMcpClient.ts`, `brightDataSourceAdapter.ts`):
  * - `BRIGHTDATA_MCP_MOCK` — when true, skips live MCP and returns fixtures (local tests).
+ * - `BRIGHTDATA_MCP_ENRICHMENT` — set `true` to run live MCP enrichment for tenant-scoped OSINT when a runtime invoker is wired; `false` disables. Mock mode ignores this for fixtures.
  * - `BRIGHTDATA_MCP_SERVER` — MCP server id (default `user-brightdata-mcp`).
  * - `BRIGHTDATA_MCP_SEARCH_TOOL`, `BRIGHTDATA_MCP_SCRAPE_TOOL`, `BRIGHTDATA_MCP_SCREENSHOT_TOOL` — tool names.
  */
