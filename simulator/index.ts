@@ -130,6 +130,21 @@ export type {
   ReconstructForensicTimelineInput,
 } from "./forensics";
 
+export type {
+  TenantIsolationReport,
+  TenantIsolationViolation,
+  TenantIsolationViolationCode,
+  TenantScopedSimulationBundle,
+} from "./multitenant";
+export {
+  validateTenantCoherentSimulationRun,
+  validateCrossTenantPartition,
+  validateRemediationEventsScopedToTenant,
+  validateDashboardReportScopedToRun,
+  collectTenantIdStringsFromUnknown,
+  validateEmitCorrelationsTenantScoped,
+} from "./multitenant";
+
 export {
   AGENT_1_ID,
   AGENT_2_ID,

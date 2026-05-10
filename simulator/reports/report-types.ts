@@ -7,7 +7,13 @@ export interface SimulationLabReport {
   scenario: Pick<Scenario, "id" | "name">;
   run: Pick<
     SimulationRun,
-    "id" | "startedAt" | "completedAt" | "environment" | "simulation_demo_mode" | "demo_client_snapshot"
+    | "id"
+    | "startedAt"
+    | "completedAt"
+    | "environment"
+    | "tenantId"
+    | "simulation_demo_mode"
+    | "demo_client_snapshot"
   >;
   result: SimulationResult;
 }

@@ -25,6 +25,8 @@ export interface SimulationDashboardSummary {
   schema_version: 1;
   generatedAtIso: string;
   runId: string;
+  /** Mirrors {@link SimulationRun.tenantId} when the run was stamped for a specific tenant. */
+  tenantId?: string;
   scenarioId: string;
   scenarioName: string;
   status: SimulationDashboardSummaryStatus;
@@ -266,6 +268,7 @@ export function buildSimulationDashboardSummary(params: {
     schema_version: 1,
     generatedAtIso: result.finishedAt,
     runId: run.id,
+    ...(run.tenantId !== undefined ? { tenantId: run.tenantId } : {}),
     scenarioId: scenario.id,
     scenarioName: scenario.name,
     status,

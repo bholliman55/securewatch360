@@ -221,6 +221,7 @@ export async function executeScenarioSimulation(
     startedAt,
     completedAt: new Date().toISOString(),
     environment: pickEnvironment(mode, demoMode),
+    ...(tenantMarker ? { tenantId: tenantMarker } : {}),
     events: stamped,
     orchestrationCorrelationIds:
       correlationAccumulator.length > 0 ? correlationAccumulator : undefined,
@@ -247,6 +248,7 @@ export async function executeScenarioSimulation(
       startedAt: run.startedAt,
       ...(run.completedAt !== undefined ? { completedAt: run.completedAt } : {}),
       environment: run.environment,
+      ...(run.tenantId !== undefined ? { tenantId: run.tenantId } : {}),
       ...(run.simulation_demo_mode !== undefined
         ? { simulation_demo_mode: run.simulation_demo_mode }
         : {}),

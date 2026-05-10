@@ -75,6 +75,8 @@ export interface SimulationRun {
   startedAt: string;
   completedAt?: string;
   environment: SimulationEnvironmentLabel;
+  /** When set, must match every {@link SimulatedEvent.tenantId} for tenant-isolated lab runs. */
+  tenantId?: string;
   events: SimulatedEvent[];
   orchestrationCorrelationIds?: string[];
   /** UI / lab — when true, fixtures are fictitious MSSP clients and sinks stay local by default. */
