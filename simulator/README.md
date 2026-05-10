@@ -108,6 +108,7 @@ Tests live under `simulator/tests/`. They cover:
 | `npm run sim:run -- --scenario <id-or-path>` | Run one scenario (**requires** `--scenario`; stem, scenario id substring, or path to `.json`) |
 | `npm run sim:run-all` | Run every scenario in `simulator/scenarios/` |
 | `npm run sim:report -- --runId <uuid>` | Regenerate Markdown + JSON reports for a persisted run (artifacts under `.simulation-results/`) |
+| `npm run sim:replay -- --runId <uuid>` | Forensic timeline reconstruction: writes `{runId}-forensic-timeline.json`, `{runId}-forensic-timeline.md`, `{runId}-incident-reconstruction.md` (optional `--outDir` / `--resultsDir` for results folder) |
 
 ### Example: run a golden-path scenario
 

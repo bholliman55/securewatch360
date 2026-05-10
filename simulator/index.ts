@@ -99,6 +99,19 @@ export {
 } from "./engines";
 
 export {
+  reconstructForensicTimeline,
+  replayForensicTimelineStepwise,
+  exportTimelineAsJson,
+  exportTimelineAsMarkdown,
+  persistForensicTimelineArtifacts,
+} from "./forensics";
+export type {
+  ForensicTimelineDocument,
+  ForensicTimelineEvent,
+  ReconstructForensicTimelineInput,
+} from "./forensics";
+
+export {
   AGENT_1_ID,
   AGENT_2_ID,
   AGENT_3_ID,
