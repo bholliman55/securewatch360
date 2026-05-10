@@ -85,3 +85,18 @@ The HTTP proxy approach is fully functional and the two are interchangeable — 
 | `brightDataClient.test.ts` | 8 | HTTP fetch, retry, link extraction |
 | `remediationExecution.security.test.ts` | 13 | Injection prevention |
 | **Total** | **75** | |
+
+---
+
+## Continuous security intake (Cursor, PR checks, Slack)
+
+Reviews that arrive via **Cursor**, **GitHub PR comments**, or **Slack** should be treated as first-class input—not noise:
+
+1. **Triage within one business day:** owner assigns severity (align with this doc: critical / high / medium / low).
+2. **Track until closed:** file a GitHub **Issue** (label e.g. `security`) or add a line under **Remaining Recommendations** (or **Fixed Issues** once merged) in this file so the team has a single inventory.
+3. **Link the fix:** the PR that resolves a finding should reference the issue or the Slack/PR review thread (for audit trail).
+4. **Automation still runs:** `.github/workflows/security-scans.yml` (npm audit, Trivy, OPA, scheduled jobs) is the baseline; human/AI review catches what scanners miss (logic, tenant isolation, demo paths).
+
+**Investor demo / simulation PRs** (e.g. demo tenant bypass, `SIMULATION_DEMO_MODE`, orchestration sinks) deserve explicit checklist items: no demo flags in production-like deploys (see `instrumentation` + `environmentConfigValidator`), no live remediation without guardrails (`remediationGuardrails.ts`), fixture data isolated from customer tenants (`simulator/fixtures/demoMode.ts`).
+
+If a recurring finding type appears across PRs, add a regression test or CI gate rather than only documenting once.
