@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 const NAV_LINKS: { href: string; label: string }[] = [
   { href: "/analyst", label: "Analyst home" },
   { href: "/command-center", label: "Command center" },
+  { href: "/posture-roadmap", label: "Posture Roadmap" },
   { href: "/findings", label: "Findings" },
   { href: "/incidents", label: "Incidents" },
   { href: "/cves", label: "CVEs" },
