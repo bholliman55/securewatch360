@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Map } from "lucide-react";
 import { serverApiFetch } from "@/lib/serverApi";
 import { PostureRoadmapClient } from "./PostureRoadmapClient";
 import { LoadingState } from "@/components/posture-roadmap/LoadingState";
@@ -64,20 +65,22 @@ export default async function PostureRoadmapPage({ searchParams }: PageProps) {
     return (
       <main>
         <div
-          className="rounded-2xl p-8 text-center"
+          className="rounded-2xl p-8 text-center shadow-xl"
           style={{
-            background: "linear-gradient(175deg, #0d1e33 0%, #112d4e 100%)",
-            border: "1px solid rgba(41,182,246,0.2)",
+            background: "#1e293b",
+            border: "1px solid rgba(102,126,234,0.25)",
           }}
         >
-          <p className="text-4xl mb-4">🗺️</p>
-          <h1
-            className="text-2xl font-bold mb-2"
-            style={{ fontFamily: "Rajdhani, Inter, sans-serif", color: "#fff" }}
-          >
-            Posture Roadmap
-          </h1>
-          <p className="text-sm mb-6" style={{ color: "#8ab4d4" }}>
+          <div className="flex justify-center mb-4">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}
+            >
+              <Map size={28} className="text-white" />
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold mb-2 text-slate-100">Posture Roadmap</h1>
+          <p className="text-sm mb-6 text-slate-400">
             Enter a tenant ID to view your cybersecurity posture roadmap.
           </p>
           <form method="GET" action="/posture-roadmap" className="flex gap-3 max-w-md mx-auto">

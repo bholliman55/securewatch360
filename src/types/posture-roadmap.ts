@@ -115,6 +115,8 @@ export interface PostureCurrentState {
   criticalFindingsCount: number;
   highFindingsCount: number;
   identityGapsCount: number;
+  /** True when score is derived from sparse/zero data and should be treated as a baseline estimate. */
+  isEstimated?: boolean;
 }
 
 export interface RequiredControl {

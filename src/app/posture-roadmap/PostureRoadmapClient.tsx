@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Shield, Target, Zap, Map } from "lucide-react";
+import { Shield, Target, Zap, Map, RefreshCw, Info } from "lucide-react";
 import type {
   PostureCurrentState,
   PostureTargetState,
@@ -242,7 +242,17 @@ export function PostureRoadmapClient({
               Your current cybersecurity posture, where you need to be, and the prioritized path to close the gap.
             </p>
           </div>
-          <div className="flex gap-4 flex-wrap sm:flex-nowrap">
+          <div className="flex gap-3 flex-wrap sm:flex-nowrap items-start">
+            {/* Generate new assessment button */}
+            <button
+              onClick={() => setShowGenerateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 whitespace-nowrap self-center"
+              style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", color: "#fff" }}
+            >
+              <RefreshCw size={14} />
+              New Assessment
+            </button>
+
             <div className="text-center px-4 py-2 rounded-xl" style={{ background: "rgba(102,126,234,0.12)", border: "1px solid rgba(102,126,234,0.25)" }}>
               <div className="text-2xl font-bold" style={{ color: "#a78bfa" }}>
                 {currentState.maturityScore}
@@ -301,6 +311,20 @@ export function PostureRoadmapClient({
         })}
       </div>
 
+      {/* Estimated data banner */}
+      {currentState.isEstimated && (
+        <div
+          className="rounded-xl px-4 py-3 flex items-center gap-3 text-sm"
+          style={{ background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.25)", borderLeft: "3px solid #eab308" }}
+        >
+          <Info size={15} className="text-yellow-400 shrink-0" />
+          <p className="text-yellow-300">
+            <strong>Estimated assessment</strong> — limited scan data was available. Scores and gaps are based on best-guess defaults.
+            Run a full scan and regenerate for accurate results.
+          </p>
+        </div>
+      )}
+
       {/* Tab content */}
       <div>
         {activeTab === "current" && <CurrentStatePanel data={currentState} />}
@@ -330,6 +354,14 @@ export function PostureRoadmapClient({
           />
         )}
       </div>
+
+      {/* Generate Assessment modal */}
+      <GenerateAssessmentModal
+        isOpen={showGenerateModal}
+        tenantId={tenantId}
+        onClose={() => setShowGenerateModal(false)}
+        onComplete={() => { setShowGenerateModal(false); window.location.reload(); }}
+      />
 
       {/* Automation modal */}
       <AutomationModal
