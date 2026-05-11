@@ -38,6 +38,8 @@ interface Props {
   criticalItems: number;
   automationAvailableCount: number;
   error?: string;
+  /** When true: hides generate-assessment actions and suppresses live API calls. */
+  isDemo?: boolean;
 }
 
 const TABS: { id: Tab; label: string; Icon: React.ComponentType<{ size?: number }> }[] = [
@@ -58,6 +60,7 @@ export function PostureRoadmapClient({
   criticalItems,
   automationAvailableCount,
   error: initialError,
+  isDemo = false,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("current");
   const [targetFramework, setTargetFramework] = useState(initialTargetFramework);
@@ -89,6 +92,7 @@ export function PostureRoadmapClient({
   const hasData = !!(currentState || targetState || roadmapItems.length > 0);
 
   async function loadData() {
+    if (isDemo) return;
     setIsLoading(true);
     setError(null);
     try {
@@ -133,6 +137,10 @@ export function PostureRoadmapClient({
   }
 
   async function handleFrameworkChange(fw: string) {
+    if (isDemo) {
+      showToast("Framework switching is available in the full platform.");
+      return;
+    }
     if (fw === targetFramework || loadingTarget) return;
     setTargetFramework(fw);
     setLoadingTarget(true);
@@ -243,15 +251,17 @@ export function PostureRoadmapClient({
             </p>
           </div>
           <div className="flex gap-3 flex-wrap sm:flex-nowrap items-start">
-            {/* Generate new assessment button */}
-            <button
-              onClick={() => setShowGenerateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 whitespace-nowrap self-center"
-              style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", color: "#fff" }}
-            >
-              <RefreshCw size={14} />
-              New Assessment
-            </button>
+            {/* Generate new assessment button — hidden in demo mode */}
+            {!isDemo && (
+              <button
+                onClick={() => setShowGenerateModal(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 whitespace-nowrap self-center"
+                style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", color: "#fff" }}
+              >
+                <RefreshCw size={14} />
+                New Assessment
+              </button>
+            )}
 
             <div className="text-center px-4 py-2 rounded-xl" style={{ background: "rgba(102,126,234,0.12)", border: "1px solid rgba(102,126,234,0.25)" }}>
               <div className="text-2xl font-bold" style={{ color: "#a78bfa" }}>
@@ -355,13 +365,15 @@ export function PostureRoadmapClient({
         )}
       </div>
 
-      {/* Generate Assessment modal */}
-      <GenerateAssessmentModal
-        isOpen={showGenerateModal}
-        tenantId={tenantId}
-        onClose={() => setShowGenerateModal(false)}
-        onComplete={() => { setShowGenerateModal(false); window.location.reload(); }}
-      />
+      {/* Generate Assessment modal — suppressed in demo mode */}
+      {!isDemo && (
+        <GenerateAssessmentModal
+          isOpen={showGenerateModal}
+          tenantId={tenantId}
+          onClose={() => setShowGenerateModal(false)}
+          onComplete={() => { setShowGenerateModal(false); window.location.reload(); }}
+        />
+      )}
 
       {/* Automation modal */}
       <AutomationModal

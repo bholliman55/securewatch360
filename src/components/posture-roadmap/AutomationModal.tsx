@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import {
+  Zap, Eye, UserCheck, X, ChevronDown, ChevronUp,
+  Bot, Check, RotateCcw, Activity, Shield,
+  ArrowLeft, Send, AlertTriangle, ClipboardList,
+} from "lucide-react";
 import type { PostureRoadmapItem } from "@/types/posture-roadmap";
-import { ModalOverlay } from "./ModalOverlay";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ExecutionMode =
   | "recommend_only"
@@ -23,6 +27,7 @@ interface ExecutionStep {
   number: number;
   title: string;
   description: string;
+  dryRunSafe: boolean; // true = no side effects; always runs even in dry-run
 }
 
 interface MockExecutionPlan {
@@ -33,52 +38,68 @@ interface MockExecutionPlan {
   steps: ExecutionStep[];
   affectedSystems: string[];
   validationChecks: string[];
-  rollbackSteps: string[];
+  rollbackPlan: string;
 }
 
-// ─── Static mappings ─────────────────────────────────────────────────────────
+// ─── Static mappings ──────────────────────────────────────────────────────────
 
 const CATEGORY_TO_AGENT: Record<string, string> = {
-  identity_access: "Identity & Access Agent",
-  endpoint_security: "Endpoint Security Agent",
+  identity_access:       "Identity & Access Agent",
+  endpoint_security:     "Endpoint Security Agent",
   vulnerability_management: "Vulnerability Remediation Agent",
-  network_security: "Network Security Agent",
-  backup_recovery: "Backup & Recovery Agent",
-  monitoring_logging: "Monitoring & Logging Agent",
-  compliance_evidence: "Compliance Evidence Agent",
-  security_awareness: "Security Awareness Agent",
-  incident_response: "Incident Response Agent",
+  network_security:      "Network Security Agent",
+  backup_recovery:       "Backup & Recovery Agent",
+  monitoring_logging:    "Monitoring & Logging Agent",
+  compliance_evidence:   "Compliance Evidence Agent",
+  security_awareness:    "Security Awareness Agent",
+  incident_response:     "Incident Response Agent",
 };
 
 const CATEGORY_TO_PERMISSIONS: Record<string, string[]> = {
-  identity_access: ["IdP Admin", "Conditional Access Write", "User Read"],
-  endpoint_security: ["MDM Admin", "EDR Console Write", "Asset Inventory Read"],
+  identity_access:       ["IdP Admin", "Conditional Access Write", "User Read"],
+  endpoint_security:     ["MDM Admin", "EDR Console Write", "Asset Inventory Read"],
   vulnerability_management: ["Scanner Read", "ITSM Write", "Patch Management Write"],
-  network_security: ["Firewall Read", "Network Config Write"],
-  backup_recovery: ["Storage Admin", "Replication Config Write"],
-  monitoring_logging: ["SIEM Admin", "Log Source Config Write"],
-  compliance_evidence: ["SecureWatch360 Evidence Write", "Document Repository Read"],
-  security_awareness: ["Training Platform Admin", "HR System Read"],
-  incident_response: ["IRP Document Write", "Stakeholder Notify"],
+  network_security:      ["Firewall Read", "Network Config Write"],
+  backup_recovery:       ["Storage Admin", "Replication Config Write"],
+  monitoring_logging:    ["SIEM Admin", "Log Source Config Write"],
+  compliance_evidence:   ["Evidence Write", "Document Repository Read"],
+  security_awareness:    ["Training Platform Admin", "HR System Read"],
+  incident_response:     ["IRP Document Write", "Stakeholder Notify"],
 };
 
 const EFFORT_TO_DURATION: Record<string, string> = {
-  low: "15–30 min",
+  low:    "15–30 min",
   medium: "1–4 hours",
-  high: "4–24 hours",
+  high:   "4–24 hours",
 };
 
-const PRIORITY_TO_RISK: Record<string, string> = {
-  critical: "High Risk",
-  high: "Medium Risk",
-  medium: "Low Risk",
-  low: "Minimal Risk",
+const PRIORITY_TO_RISK: Record<string, { label: string; color: string }> = {
+  critical: { label: "High Risk",     color: "#ef4444" },
+  high:     { label: "Medium Risk",   color: "#f97316" },
+  medium:   { label: "Low Risk",      color: "#eab308" },
+  low:      { label: "Minimal Risk",  color: "#22c55e" },
 };
 
-const MODE_LABELS: Record<ExecutionMode, string> = {
-  recommend_only: "Recommend Only",
-  assisted_remediation: "Assisted Remediation",
-  autonomous_remediation: "Autonomous Remediation",
+const MODE_META: Record<ExecutionMode, {
+  label: string;
+  description: string;
+  Icon: React.ComponentType<{ size?: number; className?: string }>;
+}> = {
+  recommend_only: {
+    label: "Recommend Only",
+    description: "Show what would be done. No changes made to your environment.",
+    Icon: Eye,
+  },
+  assisted_remediation: {
+    label: "Assisted Remediation",
+    description: "Agent prepares each action step. You review and approve before anything executes.",
+    Icon: UserCheck,
+  },
+  autonomous_remediation: {
+    label: "Autonomous Remediation",
+    description: "Agent executes the full plan automatically. Requires admin pre-approval.",
+    Icon: Zap,
+  },
 };
 
 // ─── Plan generator ───────────────────────────────────────────────────────────
@@ -88,203 +109,451 @@ function generateMockExecutionPlan(
   mode: ExecutionMode
 ): MockExecutionPlan {
   const agent = CATEGORY_TO_AGENT[item.category] ?? "SecureWatch360 Agent";
-  const modeLabel = MODE_LABELS[mode];
+  const modeLabel = MODE_META[mode].label;
   const estimatedDuration = EFFORT_TO_DURATION[item.estimated_effort] ?? "1–4 hours";
-  const isDryRun = mode === "recommend_only";
-  const isActive = !isDryRun;
 
   let steps: ExecutionStep[];
   let affectedSystems: string[];
   let validationChecks: string[];
-  let rollbackSteps: string[];
+  let rollbackPlan: string;
   let blastRadius: "Low" | "Medium" | "High";
 
   switch (item.category) {
     case "identity_access":
       blastRadius = "Medium";
       steps = [
-        { number: 1, title: "Enumerate privileged accounts", description: "Query IdP for all accounts with admin, privileged, or elevated roles." },
-        { number: 2, title: "Identify accounts without MFA", description: "Cross-reference MFA enrollment records against the privileged account list." },
-        { number: 3, title: "Generate compliance report", description: "Produce a detailed report of MFA gaps with account details and last sign-in data." },
-        ...(isActive ? [
-          { number: 4, title: "Apply Conditional Access policy", description: "Configure IdP policy to require MFA for all identified accounts on next sign-in." },
-          { number: 5, title: "Send enrollment notifications", description: "Dispatch automated enrollment prompts to affected users via email and in-app." },
-        ] : []),
+        {
+          number: 1,
+          title: "Identify privileged users without MFA",
+          description: "Query IdP for all accounts with admin, privileged, or elevated roles. Cross-reference MFA enrollment records to produce the gap list.",
+          dryRunSafe: true,
+        },
+        {
+          number: 2,
+          title: "Generate enforcement policy",
+          description: "Build a Conditional Access policy targeting identified accounts. Preview policy scope and projected impact before any changes are made.",
+          dryRunSafe: true,
+        },
+        {
+          number: 3,
+          title: "Notify affected users",
+          description: "Dispatch automated enrollment prompts to affected users via email and SecureWatch360 in-app notification with a setup deadline.",
+          dryRunSafe: false,
+        },
+        {
+          number: 4,
+          title: "Apply MFA requirement",
+          description: "Push the Conditional Access policy to the IdP. Policy activates on each user's next sign-in attempt.",
+          dryRunSafe: false,
+        },
+        {
+          number: 5,
+          title: "Validate sign-in policy",
+          description: "Confirm the policy is active across all targeted accounts. Test with a canary account. Review sign-in event logs for unexpected lockouts.",
+          dryRunSafe: false,
+        },
+        {
+          number: 6,
+          title: "Write audit record",
+          description: "Create a signed audit event in SecureWatch360 recording accounts affected, policy ID applied, agent identity, and timestamp.",
+          dryRunSafe: true,
+        },
       ];
       affectedSystems = ["Azure Active Directory / Entra ID", "IdP MFA Service", "Conditional Access Engine"];
-      validationChecks = ["MFA enrollment rate > 95%", "No admin lockouts detected", "Sign-in logs reviewed for anomalies"];
-      rollbackSteps = ["Disable Conditional Access policy", "Notify affected users of rollback"];
+      validationChecks = [
+        "MFA enforcement active on all privileged accounts",
+        "Enrollment rate ≥ 95% within 48 hours",
+        "No admin lockouts detected",
+        "Sign-in logs show no anomalies post-enforcement",
+      ];
+      rollbackPlan =
+        "Disable the new Conditional Access policy and restore the previous conditional access state. Notify affected users that MFA enforcement has been paused. Document rollback reason and timestamp in SecureWatch360 audit log.";
       break;
 
     case "vulnerability_management":
       blastRadius = "High";
       steps = [
-        { number: 1, title: "Pull current vulnerability scan results", description: "Fetch latest scan data from vulnerability scanner, filtered to internet-facing assets." },
-        { number: 2, title: "Identify critical CVEs", description: "Filter for CVEs with CVSS score ≥ 9.0 on externally reachable hosts." },
-        { number: 3, title: "Cross-reference KEV catalog", description: "Flag any CVEs present in CISA Known Exploited Vulnerabilities catalog." },
-        ...(isActive ? [
-          { number: 4, title: "Create remediation tickets in ITSM", description: "Auto-generate prioritized remediation tickets with full CVE context and SLA assignment." },
-          { number: 5, title: "Apply available patches", description: "Trigger patch management integration to deploy vendor patches for all auto-patchable CVEs." },
-        ] : []),
+        {
+          number: 1,
+          title: "Pull current vulnerability scan results",
+          description: "Fetch latest scan data from the vulnerability scanner, filtered to internet-facing assets with CVSS ≥ 7.0.",
+          dryRunSafe: true,
+        },
+        {
+          number: 2,
+          title: "Identify critical CVEs and cross-reference KEV catalog",
+          description: "Filter for CVSS ≥ 9.0 CVEs and flag any present in the CISA Known Exploited Vulnerabilities catalog.",
+          dryRunSafe: true,
+        },
+        {
+          number: 3,
+          title: "Create prioritized remediation tickets",
+          description: "Auto-generate remediation tickets in ITSM with full CVE context, SLA assignment, and owner routing.",
+          dryRunSafe: false,
+        },
+        {
+          number: 4,
+          title: "Apply available patches",
+          description: "Trigger patch management integration to deploy vendor patches for all auto-patchable CVEs. Changes require change window approval.",
+          dryRunSafe: false,
+        },
+        {
+          number: 5,
+          title: "Validate and re-scan",
+          description: "Run a targeted re-scan on patched assets to confirm CVEs are remediated. Fail open on scan errors.",
+          dryRunSafe: false,
+        },
+        {
+          number: 6,
+          title: "Write audit record",
+          description: "Create signed audit event recording CVEs addressed, patch versions applied, affected systems, and validation result.",
+          dryRunSafe: true,
+        },
       ];
-      affectedSystems = ["Vulnerability Scanner", "Patch Management Platform", "ITSM / Ticketing System"];
-      validationChecks = ["Re-scan confirms CVEs remediated", "No service disruption detected", "Evidence record created"];
-      rollbackSteps = ["Revert patch via snapshot", "Re-open ITSM tickets for manual review"];
+      affectedSystems = ["Vulnerability Scanner", "Patch Management Platform", "ITSM / Ticketing System", "Internet-facing Assets"];
+      validationChecks = [
+        "Re-scan confirms zero unpatched critical CVEs on internet-facing assets",
+        "All CISA KEV entries resolved or risk-accepted with documentation",
+        "No service disruption detected post-patching",
+        "Evidence record created in SecureWatch360",
+      ];
+      rollbackPlan =
+        "Revert applied patches via pre-change snapshots or rollback scripts. Re-open ITSM tickets for manual review. Document rollback reason. No rollback is available for ITSM ticket creation (benign side effect).";
       break;
 
     case "endpoint_security":
       blastRadius = "Medium";
       steps = [
-        { number: 1, title: "Query MDM for unmanaged endpoints", description: "Pull device inventory from MDM platform and cross-reference with EDR agent enrollment list." },
-        { number: 2, title: "Generate unmanaged device report", description: "Produce a list of devices missing EDR coverage with last-seen timestamps and owner info." },
-        ...(isActive ? [
-          { number: 3, title: "Push EDR enrollment policy", description: "Deploy EDR agent enrollment policy via MDM to all unmanaged devices in scope." },
-          { number: 4, title: "Monitor enrollment progress", description: "Track agent check-in status in real time and flag devices that fail to enroll within 4 hours." },
-        ] : []),
+        {
+          number: 1,
+          title: "Query MDM for unmanaged endpoints",
+          description: "Pull device inventory from MDM platform and cross-reference with EDR agent enrollment list to identify gaps.",
+          dryRunSafe: true,
+        },
+        {
+          number: 2,
+          title: "Generate coverage report",
+          description: "Produce a list of devices missing EDR coverage with last-seen timestamps, owner info, and asset classification.",
+          dryRunSafe: true,
+        },
+        {
+          number: 3,
+          title: "Push EDR enrollment policy",
+          description: "Deploy EDR agent enrollment policy via MDM to all unmanaged devices in scope.",
+          dryRunSafe: false,
+        },
+        {
+          number: 4,
+          title: "Enable automated patch management",
+          description: "Configure patch management to enforce 14-day critical and 30-day high-severity SLAs across enrolled endpoints.",
+          dryRunSafe: false,
+        },
+        {
+          number: 5,
+          title: "Monitor enrollment and validate",
+          description: "Track agent check-in status in real time. Flag devices that fail to enroll within 4 hours for manual review.",
+          dryRunSafe: false,
+        },
+        {
+          number: 6,
+          title: "Write audit record",
+          description: "Record devices enrolled, coverage delta before and after, and policy version applied.",
+          dryRunSafe: true,
+        },
       ];
-      affectedSystems = ["MDM Platform (Intune/Jamf)", "EDR Console", "Asset Inventory"];
-      validationChecks = ["Coverage ≥ 95%", "All enrolled agents reporting"];
-      rollbackSteps = ["Remove MDM policy assignment", "Notify IT team"];
-      break;
-
-    case "monitoring_logging":
-      blastRadius = "Low";
-      steps = [
-        { number: 1, title: "Inventory current log sources", description: "Enumerate all active cloud resources, network devices, and application services." },
-        { number: 2, title: "Map to SIEM connectors", description: "Identify which sources have active SIEM connectors and flag gaps." },
-        ...(isActive ? [
-          { number: 3, title: "Configure log forwarding rules", description: "Create or update forwarding rules to pipe missing sources into SIEM." },
-          { number: 4, title: "Verify log ingestion", description: "Confirm log events are arriving in SIEM within expected latency thresholds." },
-          { number: 5, title: "Deploy initial alert rules", description: "Apply baseline detection rules for the newly onboarded log sources." },
-        ] : []),
+      affectedSystems = ["MDM Platform (Intune/Jamf)", "EDR Console", "Asset Inventory", "Patch Management"];
+      validationChecks = [
+        "EDR coverage ≥ 95% of all endpoints",
+        "All enrolled agents actively reporting",
+        "Patch SLA policy active and enforced",
+        "OT-adjacent hosts enrolled or documented as exceptions",
       ];
-      affectedSystems = ["Cloud Provider (CloudTrail/Diagnostic Logs)", "SIEM Platform", "Network Devices"];
-      validationChecks = ["Log ingestion confirmed", "Retention policy verified at 90 days", "Test alert fired"];
-      rollbackSteps = ["Disable log forwarding connectors", "Archive ingested logs"];
-      break;
-
-    case "compliance_evidence":
-      blastRadius = "Low";
-      steps = [
-        { number: 1, title: "Map control requirements to evidence types", description: "Identify required artifact types for each in-scope control (scan report, policy doc, training record, etc.)." },
-        { number: 2, title: "Scan existing artifacts for coverage", description: "Search SecureWatch360 evidence module and document repository for existing qualifying artifacts." },
-        ...(isActive ? [
-          { number: 3, title: "Create evidence collection tasks", description: "Generate structured collection tasks in SecureWatch360 for all uncovered controls." },
-          { number: 4, title: "Link existing scan exports to controls", description: "Auto-attach recent scan exports and policy documents to matching control requirements." },
-        ] : []),
-      ];
-      affectedSystems = ["SecureWatch360 Evidence Module", "Document Repository", "Compliance Control Catalog"];
-      validationChecks = ["Coverage > 70% of required controls", "All critical controls have at least 1 artifact"];
-      rollbackSteps = ["Archive evidence tasks", "Revert control mappings"];
+      rollbackPlan =
+        "Remove MDM policy assignment to unmanaged devices. EDR agents will self-uninstall on next check-in if policy is revoked. Notify IT team and document rollback.";
       break;
 
     case "backup_recovery":
       blastRadius = "Medium";
       steps = [
-        { number: 1, title: "Audit current backup configuration", description: "Review backup jobs, schedules, retention policies, and storage destinations." },
-        { number: 2, title: "Check immutability and offsite settings", description: "Verify Object Lock status and cross-region replication configuration." },
-        ...(isActive ? [
-          { number: 3, title: "Enable immutable storage", description: "Apply Object Lock / immutable storage policy to backup buckets." },
-          { number: 4, title: "Configure cross-region replication", description: "Enable cross-region replication for DR readiness." },
-          { number: 5, title: "Schedule recovery test", description: "Create a scheduled recovery drill task in the DR runbook system." },
-        ] : []),
+        {
+          number: 1,
+          title: "Audit current backup configuration",
+          description: "Review backup jobs, schedules, retention policies, and storage destinations for completeness.",
+          dryRunSafe: true,
+        },
+        {
+          number: 2,
+          title: "Check immutability and offsite replication",
+          description: "Verify Object Lock / immutable storage status and cross-region replication configuration.",
+          dryRunSafe: true,
+        },
+        {
+          number: 3,
+          title: "Enable backup integrity verification",
+          description: "Configure the backup platform to run automated integrity checks after each backup job completes.",
+          dryRunSafe: false,
+        },
+        {
+          number: 4,
+          title: "Configure cross-region replication",
+          description: "Enable cross-region replication for DR readiness and CUI data residency requirements.",
+          dryRunSafe: false,
+        },
+        {
+          number: 5,
+          title: "Schedule and run restoration drill",
+          description: "Execute a test restore of a non-production data set. Measure RTO and RPO against CMMC targets.",
+          dryRunSafe: false,
+        },
+        {
+          number: 6,
+          title: "Write audit record",
+          description: "Record backup coverage, integrity verification status, drill results, and evidence artifact ID.",
+          dryRunSafe: true,
+        },
       ];
-      affectedSystems = ["Cloud Storage (S3/Azure Blob)", "Backup Service", "DR Runbook"];
-      validationChecks = ["Immutability policy active", "Cross-region replication confirmed", "Test restore completed"];
-      rollbackSteps = ["Disable Object Lock (requires support ticket)", "Remove replication rule"];
+      affectedSystems = ["Cloud Storage (S3/Azure Blob)", "Backup Service", "DR Runbook", "SecureWatch360 Evidence Vault"];
+      validationChecks = [
+        "Automated integrity verification active on all backup jobs",
+        "Cross-region replication confirmed with lag < 1 hour",
+        "Test restore completed with documented RTO and RPO",
+        "Evidence artifact uploaded to SecureWatch360 vault",
+      ];
+      rollbackPlan =
+        "Disable integrity verification job if it causes backup overhead issues. Remove cross-region replication rule (note: Object Lock changes may require a support ticket to reverse). Document rollback reason and impact.";
+      break;
+
+    case "monitoring_logging":
+      blastRadius = "Low";
+      steps = [
+        {
+          number: 1,
+          title: "Inventory current log sources",
+          description: "Enumerate all active cloud resources, network devices, servers, and application services.",
+          dryRunSafe: true,
+        },
+        {
+          number: 2,
+          title: "Map to SIEM connectors and identify gaps",
+          description: "Identify which sources have active SIEM connectors and produce a gap report.",
+          dryRunSafe: true,
+        },
+        {
+          number: 3,
+          title: "Configure log forwarding rules",
+          description: "Create or update forwarding rules to pipe missing sources into SIEM with correct field normalization.",
+          dryRunSafe: false,
+        },
+        {
+          number: 4,
+          title: "Verify log ingestion and retention",
+          description: "Confirm log events are arriving in SIEM within expected latency thresholds. Verify 90-day retention policy.",
+          dryRunSafe: false,
+        },
+        {
+          number: 5,
+          title: "Deploy baseline CMMC alert rules",
+          description: "Apply CMMC-required detection rules (privileged access, failed auth, config changes) to newly onboarded sources.",
+          dryRunSafe: false,
+        },
+        {
+          number: 6,
+          title: "Write audit record",
+          description: "Record sources connected, alert rules deployed, retention policy confirmed, and baseline test result.",
+          dryRunSafe: true,
+        },
+      ];
+      affectedSystems = ["Cloud Provider (CloudTrail/Diagnostic Logs)", "SIEM Platform", "Network Devices", "Application Servers"];
+      validationChecks = [
+        "Log ingestion confirmed for all critical sources",
+        "Retention policy verified at ≥ 90 days",
+        "Baseline CMMC alert rules active and firing correctly",
+        "Test event generated and received within 5 minutes",
+      ];
+      rollbackPlan =
+        "Disable log forwarding connectors created during this run. Remove alert rules deployed. Archive any ingested logs per retention policy before disabling.";
+      break;
+
+    case "compliance_evidence":
+      blastRadius = "Low";
+      steps = [
+        {
+          number: 1,
+          title: "Map control requirements to evidence types",
+          description: "Identify required artifact types (scan report, policy doc, training record, etc.) for each in-scope CMMC control.",
+          dryRunSafe: true,
+        },
+        {
+          number: 2,
+          title: "Scan existing artifacts for coverage",
+          description: "Search SecureWatch360 evidence vault and document repository for existing qualifying artifacts.",
+          dryRunSafe: true,
+        },
+        {
+          number: 3,
+          title: "Create structured evidence collection tasks",
+          description: "Generate collection tasks in SecureWatch360 for all uncovered controls, with owner assignment and due dates.",
+          dryRunSafe: false,
+        },
+        {
+          number: 4,
+          title: "Auto-attach scan exports to controls",
+          description: "Link recent vulnerability scan exports, patch reports, and policy documents to matching control requirements.",
+          dryRunSafe: false,
+        },
+        {
+          number: 5,
+          title: "Validate coverage threshold",
+          description: "Confirm coverage exceeds 70% of required controls and that all critical controls have at least one artifact.",
+          dryRunSafe: false,
+        },
+        {
+          number: 6,
+          title: "Write audit record",
+          description: "Record controls covered, evidence artifact IDs, coverage percentage, and timestamp.",
+          dryRunSafe: true,
+        },
+      ];
+      affectedSystems = ["SecureWatch360 Evidence Module", "Document Repository", "Compliance Control Catalog"];
+      validationChecks = [
+        "Evidence coverage > 70% of required CMMC controls",
+        "All critical controls have at least one qualifying artifact",
+        "Evidence vault access-controlled and audit-logged",
+        "Artifact freshness < 12 months for all attached evidence",
+      ];
+      rollbackPlan =
+        "Archive evidence collection tasks created. Revert control-to-artifact mappings. Artifacts themselves are not deleted — rollback only removes the linkages.";
       break;
 
     default:
       blastRadius = "Low";
       steps = [
-        { number: 1, title: "Assess current configuration state", description: "Collect configuration data from relevant systems for this security domain." },
-        { number: 2, title: "Identify gaps against target state", description: "Compare current configuration against the desired state defined in the roadmap item." },
-        ...(isActive ? [
-          { number: 3, title: "Apply recommended configuration changes", description: "Execute the recommended action to close identified gaps." },
-          { number: 4, title: "Validate and document changes", description: "Confirm changes are applied and create an evidence record in SecureWatch360." },
-        ] : []),
+        {
+          number: 1,
+          title: "Assess current configuration state",
+          description: "Collect configuration data from relevant systems for this security domain.",
+          dryRunSafe: true,
+        },
+        {
+          number: 2,
+          title: "Identify gaps against target state",
+          description: "Compare current configuration against the desired state defined in this roadmap item.",
+          dryRunSafe: true,
+        },
+        {
+          number: 3,
+          title: "Apply recommended configuration changes",
+          description: "Execute the recommended action to close identified gaps.",
+          dryRunSafe: false,
+        },
+        {
+          number: 4,
+          title: "Validate changes",
+          description: "Confirm changes are applied correctly and produce the expected security improvement.",
+          dryRunSafe: false,
+        },
+        {
+          number: 5,
+          title: "Write audit record",
+          description: "Record changes made, systems affected, validation result, and agent identity.",
+          dryRunSafe: true,
+        },
       ];
       affectedSystems = ["SecureWatch360 Platform", "Relevant Security Controls"];
-      validationChecks = ["Configuration matches desired state", "Evidence record created", "No service disruption"];
-      rollbackSteps = ["Revert configuration changes", "Document rollback in audit log"];
+      validationChecks = [
+        "Configuration matches desired state",
+        "Evidence record created in SecureWatch360",
+        "No service disruption detected",
+      ];
+      rollbackPlan =
+        "Revert configuration changes to their pre-automation state. Document rollback reason and timestamp in SecureWatch360 audit log.";
   }
 
-  return { agent, modeLabel, estimatedDuration, blastRadius, steps, affectedSystems, validationChecks, rollbackSteps };
+  return { agent, modeLabel, estimatedDuration, blastRadius, steps, affectedSystems, validationChecks, rollbackPlan };
 }
 
-// ─── Helper: generate audit log preview ──────────────────────────────────────
+// ─── Audit log generator (JSON format) ───────────────────────────────────────
 
-function generateAuditLogPreview(item: PostureRoadmapItem, mode: ExecutionMode): string {
-  const now = new Date().toISOString();
-  const ts = (offset: number) =>
-    new Date(Date.now() + offset * 1000).toISOString().replace("T", "T").split(".")[0] + "Z";
+function generateAuditLogJSON(item: PostureRoadmapItem, mode: ExecutionMode): string {
   const agent = CATEGORY_TO_AGENT[item.category] ?? "SecureWatch360Agent";
-  const agentKey = agent.replace(/\s+/g, "");
-  return [
-    `[${ts(0)}] AUTOMATION_INITIATED agent=${agentKey} mode=${mode}`,
-    `[${ts(1)}] SCOPE_CHECK tenant=<tenant_id> item_id=${item.id.slice(0, 8)}`,
-    `[${ts(2)}] PERMISSION_VERIFY perms=${(CATEGORY_TO_PERMISSIONS[item.category] ?? []).join(",")}`,
-    `[${ts(3)}] ${mode === "recommend_only" ? "DRY_RUN" : "STEP_EXEC"} step=1 action="Assess scope" status=pending`,
-    `[${ts(4)}] ${mode === "recommend_only" ? "DRY_RUN" : "STEP_EXEC"} step=2 action="Evaluate gaps" status=pending`,
-    ...(mode !== "recommend_only"
-      ? [`[${ts(5)}] APPROVAL_GATE mode=${mode} status=awaiting_approval`]
-      : [`[${ts(5)}] DRY_RUN_COMPLETE recommendations_ready=true`]),
-  ].join("\n");
+  const now = new Date();
+  const ts = now.toISOString().split(".")[0] + "Z";
+  const isDryRun = mode === "recommend_only";
+  const hashSuffix = item.id.replace(/-/g, "").slice(0, 8);
+
+  const log = {
+    event: isDryRun ? "AUTOMATION_PLAN_GENERATED" : "APPROVAL_REQUEST_SUBMITTED",
+    tenant_id: item.tenant_id,
+    roadmap_item_id: item.id,
+    roadmap_item_title: item.title,
+    category: item.category,
+    agent,
+    mode,
+    triggered_by: "sw360-analyst",
+    triggered_at: ts,
+    dry_run: isDryRun,
+    approval_required: mode !== "recommend_only",
+    auto_execute: mode === "autonomous_remediation",
+    estimated_duration: EFFORT_TO_DURATION[item.estimated_effort] ?? "1–4 hours",
+    impact_score: item.estimated_impact_score,
+    framework: item.related_framework ?? null,
+    rollback_available: true,
+    status: isDryRun ? "DRY_RUN_COMPLETE" : "AWAITING_APPROVAL",
+    audit_signed: true,
+    audit_hash: `sha256:${hashSuffix}a3f7c9e2b1d4`,
+  };
+
+  return JSON.stringify(log, null, 2);
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ModeCard({
   mode,
-  icon,
-  title,
-  description,
   selected,
   onSelect,
 }: {
   mode: ExecutionMode;
-  icon: string;
-  title: string;
-  description: string;
   selected: boolean;
   onSelect: (m: ExecutionMode) => void;
 }) {
+  const { label, description, Icon } = MODE_META[mode];
   return (
     <button
       onClick={() => onSelect(mode)}
       className="w-full text-left rounded-xl p-4 transition-all"
       style={{
-        background: selected
-          ? "rgba(0,229,255,0.06)"
-          : "rgba(176,196,222,0.04)",
-        border: `1.5px solid ${selected ? "#00e5ff" : "rgba(176,196,222,0.18)"}`,
-        boxShadow: selected ? "0 0 16px rgba(0,229,255,0.1)" : "none",
+        background: selected ? "rgba(102,126,234,0.1)" : "rgba(102,126,234,0.03)",
+        border: `1.5px solid ${selected ? "#667eea" : "#334155"}`,
+        boxShadow: selected ? "0 0 0 1px rgba(102,126,234,0.2)" : "none",
       }}
     >
       <div className="flex items-start gap-3">
-        <span className="text-xl shrink-0 mt-0.5">{icon}</span>
-        <div>
-          <p
-            className="text-sm font-bold"
-            style={{ color: selected ? "#00e5ff" : "#e6edf5" }}
-          >
-            {title}
-          </p>
-          <p className="text-xs mt-0.5" style={{ color: "#8ab4d4" }}>
-            {description}
-          </p>
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+          style={{
+            background: selected
+              ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+              : "rgba(102,126,234,0.08)",
+          }}
+        >
+          <Icon size={15} className={selected ? "text-white" : "text-slate-400"} />
         </div>
-        <div className="ml-auto shrink-0 mt-1">
+        <div className="flex-1">
+          <p className="text-sm font-bold" style={{ color: selected ? "#e2e8f0" : "#94a3b8" }}>
+            {label}
+          </p>
+          <p className="text-xs mt-0.5 text-slate-400 leading-relaxed">{description}</p>
+        </div>
+        <div className="shrink-0 mt-1.5">
           <div
-            className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
+            className="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all"
             style={{
-              borderColor: selected ? "#00e5ff" : "rgba(176,196,222,0.35)",
-              background: selected ? "#00e5ff" : "transparent",
+              borderColor: selected ? "#667eea" : "#475569",
+              background: selected ? "#667eea" : "transparent",
             }}
           >
-            {selected && (
-              <div className="w-1.5 h-1.5 rounded-full bg-[#07111f]" />
-            )}
+            {selected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
           </div>
         </div>
       </div>
@@ -294,32 +563,33 @@ function ModeCard({
 
 function AccordionSection({
   title,
+  icon,
+  defaultOpen = true,
   children,
 }: {
   title: string;
+  icon: React.ReactNode;
+  defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div
-      className="rounded-xl overflow-hidden"
-      style={{ border: "1px solid rgba(176,196,222,0.15)" }}
-    >
+    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #334155" }}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3"
-        style={{ background: "rgba(176,196,222,0.05)" }}
+        className="w-full flex items-center gap-2.5 px-4 py-3 transition-colors hover:bg-slate-700/30"
+        style={{ background: "rgba(102,126,234,0.05)" }}
       >
-        <span
-          className="text-sm font-bold uppercase tracking-wider"
-          style={{ color: "#29b6f6", fontFamily: "Rajdhani, Inter, sans-serif" }}
-        >
+        <span className="text-violet-400 shrink-0">{icon}</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex-1 text-left">
           {title}
         </span>
-        <span style={{ color: "#8ab4d4", fontSize: 12 }}>{open ? "▲" : "▼"}</span>
+        {open
+          ? <ChevronUp size={13} className="text-slate-500 shrink-0" />
+          : <ChevronDown size={13} className="text-slate-500 shrink-0" />}
       </button>
       {open && (
-        <div className="px-4 py-3" style={{ background: "rgba(7,17,31,0.4)" }}>
+        <div className="px-4 py-4" style={{ background: "rgba(15,23,42,0.5)" }}>
           {children}
         </div>
       )}
@@ -329,18 +599,13 @@ function AccordionSection({
 
 // ─── Main modal ───────────────────────────────────────────────────────────────
 
-export function AutomationModal({
-  item,
-  onClose,
-  onRequestApproval,
-}: AutomationModalProps) {
+export function AutomationModal({ item, onClose, onRequestApproval }: AutomationModalProps) {
   const [view, setView] = useState<ModalView>("default");
   const [selectedMode, setSelectedMode] = useState<ExecutionMode>("recommend_only");
   const [refId] = useState(
     () => `SW360-AUTO-${Math.random().toString(16).slice(2, 8).toUpperCase()}`
   );
 
-  // Reset to default view whenever a new item opens
   useEffect(() => {
     if (item) {
       setView("default");
@@ -348,11 +613,8 @@ export function AutomationModal({
     }
   }, [item?.id]);
 
-  // Close on Escape key
   const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    },
+    (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); },
     [onClose]
   );
   useEffect(() => {
@@ -365,54 +627,44 @@ export function AutomationModal({
   const agent = CATEGORY_TO_AGENT[item.category] ?? "SecureWatch360 Agent";
   const permissions = CATEGORY_TO_PERMISSIONS[item.category] ?? [];
   const duration = EFFORT_TO_DURATION[item.estimated_effort] ?? "1–4 hours";
-  const riskLabel = PRIORITY_TO_RISK[item.priority] ?? "Low Risk";
+  const risk = PRIORITY_TO_RISK[item.priority] ?? { label: "Low Risk", color: "#22c55e" };
   const plan = generateMockExecutionPlan(item, selectedMode);
-  const auditLog = generateAuditLogPreview(item, selectedMode);
-
+  const auditJSON = generateAuditLogJSON(item, selectedMode);
   const impactColor =
-    item.estimated_impact_score >= 80
-      ? "#22c55e"
-      : item.estimated_impact_score >= 60
-      ? "#eab308"
-      : "#8ab4d4";
+    item.estimated_impact_score >= 80 ? "#22c55e"
+    : item.estimated_impact_score >= 60 ? "#eab308"
+    : "#94a3b8";
 
   function handleRequestApproval() {
     onRequestApproval(item!, selectedMode);
     setView("submitted");
   }
 
-  // ── Overlay + centering wrapper ──────────────────────────────────────────
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{
-        backdropFilter: "blur(8px)",
-        background: "rgba(7,17,31,0.75)",
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      style={{ backdropFilter: "blur(6px)", background: "rgba(0,0,0,0.65)" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="w-full rounded-2xl flex flex-col animate-slide-in"
+        className="w-full rounded-2xl flex flex-col"
         style={{
           maxWidth: 680,
-          maxHeight: "90vh",
-          background: "linear-gradient(175deg, #0d1e33 0%, #07111f 100%)",
-          border: "1px solid rgba(0,229,255,0.25)",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.6), 0 0 40px rgba(0,229,255,0.06)",
+          maxHeight: "92vh",
+          background: "linear-gradient(175deg, #0f172a 0%, #0c1526 100%)",
+          border: "1px solid rgba(102,126,234,0.35)",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(102,126,234,0.1)",
           overflow: "hidden",
         }}
       >
-        {/* Scrollable body */}
-        <div className="overflow-y-auto flex-1" style={{ scrollbarWidth: "thin" }}>
+        <div className="overflow-y-auto flex-1" style={{ scrollbarWidth: "thin", scrollbarColor: "#334155 transparent" }}>
           {view === "default" && (
             <DefaultView
               item={item}
               agent={agent}
               permissions={permissions}
               duration={duration}
-              riskLabel={riskLabel}
+              risk={risk}
               impactColor={impactColor}
               selectedMode={selectedMode}
               onSelectMode={setSelectedMode}
@@ -425,14 +677,14 @@ export function AutomationModal({
             <PreviewView
               item={item}
               plan={plan}
-              auditLog={auditLog}
+              auditJSON={auditJSON}
               selectedMode={selectedMode}
               onBack={() => setView("default")}
               onRequestApproval={handleRequestApproval}
             />
           )}
           {view === "submitted" && (
-            <SubmittedView refId={refId} onClose={onClose} />
+            <SubmittedView refId={refId} item={item} mode={selectedMode} onClose={onClose} />
           )}
         </div>
       </div>
@@ -443,23 +695,14 @@ export function AutomationModal({
 // ─── Default view ─────────────────────────────────────────────────────────────
 
 function DefaultView({
-  item,
-  agent,
-  permissions,
-  duration,
-  riskLabel,
-  impactColor,
-  selectedMode,
-  onSelectMode,
-  onClose,
-  onPreview,
-  onRequestApproval,
+  item, agent, permissions, duration, risk, impactColor,
+  selectedMode, onSelectMode, onClose, onPreview, onRequestApproval,
 }: {
   item: PostureRoadmapItem;
   agent: string;
   permissions: string[];
   duration: string;
-  riskLabel: string;
+  risk: { label: string; color: string };
   impactColor: string;
   selectedMode: ExecutionMode;
   onSelectMode: (m: ExecutionMode) => void;
@@ -471,97 +714,92 @@ function DefaultView({
     <div className="p-6 space-y-5">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div
-            className="w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0"
-            style={{
-              background: "rgba(0,229,255,0.1)",
-              border: "1.5px solid rgba(0,229,255,0.35)",
-              boxShadow: "0 0 20px #00e5ff44",
-            }}
+            className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}
           >
-            ⚡
+            <Zap size={20} className="text-white" />
           </div>
           <div>
-            <p className="sw-kicker mb-0.5">SecureWatch360</p>
-            <h2
-              className="text-2xl font-bold leading-tight"
-              style={{ fontFamily: "Rajdhani, Inter, sans-serif", color: "#fff" }}
-            >
+            <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-0.5">SecureWatch360</p>
+            <h2 className="text-xl font-bold text-slate-100 leading-tight">
               Automate with SecureWatch360
             </h2>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="text-lg w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors"
-          style={{ color: "#8ab4d4", background: "rgba(176,196,222,0.08)" }}
+          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors hover:bg-slate-700"
+          style={{ color: "#94a3b8" }}
           aria-label="Close"
         >
-          ×
+          <X size={16} />
         </button>
       </div>
 
       {/* Item context card */}
       <div
-        className="rounded-xl p-4 space-y-2"
+        className="rounded-xl p-4 space-y-3"
         style={{
-          background: "rgba(0,229,255,0.04)",
-          border: "1px solid rgba(0,229,255,0.2)",
-          borderLeft: "3px solid #00e5ff",
+          background: "rgba(102,126,234,0.06)",
+          border: "1px solid rgba(102,126,234,0.25)",
+          borderLeft: "3px solid #667eea",
         }}
       >
-        <div className="flex flex-wrap gap-2 items-center">
+        {/* Badges */}
+        <div className="flex flex-wrap gap-2">
           <span
-            className="text-xs font-bold uppercase px-2 py-0.5 rounded-full"
-            style={{
-              background: "rgba(41,182,246,0.15)",
-              color: "#29b6f6",
-              border: "1px solid rgba(41,182,246,0.3)",
-            }}
+            className="text-xs font-semibold px-2 py-0.5 rounded-full capitalize"
+            style={{ background: "rgba(167,139,250,0.15)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.3)" }}
           >
             {item.category.replace(/_/g, " ")}
           </span>
           {item.related_framework && (
             <span
               className="text-xs font-mono px-2 py-0.5 rounded"
-              style={{ background: "rgba(41,182,246,0.1)", color: "#29b6f6" }}
+              style={{ background: "rgba(102,126,234,0.15)", color: "#a78bfa" }}
             >
               {item.related_framework}
             </span>
           )}
         </div>
-        <p className="font-bold text-sm" style={{ color: "#e6edf5" }}>
-          {item.title}
-        </p>
-        {item.recommended_action && (
+
+        {/* Title */}
+        <p className="font-bold text-slate-100 leading-snug">{item.title}</p>
+
+        {/* Problem summary */}
+        {item.current_state && (
           <div>
-            <p
-              className="text-xs uppercase tracking-wider font-semibold mb-1"
-              style={{ color: "#8ab4d4" }}
-            >
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1 text-slate-400">
+              Problem Summary
+            </p>
+            <p className="text-sm text-slate-300 leading-relaxed">{item.current_state}</p>
+          </div>
+        )}
+
+        {/* Recommended action */}
+        {item.recommended_action && (
+          <div className="pt-1 border-t border-slate-700/50">
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1 text-slate-400">
               Recommended Action
             </p>
-            <p className="text-sm" style={{ color: "#c7dce8" }}>
-              {item.recommended_action}
-            </p>
+            <p className="text-sm text-slate-200 leading-relaxed">{item.recommended_action}</p>
           </div>
         )}
       </div>
 
-      {/* Agent info row */}
+      {/* Agent row */}
       <div
-        className="rounded-xl p-3 flex items-center justify-between"
-        style={{ background: "rgba(176,196,222,0.05)", border: "1px solid rgba(176,196,222,0.12)" }}
+        className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+        style={{ background: "rgba(102,126,234,0.05)", border: "1px solid #334155" }}
       >
-        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#8ab4d4" }}>
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
           SecureWatch360 Agent
-        </span>
+        </p>
         <div className="flex items-center gap-2">
-          <span className="text-base">🤖</span>
-          <span className="text-sm font-semibold" style={{ color: "#29b6f6" }}>
-            {agent}
-          </span>
+          <Bot size={15} className="text-violet-400" />
+          <span className="text-sm font-semibold text-violet-300">{agent}</span>
         </div>
       </div>
 
@@ -569,21 +807,19 @@ function DefaultView({
       <div className="grid grid-cols-2 gap-3">
         {/* Expected Impact */}
         <div
-          className="rounded-xl p-3 space-y-1.5"
-          style={{ background: "rgba(176,196,222,0.04)", border: "1px solid rgba(176,196,222,0.1)" }}
+          className="rounded-xl p-3 space-y-2"
+          style={{ background: "rgba(102,126,234,0.04)", border: "1px solid #334155" }}
         >
-          <p className="text-xs uppercase tracking-wider font-semibold" style={{ color: "#8ab4d4" }}>
-            Expected Impact
-          </p>
+          <p className="text-xs uppercase tracking-wider font-semibold text-slate-400">Expected Impact</p>
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold tabular-nums" style={{ color: impactColor }}>
+            <span className="text-xl font-bold tabular-nums" style={{ color: impactColor }}>
               {item.estimated_impact_score}
             </span>
-            <span className="text-xs" style={{ color: "#8ab4d4" }}>/100</span>
+            <span className="text-xs text-slate-500">/100</span>
           </div>
-          <div className="w-full h-1.5 rounded-full" style={{ background: "rgba(176,196,222,0.15)" }}>
+          <div className="w-full h-1.5 rounded-full" style={{ background: "rgba(102,126,234,0.15)" }}>
             <div
-              className="h-1.5 rounded-full"
+              className="h-1.5 rounded-full transition-all"
               style={{ width: `${item.estimated_impact_score}%`, background: impactColor }}
             />
           </div>
@@ -591,131 +827,92 @@ function DefaultView({
 
         {/* Estimated Risk */}
         <div
-          className="rounded-xl p-3 space-y-1.5"
-          style={{ background: "rgba(176,196,222,0.04)", border: "1px solid rgba(176,196,222,0.1)" }}
+          className="rounded-xl p-3 space-y-2"
+          style={{ background: "rgba(102,126,234,0.04)", border: "1px solid #334155" }}
         >
-          <p className="text-xs uppercase tracking-wider font-semibold" style={{ color: "#8ab4d4" }}>
-            Estimated Risk
-          </p>
-          <p
-            className="text-sm font-bold"
-            style={{
-              color:
-                riskLabel === "High Risk"
-                  ? "#ef4444"
-                  : riskLabel === "Medium Risk"
-                  ? "#f97316"
-                  : riskLabel === "Low Risk"
-                  ? "#eab308"
-                  : "#22c55e",
-            }}
-          >
-            {riskLabel}
-          </p>
+          <p className="text-xs uppercase tracking-wider font-semibold text-slate-400">Execution Risk</p>
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={14} style={{ color: risk.color }} />
+            <p className="text-sm font-bold" style={{ color: risk.color }}>{risk.label}</p>
+          </div>
+          <p className="text-xs text-slate-500">Rollback available if issues arise</p>
         </div>
 
         {/* Required Permissions */}
         <div
-          className="rounded-xl p-3 space-y-1.5"
-          style={{ background: "rgba(176,196,222,0.04)", border: "1px solid rgba(176,196,222,0.1)" }}
+          className="rounded-xl p-3 space-y-2"
+          style={{ background: "rgba(102,126,234,0.04)", border: "1px solid #334155" }}
         >
-          <p className="text-xs uppercase tracking-wider font-semibold" style={{ color: "#8ab4d4" }}>
-            Required Permissions
-          </p>
+          <p className="text-xs uppercase tracking-wider font-semibold text-slate-400">Required Permissions</p>
           <div className="flex flex-wrap gap-1">
             {permissions.slice(0, 3).map((p) => (
               <span
                 key={p}
                 className="text-xs px-1.5 py-0.5 rounded"
-                style={{ background: "rgba(21,101,192,0.25)", color: "#29b6f6", border: "1px solid rgba(41,182,246,0.2)" }}
+                style={{ background: "rgba(102,126,234,0.15)", color: "#a78bfa", border: "1px solid rgba(102,126,234,0.25)" }}
               >
                 {p}
               </span>
             ))}
             {permissions.length > 3 && (
-              <span className="text-xs" style={{ color: "#8ab4d4" }}>
+              <span className="text-xs text-slate-500 self-center">
                 +{permissions.length - 3} more
               </span>
             )}
           </div>
         </div>
 
-        {/* Estimated Duration */}
+        {/* Duration */}
         <div
-          className="rounded-xl p-3 space-y-1.5"
-          style={{ background: "rgba(176,196,222,0.04)", border: "1px solid rgba(176,196,222,0.1)" }}
+          className="rounded-xl p-3 space-y-2"
+          style={{ background: "rgba(102,126,234,0.04)", border: "1px solid #334155" }}
         >
-          <p className="text-xs uppercase tracking-wider font-semibold" style={{ color: "#8ab4d4" }}>
-            Estimated Duration
-          </p>
-          <p className="text-sm font-bold" style={{ color: "#e6edf5" }}>
-            {duration}
-          </p>
+          <p className="text-xs uppercase tracking-wider font-semibold text-slate-400">Estimated Duration</p>
+          <p className="text-sm font-bold text-slate-100">{duration}</p>
+          <p className="text-xs text-slate-500">No real-time changes in dry-run</p>
         </div>
       </div>
 
-      {/* Execution mode selector */}
+      {/* Execution mode */}
       <div>
-        <p className="text-xs uppercase tracking-wider font-semibold mb-2" style={{ color: "#8ab4d4" }}>
+        <p className="text-xs font-semibold uppercase tracking-wider mb-2.5 text-slate-400">
           Execution Mode
         </p>
         <div className="space-y-2">
-          <ModeCard
-            mode="recommend_only"
-            icon="🔍"
-            title="Recommend Only"
-            description="Show what would be done. No changes made."
-            selected={selectedMode === "recommend_only"}
-            onSelect={onSelectMode}
-          />
-          <ModeCard
-            mode="assisted_remediation"
-            icon="🤝"
-            title="Assisted Remediation"
-            description="Agent prepares the action. You approve each step."
-            selected={selectedMode === "assisted_remediation"}
-            onSelect={onSelectMode}
-          />
-          <ModeCard
-            mode="autonomous_remediation"
-            icon="⚡"
-            title="Autonomous Remediation"
-            description="Agent executes fully. Requires admin approval."
-            selected={selectedMode === "autonomous_remediation"}
-            onSelect={onSelectMode}
-          />
+          {(["recommend_only", "assisted_remediation", "autonomous_remediation"] as ExecutionMode[]).map(
+            (m) => (
+              <ModeCard key={m} mode={m} selected={selectedMode === m} onSelect={onSelectMode} />
+            )
+          )}
         </div>
       </div>
 
-      {/* Action buttons */}
+      {/* Buttons */}
       <div className="space-y-2 pt-1">
         <button
           onClick={onPreview}
-          className="w-full py-3 rounded-xl text-sm font-bold transition-all"
+          className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
           style={{
-            background: "linear-gradient(135deg, #00bcd4, #0097a7)",
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
             color: "#fff",
-            border: "none",
-            boxShadow: "0 4px 20px rgba(0,229,255,0.2)",
+            boxShadow: "0 4px 20px rgba(102,126,234,0.3)",
           }}
         >
+          <ClipboardList size={15} />
           Preview Automation Plan
         </button>
         <button
           onClick={onRequestApproval}
-          className="w-full py-3 rounded-xl text-sm font-bold transition-all"
-          style={{
-            background: "transparent",
-            color: "#29b6f6",
-            border: "1.5px solid rgba(41,182,246,0.45)",
-          }}
+          className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors hover:bg-violet-500/10"
+          style={{ background: "transparent", color: "#a78bfa", border: "1.5px solid rgba(167,139,250,0.4)" }}
         >
+          <Send size={14} />
           Request Approval
         </button>
         <button
           onClick={onClose}
-          className="w-full py-3 rounded-xl text-sm font-semibold transition-all"
-          style={{ background: "transparent", color: "#8ab4d4", border: "none" }}
+          className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors hover:text-slate-300"
+          style={{ background: "transparent", color: "#64748b", border: "none" }}
         >
           Cancel
         </button>
@@ -727,28 +924,20 @@ function DefaultView({
 // ─── Preview view ─────────────────────────────────────────────────────────────
 
 function PreviewView({
-  item,
-  plan,
-  auditLog,
-  selectedMode,
-  onBack,
-  onRequestApproval,
+  item, plan, auditJSON, selectedMode, onBack, onRequestApproval,
 }: {
   item: PostureRoadmapItem;
   plan: MockExecutionPlan;
-  auditLog: string;
+  auditJSON: string;
   selectedMode: ExecutionMode;
   onBack: () => void;
   onRequestApproval: () => void;
 }) {
   const isDryRun = selectedMode === "recommend_only";
-
   const blastColor =
-    plan.blastRadius === "High"
-      ? "#ef4444"
-      : plan.blastRadius === "Medium"
-      ? "#f97316"
-      : "#22c55e";
+    plan.blastRadius === "High" ? "#ef4444"
+    : plan.blastRadius === "Medium" ? "#f97316"
+    : "#22c55e";
 
   return (
     <div className="p-6 space-y-5">
@@ -756,85 +945,90 @@ function PreviewView({
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}
-          className="text-sm px-3 py-1.5 rounded-lg flex items-center gap-1.5"
-          style={{ background: "rgba(176,196,222,0.08)", color: "#8ab4d4", border: "1px solid rgba(176,196,222,0.15)" }}
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-slate-700"
+          style={{ background: "rgba(102,126,234,0.08)", color: "#94a3b8", border: "1px solid #334155" }}
         >
-          ← Back
+          <ArrowLeft size={12} /> Back
         </button>
         <div>
-          <h2
-            className="text-xl font-bold"
-            style={{ fontFamily: "Rajdhani, Inter, sans-serif", color: "#fff" }}
-          >
-            Automation Preview Plan
-          </h2>
-          <p className="text-xs" style={{ color: "#8ab4d4" }}>
-            {item.title}
-          </p>
+          <h2 className="text-lg font-bold text-slate-100">Automation Preview Plan</h2>
+          <p className="text-xs text-slate-400 mt-0.5 leading-tight">{item.title}</p>
         </div>
+        {isDryRun && (
+          <span
+            className="ml-auto text-xs font-bold px-2.5 py-1 rounded-full shrink-0"
+            style={{ background: "rgba(234,179,8,0.12)", color: "#eab308", border: "1px solid rgba(234,179,8,0.3)" }}
+          >
+            DRY RUN
+          </span>
+        )}
       </div>
 
-      {/* Sections */}
       <div className="space-y-3">
         {/* Overview */}
-        <AccordionSection title="Overview">
-          <div className="grid grid-cols-2 gap-3">
+        <AccordionSection title="Overview" icon={<Shield size={14} />}>
+          <div className="grid grid-cols-2 gap-4">
             {[
-              { label: "Agent", value: plan.agent },
-              { label: "Mode", value: plan.modeLabel },
-              { label: "Estimated Duration", value: plan.estimatedDuration },
+              { label: "Agent", value: plan.agent, color: "#a78bfa" },
+              { label: "Mode", value: plan.modeLabel, color: "#e2e8f0" },
+              { label: "Estimated Duration", value: plan.estimatedDuration, color: "#e2e8f0" },
               { label: "Blast Radius", value: plan.blastRadius, color: blastColor },
             ].map(({ label, value, color }) => (
               <div key={label}>
-                <p className="text-xs" style={{ color: "#8ab4d4" }}>{label}</p>
-                <p className="text-sm font-semibold" style={{ color: color ?? "#e6edf5" }}>{value}</p>
+                <p className="text-xs text-slate-500 mb-0.5">{label}</p>
+                <p className="text-sm font-semibold" style={{ color }}>{value}</p>
               </div>
             ))}
           </div>
         </AccordionSection>
 
         {/* Execution steps */}
-        <AccordionSection title="Execution Steps">
-          <ol className="space-y-3">
-            {plan.steps.map((step) => (
-              <li key={step.number} className="flex gap-3">
-                <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5"
-                  style={{ background: "rgba(0,229,255,0.15)", color: "#00e5ff", border: "1px solid rgba(0,229,255,0.3)" }}
-                >
-                  {step.number}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className="text-sm font-semibold" style={{ color: "#e6edf5" }}>
-                      {step.title}
-                    </p>
-                    {isDryRun && (
-                      <span
-                        className="text-xs px-1.5 py-0.5 rounded font-mono font-bold"
-                        style={{ background: "rgba(234,179,8,0.15)", color: "#eab308", border: "1px solid rgba(234,179,8,0.3)" }}
-                      >
-                        DRY RUN
-                      </span>
-                    )}
+        <AccordionSection title="Execution Steps" icon={<ClipboardList size={14} />}>
+          <ol className="space-y-4">
+            {plan.steps.map((step) => {
+              const isSkipped = isDryRun && !step.dryRunSafe;
+              return (
+                <li key={step.number} className="flex gap-3">
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5"
+                    style={{
+                      background: isSkipped ? "rgba(148,163,184,0.1)" : "rgba(102,126,234,0.2)",
+                      color: isSkipped ? "#475569" : "#a78bfa",
+                      border: `1px solid ${isSkipped ? "#334155" : "rgba(102,126,234,0.4)"}`,
+                    }}
+                  >
+                    {step.number}
                   </div>
-                  <p className="text-xs" style={{ color: "#8ab4d4" }}>
-                    {step.description}
-                  </p>
-                </div>
-              </li>
-            ))}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm font-semibold" style={{ color: isSkipped ? "#475569" : "#e2e8f0" }}>
+                        {step.title}
+                      </p>
+                      {isSkipped && (
+                        <span
+                          className="text-xs px-1.5 py-0.5 rounded font-mono font-bold"
+                          style={{ background: "rgba(234,179,8,0.12)", color: "#eab308", border: "1px solid rgba(234,179,8,0.25)" }}
+                        >
+                          SKIPPED (DRY RUN)
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-400 leading-relaxed">{step.description}</p>
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         </AccordionSection>
 
         {/* Affected systems */}
-        <AccordionSection title="Affected Systems">
+        <AccordionSection title="Affected Systems" icon={<Bot size={14} />}>
           <div className="flex flex-wrap gap-2">
             {plan.affectedSystems.map((sys) => (
               <span
                 key={sys}
                 className="text-xs px-2.5 py-1 rounded-full"
-                style={{ background: "rgba(21,101,192,0.2)", color: "#29b6f6", border: "1px solid rgba(41,182,246,0.25)" }}
+                style={{ background: "rgba(102,126,234,0.12)", color: "#a78bfa", border: "1px solid rgba(102,126,234,0.25)" }}
               >
                 {sys}
               </span>
@@ -842,72 +1036,66 @@ function PreviewView({
           </div>
         </AccordionSection>
 
+        {/* Rollback plan */}
+        <AccordionSection title="Rollback Plan" icon={<RotateCcw size={14} />}>
+          <div
+            className="rounded-lg p-3 text-sm text-slate-300 leading-relaxed"
+            style={{ background: "rgba(249,115,22,0.06)", border: "1px solid rgba(249,115,22,0.2)", borderLeft: "3px solid #f97316" }}
+          >
+            {plan.rollbackPlan}
+          </div>
+        </AccordionSection>
+
         {/* Validation checks */}
-        <AccordionSection title="Validation Checks">
-          <ul className="space-y-1.5">
+        <AccordionSection title="Validation Checks" icon={<Check size={14} />}>
+          <ul className="space-y-2">
             {plan.validationChecks.map((check) => (
-              <li key={check} className="flex items-start gap-2 text-sm" style={{ color: "#c7dce8" }}>
-                <span style={{ color: "#22c55e", fontSize: 14, marginTop: 1 }}>✓</span>
+              <li key={check} className="flex items-start gap-2.5 text-sm text-slate-300">
+                <Check size={14} className="text-green-400 shrink-0 mt-0.5" />
                 {check}
               </li>
             ))}
           </ul>
         </AccordionSection>
 
-        {/* Rollback plan */}
-        <AccordionSection title="Rollback Plan">
-          <ol className="space-y-1.5">
-            {plan.rollbackSteps.map((step, i) => (
-              <li key={step} className="flex items-start gap-2 text-sm" style={{ color: "#c7dce8" }}>
-                <span
-                  className="text-xs font-bold shrink-0 mt-0.5"
-                  style={{ color: "#f97316", minWidth: 18 }}
-                >
-                  {i + 1}.
-                </span>
-                {step}
-              </li>
-            ))}
-          </ol>
-        </AccordionSection>
-
-        {/* Audit log preview */}
-        <AccordionSection title="Audit Log Preview">
+        {/* Audit log */}
+        <AccordionSection title="Audit Log Preview" icon={<Activity size={14} />}>
           <pre
-            className="text-xs rounded-lg p-3 overflow-x-auto"
+            className="text-xs rounded-lg p-4 overflow-x-auto leading-relaxed"
             style={{
-              background: "rgba(0,0,0,0.4)",
+              background: "rgba(0,0,0,0.5)",
               color: "#86efac",
-              fontFamily: "'Courier New', Courier, monospace",
-              lineHeight: 1.6,
+              fontFamily: "'JetBrains Mono', 'Courier New', monospace",
               border: "1px solid rgba(34,197,94,0.15)",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
             }}
           >
-            {auditLog}
+            {auditJSON}
           </pre>
         </AccordionSection>
       </div>
 
-      {/* Bottom buttons */}
+      {/* Buttons */}
       <div className="space-y-2 pt-1">
         <button
           onClick={onRequestApproval}
-          className="w-full py-3 rounded-xl text-sm font-bold"
+          className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
           style={{
-            background: "linear-gradient(135deg, #00bcd4, #0097a7)",
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
             color: "#fff",
-            border: "none",
-            boxShadow: "0 4px 20px rgba(0,229,255,0.2)",
+            boxShadow: "0 4px 20px rgba(102,126,234,0.3)",
           }}
         >
+          <Send size={14} />
           Request Approval
         </button>
         <button
           onClick={onBack}
-          className="w-full py-3 rounded-xl text-sm font-semibold"
-          style={{ background: "transparent", color: "#8ab4d4", border: "none" }}
+          className="w-full py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 transition-colors hover:text-slate-300"
+          style={{ background: "transparent", color: "#64748b", border: "none" }}
         >
-          ← Back
+          <ArrowLeft size={13} /> Back
         </button>
       </div>
     </div>
@@ -916,60 +1104,82 @@ function PreviewView({
 
 // ─── Submitted view ───────────────────────────────────────────────────────────
 
-function SubmittedView({ refId, onClose }: { refId: string; onClose: () => void }) {
+function SubmittedView({
+  refId,
+  item,
+  mode,
+  onClose,
+}: {
+  refId: string;
+  item: PostureRoadmapItem;
+  mode: ExecutionMode;
+  onClose: () => void;
+}) {
   return (
-    <div className="p-10 flex flex-col items-center text-center space-y-5">
+    <div className="p-10 flex flex-col items-center text-center space-y-6">
       {/* Pulsing checkmark */}
       <div className="relative">
         <div
           className="absolute inset-0 rounded-full animate-ping"
-          style={{ background: "rgba(34,197,94,0.2)" }}
+          style={{ background: "rgba(34,197,94,0.15)" }}
         />
         <div
-          className="relative w-20 h-20 rounded-full flex items-center justify-center text-4xl"
+          className="relative w-20 h-20 rounded-full flex items-center justify-center"
           style={{
-            background: "rgba(34,197,94,0.15)",
-            border: "2px solid rgba(34,197,94,0.5)",
-            boxShadow: "0 0 32px rgba(34,197,94,0.25)",
+            background: "rgba(34,197,94,0.12)",
+            border: "2px solid rgba(34,197,94,0.4)",
+            boxShadow: "0 0 32px rgba(34,197,94,0.2)",
           }}
         >
-          ✓
+          <Check size={32} className="text-green-400" />
         </div>
       </div>
 
       <div className="space-y-2">
-        <h2
-          className="text-2xl font-bold"
-          style={{ fontFamily: "Rajdhani, Inter, sans-serif", color: "#22c55e" }}
-        >
-          Approval Request Submitted
-        </h2>
-        <p className="text-sm" style={{ color: "#8ab4d4", maxWidth: 440, margin: "0 auto" }}>
-          An analyst will review this automation plan and confirm before any changes are
-          made. You&apos;ll be notified when the request is reviewed.
+        <h2 className="text-2xl font-bold text-green-400">Approval Request Submitted</h2>
+        <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
+          A SecureWatch360 analyst will review this{" "}
+          <span className="text-slate-300 font-medium">{MODE_META[mode].label}</span> plan
+          for <span className="text-slate-300 font-medium">{item.title}</span> before any
+          changes are made. You&apos;ll be notified when approved.
         </p>
       </div>
 
+      {/* What happens next */}
+      <div
+        className="w-full rounded-xl p-4 text-left space-y-2.5"
+        style={{ background: "rgba(102,126,234,0.06)", border: "1px solid rgba(102,126,234,0.2)" }}
+      >
+        <p className="text-xs font-bold uppercase tracking-wider text-violet-400">What happens next</p>
+        {[
+          "Analyst reviews the automation plan and approves or requests changes",
+          "No changes are made to your environment until approval is granted",
+          "You receive an in-app and email notification with the decision",
+          "All actions will be logged in the SecureWatch360 audit trail",
+        ].map((step, i) => (
+          <div key={i} className="flex items-start gap-2.5 text-xs text-slate-400">
+            <Check size={12} className="text-violet-400 mt-0.5 shrink-0" />
+            {step}
+          </div>
+        ))}
+      </div>
+
+      {/* Reference ID */}
       <div
         className="rounded-xl px-5 py-3"
-        style={{ background: "rgba(176,196,222,0.06)", border: "1px solid rgba(176,196,222,0.15)" }}
+        style={{ background: "rgba(102,126,234,0.08)", border: "1px solid #334155" }}
       >
-        <p className="text-xs uppercase tracking-wider font-semibold mb-1" style={{ color: "#8ab4d4" }}>
-          Reference ID
-        </p>
-        <p className="font-mono text-sm font-bold" style={{ color: "#00e5ff" }}>
-          {refId}
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Reference ID</p>
+        <p className="font-mono text-sm font-bold text-violet-300">{refId}</p>
       </div>
 
       <button
         onClick={onClose}
-        className="px-8 py-3 rounded-xl text-sm font-bold mt-2"
+        className="px-8 py-3 rounded-xl text-sm font-bold transition-opacity hover:opacity-90"
         style={{
-          background: "linear-gradient(135deg, #1565c0, #1e88e5)",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
           color: "#fff",
-          border: "none",
-          boxShadow: "0 4px 20px rgba(21,101,192,0.3)",
+          boxShadow: "0 4px 20px rgba(102,126,234,0.3)",
         }}
       >
         Close
