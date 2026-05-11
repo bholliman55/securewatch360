@@ -250,19 +250,7 @@ export function PostureRoadmapClient({
               Your current cybersecurity posture, where you need to be, and the prioritized path to close the gap.
             </p>
           </div>
-          <div className="flex gap-3 flex-wrap sm:flex-nowrap items-start">
-            {/* Generate new assessment button — hidden in demo mode */}
-            {!isDemo && (
-              <button
-                onClick={() => setShowGenerateModal(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 whitespace-nowrap self-center"
-                style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", color: "#fff" }}
-              >
-                <RefreshCw size={14} />
-                New Assessment
-              </button>
-            )}
-
+          <div className="flex gap-4 flex-wrap sm:flex-nowrap">
             <div className="text-center px-4 py-2 rounded-xl" style={{ background: "rgba(102,126,234,0.12)", border: "1px solid rgba(102,126,234,0.25)" }}>
               <div className="text-2xl font-bold" style={{ color: "#a78bfa" }}>
                 {currentState.maturityScore}

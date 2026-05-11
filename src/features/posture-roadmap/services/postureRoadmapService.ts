@@ -349,6 +349,17 @@ export async function generateNewPostureAssessment(
   // Proceed even when all inputs are zero — the scoring engine handles it gracefully
   // and marks the result isEstimated=true. Throwing NO_SCAN_DATA here would prevent
   // new tenants from ever generating a baseline assessment.
+  if (
+    input.openFindings.length === 0 &&
+    input.totalAssets === 0 &&
+    input.totalUsers === 0 &&
+    input.controlsMapped === 0
+  ) {
+    throw new PostureRoadmapError(
+      `No scan data found for tenant ${tenantId}. Run a scan before generating a posture assessment.`,
+      "NO_SCAN_DATA"
+    );
+  }
 
   const result = generatePostureAssessment(input, targetFramework, {
     clientId,
