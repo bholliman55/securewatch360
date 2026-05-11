@@ -250,32 +250,62 @@ export function PostureRoadmapClient({
               Your current cybersecurity posture, where you need to be, and the prioritized path to close the gap.
             </p>
           </div>
-          <div className="flex gap-4 flex-wrap sm:flex-nowrap">
-            <div className="text-center px-4 py-2 rounded-xl" style={{ background: "rgba(102,126,234,0.12)", border: "1px solid rgba(102,126,234,0.25)" }}>
-              <div className="text-2xl font-bold" style={{ color: "#a78bfa" }}>
-                {currentState.maturityScore}
+          <div className="flex gap-2 sm:gap-3 flex-wrap items-start">
+            {/* Generate new assessment button — hidden in demo mode */}
+            {!isDemo && (
+              <button
+                onClick={() => setShowGenerateModal(true)}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 whitespace-nowrap self-center"
+                style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", color: "#fff" }}
+              >
+                <RefreshCw size={14} />
+                <span className="hidden sm:inline">New Assessment</span>
+                <span className="sm:hidden">Assess</span>
+              </button>
+            )}
+
+            {[
+              {
+                value: currentState.maturityScore,
+                label: "Maturity",
+                color: "#a78bfa",
+                bg: "rgba(102,126,234,0.12)",
+                border: "rgba(102,126,234,0.25)",
+              },
+              {
+                value: criticalItems,
+                label: "Critical",
+                color: "#ef4444",
+                bg: "rgba(239,68,68,0.1)",
+                border: "rgba(239,68,68,0.25)",
+              },
+              {
+                value: `${completedPct}%`,
+                label: "Progress",
+                color: "#22c55e",
+                bg: "rgba(34,197,94,0.1)",
+                border: "rgba(34,197,94,0.25)",
+              },
+              {
+                value: automationAvailableCount,
+                label: "Automate",
+                color: "#22c55e",
+                bg: "rgba(34,197,94,0.08)",
+                border: "rgba(34,197,94,0.2)",
+                icon: <Zap size={14} className="inline mr-0.5" />,
+              },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="text-center px-3 sm:px-4 py-2 rounded-xl min-w-[60px]"
+                style={{ background: s.bg, border: `1px solid ${s.border}` }}
+              >
+                <div className="text-xl sm:text-2xl font-bold tabular-nums" style={{ color: s.color }}>
+                  {s.icon}{s.value}
+                </div>
+                <div className="text-xs text-slate-400">{s.label}</div>
               </div>
-              <div className="text-xs text-slate-400">Maturity Score</div>
-            </div>
-            <div className="text-center px-4 py-2 rounded-xl" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)" }}>
-              <div className="text-2xl font-bold text-red-500">
-                {criticalItems}
-              </div>
-              <div className="text-xs text-slate-400">Critical Items</div>
-            </div>
-            <div className="text-center px-4 py-2 rounded-xl" style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)" }}>
-              <div className="text-2xl font-bold text-green-500">
-                {completedPct}%
-              </div>
-              <div className="text-xs text-slate-400">Roadmap Progress</div>
-            </div>
-            <div className="text-center px-4 py-2 rounded-xl" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
-              <div className="text-2xl font-bold text-green-500 flex items-center justify-center gap-1">
-                <Zap size={18} />
-                {automationAvailableCount}
-              </div>
-              <div className="text-xs text-slate-400">Automatable</div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
