@@ -16,6 +16,7 @@ import { EmptyState } from "@/components/posture-roadmap/EmptyState";
 import { ErrorState } from "@/components/posture-roadmap/ErrorState";
 import { AutomationModal } from "@/components/posture-roadmap/AutomationModal";
 import type { ExecutionMode } from "@/components/posture-roadmap/AutomationModal";
+import { GenerateAssessmentModal } from "@/components/posture-roadmap/GenerateAssessmentModal";
 
 type Tab = "current" | "target" | "gaps" | "roadmap";
 
@@ -71,6 +72,9 @@ export function PostureRoadmapClient({
 
   // Automation modal state
   const [automationItem, setAutomationItem] = useState<PostureRoadmapItem | null>(null);
+
+  // Generate Assessment modal state
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
 
   // Toast state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -182,22 +186,38 @@ export function PostureRoadmapClient({
   // — Empty / no-data state
   if (!hasData) {
     return (
-      <EmptyState
-        tenantId={tenantId}
-        onRunAssessment={handleRunAssessment}
-        isGenerating={isGenerating}
-      />
+      <>
+        <EmptyState
+          tenantId={tenantId}
+          onRunAssessment={() => setShowGenerateModal(true)}
+          isGenerating={isGenerating}
+        />
+        <GenerateAssessmentModal
+          isOpen={showGenerateModal}
+          tenantId={tenantId}
+          onClose={() => setShowGenerateModal(false)}
+          onComplete={() => { setShowGenerateModal(false); window.location.reload(); }}
+        />
+      </>
     );
   }
 
   // — Guard: type narrowing for fully-populated data
   if (!currentState || !targetState) {
     return (
-      <EmptyState
-        tenantId={tenantId}
-        onRunAssessment={handleRunAssessment}
-        isGenerating={isGenerating}
-      />
+      <>
+        <EmptyState
+          tenantId={tenantId}
+          onRunAssessment={() => setShowGenerateModal(true)}
+          isGenerating={isGenerating}
+        />
+        <GenerateAssessmentModal
+          isOpen={showGenerateModal}
+          tenantId={tenantId}
+          onClose={() => setShowGenerateModal(false)}
+          onComplete={() => { setShowGenerateModal(false); window.location.reload(); }}
+        />
+      </>
     );
   }
 
