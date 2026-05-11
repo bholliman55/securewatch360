@@ -51,7 +51,6 @@ async function PostureRoadmapContent({ tenantId, targetFramework }: { tenantId: 
       totalRoadmapItems={summary.ok ? (summary.totalRoadmapItems ?? 0) : 0}
       criticalItems={summary.ok ? (summary.criticalItems ?? 0) : 0}
       automationAvailableCount={summary.ok ? (summary.automationAvailableCount ?? 0) : 0}
-      hasData={hasData}
     />
   );
 }

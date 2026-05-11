@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Lock, Server, Globe, Bug, Database, Activity, ClipboardCheck, GraduationCap, AlertTriangle, Zap, ChevronDown, ChevronUp, Search } from "lucide-react";
 import type { PostureRoadmapItem, RoadmapStatus, RoadmapCategory } from "@/types/posture-roadmap";
 import { ROADMAP_CATEGORY_LABELS } from "@/types/posture-roadmap";
 
@@ -10,16 +11,28 @@ interface Props {
   onAutomate?: (item: PostureRoadmapItem) => void;
 }
 
+const CATEGORY_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+  identity_access: Lock,
+  endpoint_security: Server,
+  network_security: Globe,
+  vulnerability_management: Bug,
+  backup_recovery: Database,
+  monitoring_logging: Activity,
+  compliance_evidence: ClipboardCheck,
+  security_awareness: GraduationCap,
+  incident_response: AlertTriangle,
+};
+
 const PRIORITY_STYLES: Record<string, { bg: string; color: string; border: string }> = {
   critical: { bg: "#ef444422", color: "#ef4444", border: "#ef444444" },
   high:     { bg: "#f9731622", color: "#f97316", border: "#f9731644" },
   medium:   { bg: "#eab30822", color: "#eab308", border: "#eab30844" },
-  low:      { bg: "#22c55e22", color: "#22c55e", border: "#22c55e44" },
+  low:      { bg: "#3b82f622", color: "#3b82f6", border: "#3b82f644" },
 };
 
 const STATUS_STYLES: Record<RoadmapStatus, { label: string; color: string; bg: string }> = {
-  not_started: { label: "Not Started", color: "#8ab4d4", bg: "rgba(138,180,212,0.12)" },
-  in_progress: { label: "In Progress", color: "#29b6f6", bg: "rgba(41,182,246,0.12)" },
+  not_started: { label: "Not Started", color: "#94a3b8", bg: "rgba(148,163,184,0.12)" },
+  in_progress: { label: "In Progress", color: "#a78bfa", bg: "rgba(167,139,250,0.12)" },
   completed:   { label: "Completed",   color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
   deferred:    { label: "Deferred",    color: "#6b7280", bg: "rgba(107,114,128,0.12)" },
 };
@@ -31,21 +44,9 @@ const EFFORT_LABELS: Record<string, string> = {
 };
 
 const AUTOMATION_STYLES = {
-  now:    { label: "⚡ Automate Now",  bg: "#22c55e22", color: "#22c55e", border: "#22c55e44" },
-  later:  { label: "🔮 Automate Later", bg: "#eab30822", color: "#eab308", border: "#eab30844" },
-  not_yet:{ label: "Manual",           bg: "rgba(176,196,222,0.08)", color: "#8ab4d4", border: "rgba(176,196,222,0.2)" },
-};
-
-const CATEGORY_ICONS: Record<string, string> = {
-  identity_access: "🔐",
-  endpoint_security: "💻",
-  network_security: "🌐",
-  vulnerability_management: "🔍",
-  backup_recovery: "💾",
-  monitoring_logging: "📊",
-  compliance_evidence: "📋",
-  security_awareness: "🎓",
-  incident_response: "🚨",
+  now:     { label: "Automate Now",   bg: "#22c55e22", color: "#22c55e", border: "#22c55e44" },
+  later:   { label: "Automate Later", bg: "#eab30822", color: "#eab308", border: "#eab30844" },
+  not_yet: { label: "Manual",         bg: "rgba(102,126,234,0.08)", color: "#94a3b8", border: "rgba(102,126,234,0.2)" },
 };
 
 function PriorityBadge({ priority }: { priority: string }) {
@@ -84,7 +85,7 @@ function StatusSelect({
         });
         onUpdate(itemId, newStatus);
       } catch {
-        // silently fail; optimistic update can be reverted in a future iteration
+        // silently fail
       }
     });
   }
@@ -105,7 +106,7 @@ function StatusSelect({
     >
       {(Object.entries(STATUS_STYLES) as [RoadmapStatus, (typeof STATUS_STYLES)[RoadmapStatus]][]).map(
         ([val, meta]) => (
-          <option key={val} value={val} style={{ background: "#0d1e33", color: "#fff" }}>
+          <option key={val} value={val} style={{ background: "#0f172a", color: "#f1f5f9" }}>
             {meta.label}
           </option>
         )
@@ -126,45 +127,51 @@ function RoadmapCard({
   onAutomate?: (item: PostureRoadmapItem) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const CategoryIcon = CATEGORY_ICONS[item.category] ?? AlertTriangle;
   const auto = AUTOMATION_STYLES[item.automation_level];
   const impactColor =
     item.estimated_impact_score >= 80 ? "#22c55e"
     : item.estimated_impact_score >= 60 ? "#eab308"
-    : "#8ab4d4";
+    : "#94a3b8";
+
+  const borderColor =
+    item.priority === "critical" ? "rgba(239,68,68,0.35)"
+    : item.priority === "high" ? "rgba(249,115,22,0.3)"
+    : "#334155";
+
+  const leftAccent =
+    item.priority === "critical" ? "#ef4444"
+    : item.priority === "high" ? "#f97316"
+    : "#667eea";
 
   return (
     <div
-      className="rounded-2xl overflow-hidden transition-all"
+      className="rounded-2xl overflow-hidden shadow-lg transition-all"
       style={{
-        background: "linear-gradient(175deg, #0d1e33 0%, #112d4e 100%)",
-        border: `1px solid ${
-          item.priority === "critical" ? "rgba(239,68,68,0.3)"
-          : item.priority === "high" ? "rgba(249,115,22,0.25)"
-          : "rgba(176,196,222,0.18)"
-        }`,
+        background: "#1e293b",
+        border: `1px solid ${borderColor}`,
+        borderLeft: `4px solid ${leftAccent}`,
       }}
     >
       {/* Card header */}
       <div className="px-5 py-4 flex items-start gap-3">
-        <span className="text-lg mt-0.5 shrink-0">
-          {CATEGORY_ICONS[item.category] ?? "⚙️"}
-        </span>
+        <CategoryIcon size={18} className="mt-0.5 shrink-0 text-slate-400" />
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1.5">
             <PriorityBadge priority={item.priority} />
             {item.related_framework && (
               <span
                 className="text-xs font-mono px-1.5 py-0.5 rounded"
-                style={{ background: "rgba(41,182,246,0.12)", color: "#29b6f6" }}
+                style={{ background: "rgba(102,126,234,0.15)", color: "#a78bfa" }}
               >
                 {item.related_framework}
               </span>
             )}
-            <span className="text-xs" style={{ color: "#8ab4d4" }}>
+            <span className="text-xs text-slate-400">
               {ROADMAP_CATEGORY_LABELS[item.category]}
             </span>
           </div>
-          <p className="text-sm font-semibold leading-snug" style={{ color: "#e6edf5" }}>
+          <p className="text-sm font-semibold leading-snug text-slate-100">
             {item.title}
           </p>
         </div>
@@ -177,10 +184,10 @@ function RoadmapCard({
           />
           <button
             onClick={() => setExpanded((v) => !v)}
-            className="text-xs px-2 py-1 rounded-lg"
-            style={{ color: "#8ab4d4", background: "rgba(176,196,222,0.08)", border: "1px solid rgba(176,196,222,0.15)" }}
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: "#94a3b8", background: "rgba(102,126,234,0.08)", border: "1px solid #334155" }}
           >
-            {expanded ? "▲" : "▼"}
+            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
         </div>
       </div>
@@ -188,20 +195,20 @@ function RoadmapCard({
       {/* Metrics row */}
       <div
         className="px-5 py-2.5 flex flex-wrap gap-4 items-center"
-        style={{ borderTop: "1px solid rgba(176,196,222,0.08)", background: "rgba(176,196,222,0.03)" }}
+        style={{ borderTop: "1px solid #334155", background: "rgba(102,126,234,0.03)" }}
       >
         <div className="flex items-center gap-1.5">
-          <span className="text-xs" style={{ color: "#8ab4d4" }}>Effort:</span>
-          <span className="text-xs font-semibold" style={{ color: "#e6edf5" }}>
+          <span className="text-xs text-slate-400">Effort:</span>
+          <span className="text-xs font-semibold text-slate-100">
             {EFFORT_LABELS[item.estimated_effort]}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-xs" style={{ color: "#8ab4d4" }}>Impact:</span>
+          <span className="text-xs text-slate-400">Impact:</span>
           <span className="text-xs font-bold tabular-nums" style={{ color: impactColor }}>
             {item.estimated_impact_score}/100
           </span>
-          <div className="w-16 h-1.5 rounded-full" style={{ background: "rgba(176,196,222,0.15)" }}>
+          <div className="w-16 h-1.5 rounded-full" style={{ background: "rgba(102,126,234,0.15)" }}>
             <div
               className="h-1.5 rounded-full"
               style={{ width: `${item.estimated_impact_score}%`, background: impactColor }}
@@ -210,9 +217,10 @@ function RoadmapCard({
         </div>
         <div className="ml-auto">
           <span
-            className="text-xs font-bold px-2.5 py-1 rounded-full"
+            className="text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1"
             style={{ background: auto.bg, color: auto.color, border: `1px solid ${auto.border}` }}
           >
+            {item.automation_level === "now" && <Zap size={10} />}
             {auto.label}
           </span>
         </div>
@@ -220,35 +228,28 @@ function RoadmapCard({
 
       {/* Expanded details */}
       {expanded && (
-        <div
-          className="px-5 py-4 space-y-3"
-          style={{ borderTop: "1px solid rgba(176,196,222,0.1)" }}
-        >
+        <div className="px-5 py-4 space-y-3" style={{ borderTop: "1px solid #334155" }}>
           {item.current_state && (
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "#8ab4d4" }}>
-                Current State
-              </p>
-              <p className="text-sm" style={{ color: "#e6edf5" }}>{item.current_state}</p>
+              <p className="text-xs font-bold uppercase tracking-wider mb-1 text-slate-400">Current State</p>
+              <p className="text-sm text-slate-100">{item.current_state}</p>
             </div>
           )}
           {item.desired_state && (
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "#8ab4d4" }}>
-                Desired State
-              </p>
-              <p className="text-sm" style={{ color: "#e6edf5" }}>{item.desired_state}</p>
+              <p className="text-xs font-bold uppercase tracking-wider mb-1 text-slate-400">Desired State</p>
+              <p className="text-sm text-slate-100">{item.desired_state}</p>
             </div>
           )}
           {item.recommended_action && (
             <div
               className="rounded-xl p-3"
-              style={{ background: "rgba(41,182,246,0.06)", border: "1px solid rgba(41,182,246,0.15)" }}
+              style={{ background: "rgba(102,126,234,0.08)", border: "1px solid rgba(102,126,234,0.2)" }}
             >
-              <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "#29b6f6" }}>
+              <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "#a78bfa" }}>
                 Recommended Action
               </p>
-              <p className="text-sm" style={{ color: "#e6edf5" }}>{item.recommended_action}</p>
+              <p className="text-sm text-slate-100">{item.recommended_action}</p>
             </div>
           )}
           {item.automation_level === "now" && (
@@ -256,12 +257,12 @@ function RoadmapCard({
               className="rounded-xl p-3 flex items-start gap-3"
               style={{ background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.2)" }}
             >
-              <span className="text-lg shrink-0">⚡</span>
+              <Zap size={16} className="shrink-0 text-green-400 mt-0.5" />
               <div className="flex-1">
-                <p className="text-xs font-bold" style={{ color: "#22c55e" }}>
+                <p className="text-xs font-bold text-green-400">
                   SecureWatch360 Can Automate This Now
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: "#86efac" }}>
+                <p className="text-xs mt-0.5 text-green-300">
                   This control can be automatically remediated or monitored using the SecureWatch360 platform.
                   Mark as In Progress and assign to the automation engine to begin.
                 </p>
@@ -269,16 +270,15 @@ function RoadmapCard({
               {onAutomate && (
                 <button
                   onClick={() => onAutomate(item)}
-                  className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+                  className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg transition-opacity hover:opacity-90"
                   style={{
-                    background: "linear-gradient(135deg, #00bcd4, #0097a7)",
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                     color: "#fff",
                     border: "none",
-                    boxShadow: "0 2px 12px rgba(0,229,255,0.25)",
                     whiteSpace: "nowrap",
                   }}
                 >
-                  ⚡ Automate
+                  <span className="flex items-center gap-1"><Zap size={11} /> Automate</span>
                 </button>
               )}
             </div>
@@ -287,14 +287,14 @@ function RoadmapCard({
             <div className="flex justify-end">
               <button
                 onClick={() => onAutomate(item)}
-                className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
                 style={{
-                  background: "rgba(234,179,8,0.1)",
-                  color: "#eab308",
-                  border: "1px solid rgba(234,179,8,0.3)",
+                  background: "rgba(102,126,234,0.1)",
+                  color: "#a78bfa",
+                  border: "1px solid rgba(102,126,234,0.3)",
                 }}
               >
-                🔮 Automate with SecureWatch360
+                Automate with SecureWatch360
               </button>
             </div>
           )}
@@ -306,6 +306,12 @@ function RoadmapCard({
 
 const ALL_STATUSES: RoadmapStatus[] = ["not_started", "in_progress", "completed", "deferred"];
 const ALL_CATEGORIES = Object.keys(ROADMAP_CATEGORY_LABELS) as RoadmapCategory[];
+
+const SELECT_STYLE = {
+  background: "#0f172a",
+  color: "#f1f5f9",
+  border: "1px solid #334155",
+};
 
 export function RoadmapPanel({ items: initialItems, tenantId, onAutomate }: Props) {
   const [items, setItems] = useState<PostureRoadmapItem[]>(initialItems);
@@ -334,28 +340,29 @@ export function RoadmapPanel({ items: initialItems, tenantId, onAutomate }: Prop
     <div className="space-y-6 animate-fade-in">
       {/* Stats bar */}
       <div
-        className="rounded-2xl px-6 py-4 flex flex-wrap gap-6 items-center"
+        className="rounded-2xl px-6 py-4 flex flex-wrap gap-6 items-center shadow-lg"
         style={{
-          background: "linear-gradient(175deg, #0d1e33 0%, #112d4e 100%)",
-          border: "1px solid rgba(41,182,246,0.2)",
+          background: "#1e293b",
+          border: "1px solid rgba(102,126,234,0.2)",
+          borderLeft: "4px solid #667eea",
         }}
       >
         <div>
           <p className="sw-kicker">Roadmap</p>
-          <p className="text-xs mt-0.5" style={{ color: "#8ab4d4" }}>
+          <p className="text-xs mt-0.5 text-slate-400">
             {items.length} items across {new Set(items.map((i) => i.category)).size} security domains
           </p>
         </div>
         <div className="flex gap-5 ml-auto flex-wrap">
           {[
-            { label: "Total", value: items.length, color: "#8ab4d4" },
-            { label: "Critical", value: criticalCount, color: "#ef4444" },
-            { label: "Completed", value: completedCount, color: "#22c55e" },
-            { label: "⚡ Automatable", value: automationCount, color: "#22c55e" },
+            { label: "Total",       value: items.length,    color: "#94a3b8" },
+            { label: "Critical",    value: criticalCount,   color: "#ef4444" },
+            { label: "Completed",   value: completedCount,  color: "#22c55e" },
+            { label: "Automatable", value: automationCount, color: "#22c55e" },
           ].map((s) => (
             <div key={s.label} className="text-center">
               <div className="text-2xl font-bold tabular-nums" style={{ color: s.color }}>{s.value}</div>
-              <div className="text-xs" style={{ color: "#8ab4d4" }}>{s.label}</div>
+              <div className="text-xs text-slate-400">{s.label}</div>
             </div>
           ))}
         </div>
@@ -367,7 +374,7 @@ export function RoadmapPanel({ items: initialItems, tenantId, onAutomate }: Prop
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value as RoadmapStatus | "")}
           className="text-xs rounded-lg px-3 py-2 appearance-none"
-          style={{ background: "#0d1e33", color: "#e6edf5", border: "1px solid rgba(176,196,222,0.2)" }}
+          style={SELECT_STYLE}
         >
           <option value="">All statuses</option>
           {ALL_STATUSES.map((s) => (
@@ -379,7 +386,7 @@ export function RoadmapPanel({ items: initialItems, tenantId, onAutomate }: Prop
           value={filterPriority}
           onChange={(e) => setFilterPriority(e.target.value)}
           className="text-xs rounded-lg px-3 py-2 appearance-none"
-          style={{ background: "#0d1e33", color: "#e6edf5", border: "1px solid rgba(176,196,222,0.2)" }}
+          style={SELECT_STYLE}
         >
           <option value="">All priorities</option>
           {["critical", "high", "medium", "low"].map((p) => (
@@ -391,7 +398,7 @@ export function RoadmapPanel({ items: initialItems, tenantId, onAutomate }: Prop
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value as RoadmapCategory | "")}
           className="text-xs rounded-lg px-3 py-2 appearance-none"
-          style={{ background: "#0d1e33", color: "#e6edf5", border: "1px solid rgba(176,196,222,0.2)" }}
+          style={SELECT_STYLE}
         >
           <option value="">All categories</option>
           {ALL_CATEGORIES.map((c) => (
@@ -402,9 +409,9 @@ export function RoadmapPanel({ items: initialItems, tenantId, onAutomate }: Prop
         <label
           className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg cursor-pointer select-none"
           style={{
-            background: showAutomationOnly ? "rgba(34,197,94,0.12)" : "#0d1e33",
-            color: showAutomationOnly ? "#22c55e" : "#8ab4d4",
-            border: `1px solid ${showAutomationOnly ? "rgba(34,197,94,0.35)" : "rgba(176,196,222,0.2)"}`,
+            background: showAutomationOnly ? "rgba(34,197,94,0.12)" : "#0f172a",
+            color: showAutomationOnly ? "#22c55e" : "#94a3b8",
+            border: `1px solid ${showAutomationOnly ? "rgba(34,197,94,0.35)" : "#334155"}`,
           }}
         >
           <input
@@ -413,29 +420,33 @@ export function RoadmapPanel({ items: initialItems, tenantId, onAutomate }: Prop
             onChange={(e) => setShowAutomationOnly(e.target.checked)}
             className="sr-only"
           />
-          ⚡ Automatable only
+          <Zap size={12} />
+          Automatable only
         </label>
 
         {(filterStatus || filterPriority || filterCategory || showAutomationOnly) && (
           <button
             onClick={() => { setFilterStatus(""); setFilterPriority(""); setFilterCategory(""); setShowAutomationOnly(false); }}
-            className="text-xs px-3 py-2 rounded-lg"
-            style={{ color: "#8ab4d4", background: "rgba(176,196,222,0.08)", border: "1px solid rgba(176,196,222,0.15)" }}
+            className="text-xs px-3 py-2 rounded-lg transition-colors hover:bg-slate-700"
+            style={{ color: "#94a3b8", background: "rgba(102,126,234,0.08)", border: "1px solid #334155" }}
           >
             Clear filters
           </button>
         )}
 
-        <span className="ml-auto text-xs self-center" style={{ color: "#8ab4d4" }}>
+        <span className="ml-auto text-xs self-center text-slate-400">
           {filtered.length} of {items.length} shown
         </span>
       </div>
 
       {/* Cards */}
       {filtered.length === 0 ? (
-        <div className="text-center py-12" style={{ color: "#8ab4d4" }}>
-          <p className="text-3xl mb-2">🔍</p>
-          <p className="text-sm">No items match the current filters.</p>
+        <div
+          className="text-center py-12 rounded-2xl"
+          style={{ background: "#1e293b", border: "1px solid #334155" }}
+        >
+          <Search size={32} className="mx-auto mb-2 text-slate-600" />
+          <p className="text-sm text-slate-400">No items match the current filters.</p>
         </div>
       ) : (
         <div className="space-y-3">
