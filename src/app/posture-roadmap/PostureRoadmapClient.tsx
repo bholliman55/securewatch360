@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Shield, Target, Zap, Map } from "lucide-react";
+import { Shield, Target, Zap, Map, RefreshCw, Info } from "lucide-react";
 import type {
   PostureCurrentState,
   PostureTargetState,
@@ -38,6 +38,8 @@ interface Props {
   criticalItems: number;
   automationAvailableCount: number;
   error?: string;
+  /** When true: hides generate-assessment actions and suppresses live API calls. */
+  isDemo?: boolean;
 }
 
 const TABS: { id: Tab; label: string; Icon: React.ComponentType<{ size?: number }> }[] = [
@@ -58,6 +60,7 @@ export function PostureRoadmapClient({
   criticalItems,
   automationAvailableCount,
   error: initialError,
+  isDemo = false,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("current");
   const [targetFramework, setTargetFramework] = useState(initialTargetFramework);
@@ -89,6 +92,7 @@ export function PostureRoadmapClient({
   const hasData = !!(currentState || targetState || roadmapItems.length > 0);
 
   async function loadData() {
+    if (isDemo) return;
     setIsLoading(true);
     setError(null);
     try {
@@ -133,6 +137,10 @@ export function PostureRoadmapClient({
   }
 
   async function handleFrameworkChange(fw: string) {
+    if (isDemo) {
+      showToast("Framework switching is available in the full platform.");
+      return;
+    }
     if (fw === targetFramework || loadingTarget) return;
     setTargetFramework(fw);
     setLoadingTarget(true);
@@ -301,6 +309,20 @@ export function PostureRoadmapClient({
         })}
       </div>
 
+      {/* Estimated data banner */}
+      {currentState.isEstimated && (
+        <div
+          className="rounded-xl px-4 py-3 flex items-center gap-3 text-sm"
+          style={{ background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.25)", borderLeft: "3px solid #eab308" }}
+        >
+          <Info size={15} className="text-yellow-400 shrink-0" />
+          <p className="text-yellow-300">
+            <strong>Estimated assessment</strong> — limited scan data was available. Scores and gaps are based on best-guess defaults.
+            Run a full scan and regenerate for accurate results.
+          </p>
+        </div>
+      )}
+
       {/* Tab content */}
       <div>
         {activeTab === "current" && <CurrentStatePanel data={currentState} />}
@@ -330,6 +352,16 @@ export function PostureRoadmapClient({
           />
         )}
       </div>
+
+      {/* Generate Assessment modal — suppressed in demo mode */}
+      {!isDemo && (
+        <GenerateAssessmentModal
+          isOpen={showGenerateModal}
+          tenantId={tenantId}
+          onClose={() => setShowGenerateModal(false)}
+          onComplete={() => { setShowGenerateModal(false); window.location.reload(); }}
+        />
+      )}
 
       {/* Automation modal */}
       <AutomationModal

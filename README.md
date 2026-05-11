@@ -412,6 +412,35 @@ npx tsx scripts/seed-v4.ts --no-sample-finding
 
 Policy Rego in the seed is loaded from `policies/rego/seed/*.rego` (edit files, re-run `npm run seed:v4`).
 
+### Posture Roadmap demo data (Acme Precision Manufacturing)
+
+Seeds a realistic investor-walkthrough scenario: Acme Precision Manufacturing, CMMC L2 target, maturity score 42, 6 framework readiness scores, 10 posture gaps, and 13 roadmap action items across Fix First / Next 30 / 60 / 90 Days buckets.
+
+**Seed demo data:**
+
+```bash
+npm run seed:posture-roadmap-demo
+```
+
+The script auto-creates an "Acme Precision Manufacturing" tenant if none exists, or finds any tenant whose name contains "acme" or "demo". Pass `--tenant <uuid>` to target a specific tenant:
+
+```bash
+node scripts/seed-posture-roadmap-demo.mjs --tenant <uuid>
+```
+
+**Reset and re-seed:**
+
+```bash
+npm run reset:posture-roadmap-demo   # clears all posture roadmap tables for the Acme tenant
+npm run seed:posture-roadmap-demo    # re-seeds fresh demo data
+```
+
+The reset script deletes in FK-safe order (`posture_roadmap_action_items` → `posture_gaps` → `framework_readiness_scores` → `posture_score_history` → `posture_assessments` → `posture_roadmap_items` → `posture_target_config`) without removing the tenant record.
+
+Both scripts require `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in env (service role bypasses RLS — local/CI use only).
+
+**View the demo:** navigate to `/posture-roadmap?tenantId=<uuid>` with the seeded tenant ID.
+
 ### Policy pack + IaC + Rego validation
 
 Validates the **framework catalog** SQL export shape (`npm run qa:policy-pack`), the **in-repo reference pack** under `iac/securewatch360-policy-pack/` (Terraform + Ansible), and **OPA syntax** for `policies/rego/**` when the CLIs are installed.

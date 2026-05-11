@@ -346,6 +346,9 @@ export async function generateNewPostureAssessment(
 
   const input = await buildPostureScoringInput(tenantId, clientId);
 
+  // Proceed even when all inputs are zero — the scoring engine handles it gracefully
+  // and marks the result isEstimated=true. Throwing NO_SCAN_DATA here would prevent
+  // new tenants from ever generating a baseline assessment.
   if (
     input.openFindings.length === 0 &&
     input.totalAssets === 0 &&
