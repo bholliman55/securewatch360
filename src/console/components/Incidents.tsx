@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   AlertTriangle, AlertCircle, Clock, CheckCircle, RefreshCw, Plus,
-  X, Users, BookOpen, Bell, ChevronRight, Phone, Mail, Slack,
+  X, Users, BookOpen, Bell, ChevronRight, Phone, Mail, Hash as Slack,
   ShieldCheck, Edit2, Trash2, Save, PhoneCall,
 } from 'lucide-react';
 import { useIncidents } from '../hooks/useIncidents';
