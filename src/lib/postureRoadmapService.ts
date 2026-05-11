@@ -216,6 +216,8 @@ export async function computeCurrentState(
   const severityDeduction = Math.min(20, criticalCount * 3 + highCount);
   const maturityScore = clamp(rawScore - severityDeduction);
 
+  const isEstimated = totalControls === 0 && openFindings.length === 0;
+
   return {
     maturityScore,
     maturityLabel: maturityLabel(maturityScore),
@@ -227,6 +229,7 @@ export async function computeCurrentState(
     criticalFindingsCount: criticalCount,
     highFindingsCount: highCount,
     identityGapsCount: identityGaps,
+    isEstimated,
   };
 }
 
