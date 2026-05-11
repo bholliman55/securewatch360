@@ -23,11 +23,11 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ size?: number; classN
   incident_response: AlertTriangle,
 };
 
-const PRIORITY_STYLES: Record<string, { bg: string; color: string; border: string }> = {
-  critical: { bg: "#ef444422", color: "#ef4444", border: "#ef444444" },
-  high:     { bg: "#f9731622", color: "#f97316", border: "#f9731644" },
-  medium:   { bg: "#eab30822", color: "#eab308", border: "#eab30844" },
-  low:      { bg: "#3b82f622", color: "#3b82f6", border: "#3b82f644" },
+const PRIORITY_STYLES: Record<string, { bg: string; color: string; border: string; label: string }> = {
+  critical: { bg: "#ef444422", color: "#ef4444", border: "#ef444444", label: "Critical" },
+  high:     { bg: "#f9731622", color: "#f97316", border: "#f9731644", label: "High"     },
+  medium:   { bg: "#eab30822", color: "#eab308", border: "#eab30844", label: "Medium"   },
+  low:      { bg: "#3b82f622", color: "#3b82f6", border: "#3b82f644", label: "Low"      },
 };
 
 const STATUS_STYLES: Record<RoadmapStatus, { label: string; color: string; bg: string }> = {
@@ -38,9 +38,9 @@ const STATUS_STYLES: Record<RoadmapStatus, { label: string; color: string; bg: s
 };
 
 const EFFORT_LABELS: Record<string, string> = {
-  low: "Low effort",
-  medium: "Med effort",
-  high: "High effort",
+  low:    "Low Effort",
+  medium: "Medium Effort",
+  high:   "High Effort",
 };
 
 const AUTOMATION_STYLES = {
@@ -53,10 +53,10 @@ function PriorityBadge({ priority }: { priority: string }) {
   const s = PRIORITY_STYLES[priority] ?? PRIORITY_STYLES.medium;
   return (
     <span
-      className="text-xs font-bold uppercase px-2 py-0.5 rounded-full"
+      className="text-xs font-bold px-2 py-0.5 rounded-full"
       style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}
     >
-      {priority}
+      {s.label}
     </span>
   );
 }
@@ -369,12 +369,13 @@ export function RoadmapPanel({ items: initialItems, tenantId, onAutomate }: Prop
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value as RoadmapStatus | "")}
-          className="text-xs rounded-lg px-3 py-2 appearance-none"
+          className="text-xs rounded-lg px-2 sm:px-3 py-2 appearance-none"
           style={SELECT_STYLE}
+          aria-label="Filter by status"
         >
           <option value="">All statuses</option>
           {ALL_STATUSES.map((s) => (
@@ -385,29 +386,31 @@ export function RoadmapPanel({ items: initialItems, tenantId, onAutomate }: Prop
         <select
           value={filterPriority}
           onChange={(e) => setFilterPriority(e.target.value)}
-          className="text-xs rounded-lg px-3 py-2 appearance-none"
+          className="text-xs rounded-lg px-2 sm:px-3 py-2 appearance-none"
           style={SELECT_STYLE}
+          aria-label="Filter by priority"
         >
           <option value="">All priorities</option>
           {["critical", "high", "medium", "low"].map((p) => (
-            <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+            <option key={p} value={p}>{PRIORITY_STYLES[p]?.label ?? p}</option>
           ))}
         </select>
 
         <select
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value as RoadmapCategory | "")}
-          className="text-xs rounded-lg px-3 py-2 appearance-none"
+          className="text-xs rounded-lg px-2 sm:px-3 py-2 appearance-none hidden sm:block"
           style={SELECT_STYLE}
+          aria-label="Filter by category"
         >
-          <option value="">All categories</option>
+          <option value="">All domains</option>
           {ALL_CATEGORIES.map((c) => (
             <option key={c} value={c}>{ROADMAP_CATEGORY_LABELS[c]}</option>
           ))}
         </select>
 
         <label
-          className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg cursor-pointer select-none"
+          className="flex items-center gap-1.5 text-xs px-2.5 sm:px-3 py-2 rounded-lg cursor-pointer select-none"
           style={{
             background: showAutomationOnly ? "rgba(34,197,94,0.12)" : "#0f172a",
             color: showAutomationOnly ? "#22c55e" : "#94a3b8",
@@ -420,22 +423,23 @@ export function RoadmapPanel({ items: initialItems, tenantId, onAutomate }: Prop
             onChange={(e) => setShowAutomationOnly(e.target.checked)}
             className="sr-only"
           />
-          <Zap size={12} />
-          Automatable only
+          <Zap size={11} />
+          <span className="hidden sm:inline">Automatable only</span>
+          <span className="sm:hidden">Automate</span>
         </label>
 
         {(filterStatus || filterPriority || filterCategory || showAutomationOnly) && (
           <button
             onClick={() => { setFilterStatus(""); setFilterPriority(""); setFilterCategory(""); setShowAutomationOnly(false); }}
-            className="text-xs px-3 py-2 rounded-lg transition-colors hover:bg-slate-700"
+            className="text-xs px-2.5 sm:px-3 py-2 rounded-lg transition-colors hover:bg-slate-700"
             style={{ color: "#94a3b8", background: "rgba(102,126,234,0.08)", border: "1px solid #334155" }}
           >
-            Clear filters
+            Clear
           </button>
         )}
 
-        <span className="ml-auto text-xs self-center text-slate-400">
-          {filtered.length} of {items.length} shown
+        <span className="ml-auto text-xs self-center text-slate-500 tabular-nums">
+          {filtered.length} / {items.length}
         </span>
       </div>
 

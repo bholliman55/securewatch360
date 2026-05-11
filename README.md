@@ -763,6 +763,195 @@ Bidirectional sync: push remediation actions to Jira or ServiceNow; store extern
 
 ---
 
+## Posture Roadmap
+
+> **From visibility to remediation in one screen — scored posture, framework readiness, gap analysis, and a prioritized 90-day action plan.**
+
+### What it does
+
+The Posture Roadmap feature gives CTOs, IT Directors, and Security Officers a single view of:
+
+1. **Current State** — overall maturity score (0–100), key risk findings, and readiness percentage across six compliance frameworks (CMMC L1/L2, CIS, NIST, HIPAA, SOC 2).
+2. **Target State** — the selected framework's certification threshold, control coverage, and the exact gaps blocking readiness.
+3. **Gap Analysis** — every unaddressed control gap grouped by security domain, sorted by severity, with expandable detail (current state → desired state → recommended action).
+4. **Roadmap** — a prioritized action plan bucketed into Fix First / Next 30 / 60 / 90 days, with effort estimates, impact scores, and automation availability.
+
+Each roadmap item is tagged with an **automation level**:
+- `Automate Now` — SecureWatch360 Identity / Endpoint / Backup / Vulnerability agents can remediate immediately.
+- `Automate Later` — automation support is planned; manual action required in the interim.
+- `Manual` — requires policy, process, or training changes with no automated path.
+
+### Architecture
+
+```
+Client (Next.js SSR page)
+  └─ /posture-roadmap/page.tsx          Server Component — fetches summary + roadmap items
+       └─ PostureRoadmapClient.tsx       Client Component — tab navigation, framework switcher, modals
+
+Service layer
+  src/features/posture-roadmap/services/
+    postureScoringService.ts            Pure scoring engine — calculateOverallPostureScore,
+                                        calculateFrameworkReadiness, generatePostureGaps,
+                                        generateRoadmapItems
+    postureDataAdapter.ts               Transforms Supabase live data → PostureScoringInput
+    postureRoadmapService.ts            Orchestration — read/write/generate assessment lifecycle
+
+src/lib/postureRoadmapService.ts        Legacy lib-layer service (computeCurrentState,
+                                        computeTargetState, getPostureRoadmapSummary)
+                                        Used by summary and roadmap API routes.
+
+API routes
+  GET  /api/posture-roadmap/summary     Full posture summary (current state, target, gaps, counts)
+  POST /api/posture-roadmap/assessment  Trigger full assessment pipeline → persist to DB
+  GET  /api/posture-roadmap/roadmap     List roadmap items (filterable by status/priority/category)
+  PATCH /api/posture-roadmap/roadmap/[id]  Update item status or priority
+  GET  /api/posture-roadmap/target      Get current target framework
+  PATCH /api/posture-roadmap/target     Set target framework
+
+Supabase tables (see migrations below)
+  posture_assessments                   Assessment snapshots
+  framework_readiness_scores            Per-framework readiness breakdown
+  posture_gaps                          Gap records with severity and evidence links
+  posture_roadmap_action_items          Prioritized action items with automation metadata
+  posture_score_history                 Score over time per framework
+  posture_target_config                 Per-tenant target framework setting
+  posture_roadmap_items                 Simple tenant-scoped roadmap items (pre-assessment)
+
+Inngest
+  compliance-posture-daily.ts           Nightly cron that re-scores all tenants with assessments
+```
+
+### Category weights (scoring engine)
+
+| Category | Weight | Key inputs |
+|---|---|---|
+| Identity & Access | 20% | MFA %, privileged MFA %, RBAC |
+| Endpoint Security | 15% | EDR coverage, patch compliance |
+| Vulnerability Mgmt | 15% | Open critical/high CVEs, CVSS age |
+| Network Security | 10% | Internet-facing exposure, segmentation |
+| Backup & Recovery | 10% | Backup configured, immutability, last test |
+| Monitoring & Logging | 10% | Centralized logging, SIEM |
+| Compliance Evidence | 10% | Controls mapped, evidence coverage |
+| Security Awareness | 5% | Training completion, phishing simulation |
+| Incident Response | 5% | IRP documented, tabletop completed |
+
+Framework target scores: **CIS 70 · NIST 65 · CMMC L1 60 · CMMC L2 80 · HIPAA 75 · SOC 2 72**
+
+### Database migrations
+
+Three migrations compose the full Posture Roadmap schema. Apply in order:
+
+```bash
+# Apply all pending migrations
+supabase db push
+
+# Or apply individually (in order):
+supabase db push --file supabase/migrations/20260510190000_posture_roadmap.sql
+supabase db push --file supabase/migrations/20260510200000_posture_roadmap_extended.sql
+supabase db push --file supabase/migrations/20260510210000_posture_roadmap_gap_fill.sql
+```
+
+What each migration adds:
+- `20260510190000_posture_roadmap.sql` — `posture_roadmap_items`, `posture_target_config`, RLS policies
+- `20260510200000_posture_roadmap_extended.sql` — `posture_assessments`, `framework_readiness_scores`, `posture_gaps`, `posture_roadmap_action_items`, `posture_score_history`
+- `20260510210000_posture_roadmap_gap_fill.sql` — `is_estimated` flags, `roadmap_bucket` column, view alias, RLS gap-fills
+
+### Seeding demo data
+
+The demo page (`/demo/posture-roadmap`) uses fully static fixtures — no DB required. To seed
+the **Acme Precision Manufacturing** tenant into Supabase for end-to-end testing:
+
+```bash
+# 1. Ensure migrations are applied
+supabase db push
+
+# 2. Run the v4 seed script (includes posture seed data)
+npm run seed:v4
+
+# The seed inserts:
+#   - Tenant: Acme Precision Manufacturing (tenant_id: e0129f25-ab2c-4a0b-a72b-4cfaef9692b1)
+#   - 13 roadmap items across 8 security domains (CMMC L2 target)
+#   - Target framework set to CMMC_L2
+#   - Posture assessment with overall score 42, 38% CMMC L2 readiness
+```
+
+### Resetting demo data
+
+```bash
+# Reset posture data for the demo tenant only
+npm run seed:v4 -- --reset
+
+# Or via the API endpoint (requires admin role):
+curl -X POST /api/demo/reset \
+  -H "Content-Type: application/json" \
+  -d '{"tenantId": "e0129f25-ab2c-4a0b-a72b-4cfaef9692b1", "scope": "posture"}'
+
+# The demo page at /demo/posture-roadmap uses static fixtures and requires no reset.
+```
+
+### Running tests
+
+```bash
+# All posture roadmap tests (scoring engine + service layer + UI components)
+npx vitest run src/features/posture-roadmap/ src/lib/__tests__/postureScoringService.test.ts
+
+# Full test suite
+npm test
+
+# Watch mode (development)
+npx vitest
+
+# Coverage for posture scoring service
+npx vitest run --coverage src/lib/__tests__/postureScoringService.test.ts
+```
+
+Test files:
+| File | Tests | What it covers |
+|---|---|---|
+| `src/lib/__tests__/postureScoringService.test.ts` | 47 | Core scoring engine: `calculateOverallPostureScore`, `calculateFrameworkReadiness`, `generatePostureGaps`, `generateRoadmapItems`, `calculateDistanceToTarget` |
+| `src/features/posture-roadmap/services/__tests__/postureScoringService.test.ts` | 34 | `generatePostureAssessment` end-to-end: result shape, correctness, isEstimated propagation, summary text |
+| `src/features/posture-roadmap/services/__tests__/postureDataAdapter.test.ts` | 10 | `PostureRoadmapError`, `validateFramework`, `FRAMEWORK_TYPES` constants |
+| `src/features/posture-roadmap/services/__tests__/postureRoadmapService.unit.test.ts` | 28 | Service layer: `getLatestPostureAssessment`, `updateRoadmapItemStatus`, `createPostureAssessment` (automation/bucket mapping), `previewAutomationPlan`, `PostureRoadmapError` |
+| `src/features/posture-roadmap/__tests__/components.test.tsx` | 31 | UI: `EmptyState`, `GapAnalysisPanel`, `AutomationModal`, `RoadmapPanel` (filters, status dropdown, automation button) |
+
+### Accessing the feature
+
+| URL | Description |
+|---|---|
+| `/posture-roadmap?tenantId={uuid}` | Live production view — requires valid Supabase tenant ID and authenticated session |
+| `/posture-roadmap?tenantId={uuid}&targetFramework=CMMC_L2` | Pre-selects target framework |
+| `/demo/posture-roadmap` | Static demo view — no auth, no DB, uses Acme Precision Manufacturing fixtures |
+| `/api/posture-roadmap/summary?tenantId={uuid}` | JSON: full posture summary |
+| `/api/posture-roadmap/roadmap?tenantId={uuid}` | JSON: roadmap items list |
+| `/api/posture-roadmap/assessment` | `POST`: trigger new assessment pipeline |
+
+### Connection to full SecureWatch360 automation
+
+The Posture Roadmap is the **planning layer** above SecureWatch360's remediation automation:
+
+```
+Findings (scan_runs → findings)
+  └─ Decision Engine (decisionEngine.ts)
+       └─ Posture Scoring (postureScoringService.ts)
+            └─ Gap → Roadmap Item (priority + automation_level)
+                 └─ Automation Modal → /api/posture-roadmap/automate
+                      └─ Remediation Agent (remediationAgent.ts)
+                           └─ Inngest workflow (patch / isolate / enforce MFA)
+                                └─ Audit + Evidence record
+```
+
+When a roadmap item is marked **Automate Now** and the user approves:
+
+1. The `AutomationModal` collects the execution mode (`recommend_only` | `assisted_remediation` | `autonomous_remediation`).
+2. An approval request is created (`approval_requests` table) with the item context.
+3. The remediation agent routes to the appropriate Inngest function based on category and execution mode.
+4. On completion, the posture assessment is re-scored and the roadmap item status is updated to `completed`.
+5. An evidence record is written to `evidence_records` for the compliance vault.
+
+Human-in-the-loop is controlled by `REMEDIATION_HUMAN_IN_THE_LOOP=true` in `.env.local`.
+
+---
+
 ## ElevenLabs Voice Layer
 
 SecureWatch360 includes a deterministic voice operating layer fronted by an ElevenLabs Conversational AI agent. Voice utterances are classified server-side, gated by role + safety policy, optionally challenged for verbal confirmation, and audited end-to-end.
