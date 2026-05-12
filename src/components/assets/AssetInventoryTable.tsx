@@ -28,6 +28,19 @@ interface AssetsResponse {
   typeCounts: Record<string, number>;
 }
 
+interface ScanTarget {
+  id: string;
+  target_name: string;
+  target_type: string;
+  target_value: string;
+  status: string;
+}
+
+interface ScanTargetsResponse {
+  ok: boolean;
+  scanTargets: ScanTarget[];
+}
+
 function criticalityClass(c: string | null) {
   if (c === "critical") return "bg-red-100 text-red-700";
   if (c === "high") return "bg-orange-100 text-orange-700";
@@ -41,11 +54,194 @@ function statusClass(s: string) {
   return "bg-gray-100 text-gray-500";
 }
 
+const ENVIRONMENTS = ["production", "staging", "development", "testing", "other"] as const;
+const CRITICALITIES = ["critical", "high", "medium", "low"] as const;
+
+interface PromoteForm {
+  scanTargetId: string;
+  assetName: string;
+  owner: string;
+  environment: string;
+  criticality: string;
+}
+
+function PromoteModal({
+  onClose,
+  onDone,
+}: {
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [targets, setTargets] = useState<ScanTarget[]>([]);
+  const [loadingTargets, setLoadingTargets] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState<PromoteForm>({
+    scanTargetId: "",
+    assetName: "",
+    owner: "",
+    environment: "",
+    criticality: "",
+  });
+
+  useEffect(() => {
+    fetch("/api/me")
+      .then((r) => r.json())
+      .then((me: { tenants?: { id: string }[] }) => {
+        const tenantId = me.tenants?.[0]?.id;
+        if (!tenantId) return;
+        return fetch(`/api/scan-targets?tenantId=${tenantId}&limit=500`)
+          .then((r) => r.json())
+          .then((d: ScanTargetsResponse) => {
+            if (d.ok) setTargets(d.scanTargets ?? []);
+          });
+      })
+      .catch(() => {/* ignore */})
+      .finally(() => setLoadingTargets(false));
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.scanTargetId) { setError("Select a scan target"); return; }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/assets/promote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scanTargetId: form.scanTargetId,
+          assetName: form.assetName || undefined,
+          owner: form.owner || undefined,
+          environment: form.environment || undefined,
+          criticality: form.criticality || undefined,
+        }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) { setError(data.error ?? "Promotion failed"); return; }
+      onDone();
+    } catch {
+      setError("Network error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const field = (key: keyof PromoteForm, value: string) =>
+    setForm((f) => ({ ...f, [key]: value }));
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900">Promote Scan Target to Asset</h2>
+        <p className="mb-4 text-xs text-gray-500">
+          Manually add any scan target (URL, webapp, CIDR, etc.) into the asset inventory as an owned technology asset.
+        </p>
+
+        {loadingTargets ? (
+          <div className="h-10 animate-pulse rounded bg-gray-100" />
+        ) : (
+          <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-600">Scan Target *</label>
+              <select
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={form.scanTargetId}
+                onChange={(e) => field("scanTargetId", e.target.value)}
+                required
+              >
+                <option value="">Select a scan target…</option>
+                {targets.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    [{t.target_type}] {t.target_name} — {t.target_value}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-600">Asset Name (optional)</label>
+              <input
+                type="text"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g. Production Web Server"
+                value={form.assetName}
+                onChange={(e) => field("assetName", e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-600">Owner (optional)</label>
+              <input
+                type="text"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g. ops-team@example.com"
+                value={form.owner}
+                onChange={(e) => field("owner", e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">Environment</label>
+                <select
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={form.environment}
+                  onChange={(e) => field("environment", e.target.value)}
+                >
+                  <option value="">Not set</option>
+                  {ENVIRONMENTS.map((env) => <option key={env} value={env}>{env}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">Criticality</label>
+                <select
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={form.criticality}
+                  onChange={(e) => field("criticality", e.target.value)}
+                >
+                  <option value="">Not set</option>
+                  {CRITICALITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {error && (
+              <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>
+            )}
+
+            <div className="mt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {submitting ? "Promoting…" : "Promote to Asset"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function AssetInventoryTable() {
   const [data, setData] = useState<AssetsResponse | null>(null);
   const [activeType, setActiveType] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [rebuilding, setRebuilding] = useState(false);
+  const [showPromote, setShowPromote] = useState(false);
 
   const load = (type?: string) => {
     setLoading(true);
@@ -70,10 +266,19 @@ export function AssetInventoryTable() {
     load(type === "all" ? undefined : type);
   };
 
+  const handlePromoteDone = () => {
+    setShowPromote(false);
+    load(activeType);
+  };
+
   const types = data ? Object.entries(data.typeCounts) : [];
 
   return (
     <div className="flex flex-col gap-4">
+      {showPromote && (
+        <PromoteModal onClose={() => setShowPromote(false)} onDone={handlePromoteDone} />
+      )}
+
       {/* Type filter chips */}
       <div className="flex flex-wrap items-center gap-2">
         <button
@@ -96,6 +301,12 @@ export function AssetInventoryTable() {
             Assets are network/infrastructure inventory. URLs and web targets are scan targets, not assets.
           </span>
           <button
+            onClick={() => setShowPromote(true)}
+            className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-100"
+          >
+            Promote Scan Target
+          </button>
+          <button
             onClick={() => void handleRebuild()}
             disabled={rebuilding}
             className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50 disabled:opacity-50"
@@ -112,10 +323,10 @@ export function AssetInventoryTable() {
       ) : !data?.assets.length ? (
         <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center">
           <p className="text-sm text-gray-400">
-            No assets found. Only IP, hostname, domain, and cloud account scan targets are indexed as assets.
+            No assets found. Only IP, hostname, domain, and cloud account scan targets are indexed as assets automatically.
           </p>
           <p className="mt-1 text-xs text-gray-300">
-            Run &quot;Rebuild from Scan Targets&quot; or scan a network target to populate this inventory.
+            Run &quot;Rebuild from Scan Targets&quot; or use &quot;Promote Scan Target&quot; to add any target manually.
           </p>
         </div>
       ) : (
@@ -142,7 +353,9 @@ export function AssetInventoryTable() {
                 return (
                   <tr key={a.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-800">
-                      {label}
+                      <Link href={`/assets/${a.id}`} className="hover:text-blue-600 hover:underline">
+                        {label}
+                      </Link>
                       {a.owner ? (
                         <div className="text-xs text-gray-400">Owner: {a.owner}</div>
                       ) : null}

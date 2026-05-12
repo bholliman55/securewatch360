@@ -21,8 +21,19 @@ let browserClient: ReturnType<typeof createBrowserClient> | undefined;
 
 /**
  * For Client Components in the browser. Never use the service role here.
+ *
+ * During Next.js build-time prerendering the browser env vars are not set.
+ * We return `null` on the server rather than throwing so that client
+ * component modules can be safely imported during the build.  The actual
+ * Supabase client is only constructed (and used) inside the browser.
  */
 export function getSupabaseBrowserClient(): ReturnType<typeof createBrowserClient> {
+  if (typeof window === "undefined") {
+    // Server-side / build-time: return a typed placeholder. Client
+    // components that call this must only use it inside effects or
+    // event handlers that run in the browser.
+    return null as unknown as ReturnType<typeof createBrowserClient>;
+  }
   if (!browserClient) {
     browserClient = createBrowserClient(getPublicUrl(), getAnonKey());
   }
