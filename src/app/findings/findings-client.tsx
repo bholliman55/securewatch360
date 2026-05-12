@@ -467,11 +467,11 @@ export function FindingsClient({ initialFilters: initialFilterOverrides }: Findi
                     : "-"}
                 </td>
                 <td>{finding.scan?.status ?? "-"}</td>
-                {/* Related Asset → links to asset inventory, filtered by this asset */}
+                {/* Related Asset → links to asset inventory page */}
                 <td>
                   {finding.asset ? (
                     <Link
-                      href={`/assets?assetId=${finding.asset.id}`}
+                      href="/assets"
                       className="sw-link"
                       title={`Asset ID: ${finding.asset.id}`}
                     >
@@ -479,10 +479,11 @@ export function FindingsClient({ initialFilters: initialFilterOverrides }: Findi
                     </Link>
                   ) : finding.asset_id ? (
                     <Link
-                      href={`/assets?assetId=${finding.asset_id}`}
+                      href="/assets"
                       className="sw-link"
+                      title={`Asset ID: ${finding.asset_id}`}
                     >
-                      {finding.asset_id}
+                      Asset record
                     </Link>
                   ) : (
                     "-"

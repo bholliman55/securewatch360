@@ -329,11 +329,16 @@ export const scanTenantRequested = inngest.createFunction(
 
       const insertedCount = insertedFindings.length;
 
-      // Upsert an asset_inventory record for the scan target and link all
-      // findings from this run to that asset so they carry a traceable asset_id.
+      // Assets are owned technology inventory items (servers, workstations,
+      // domains, cloud resources).  URLs and webapp scan targets are scanner
+      // inputs, not owned assets.  Only upsert an asset_inventory record for
+      // target types that represent real network or infrastructure devices.
+      const ASSET_TARGET_TYPES = new Set(["ip", "hostname", "domain", "cloud_account"]);
+
       currentStep = "upsert-asset-inventory";
       const linkedAssetId = await step.run("upsert-asset-inventory", async () => {
         if (insertedFindings.length === 0) return null;
+        if (!ASSET_TARGET_TYPES.has(target.target_type)) return null;
 
         const { data: assetRow, error: upsertError } = await supabase
           .from("asset_inventory")
@@ -344,6 +349,9 @@ export const scanTenantRequested = inngest.createFunction(
               asset_type: target.target_type,
               display_name: target.target_name,
               last_seen_at: new Date().toISOString(),
+              source: "scan",
+              source_scan_id: scanRunId as string,
+              source_scan_target_id: target.id,
             },
             { onConflict: "tenant_id,asset_identifier" }
           )
@@ -353,6 +361,7 @@ export const scanTenantRequested = inngest.createFunction(
         if (upsertError || !assetRow) {
           console.warn("[scan-workflow] could not upsert asset_inventory", {
             scanRunId,
+            targetType: target.target_type,
             error: upsertError?.message,
           });
           return null;
