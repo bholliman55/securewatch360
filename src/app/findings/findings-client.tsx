@@ -3,6 +3,26 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 
+type AssetSummary = {
+  id: string;
+  identifier: string;
+  type: string;
+  display_name: string | null;
+};
+
+type ScanSummary = {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  date: string;
+  completed_at: string | null;
+  target_id: string | null;
+  target_name: string | null;
+  target_type: string | null;
+  target_value: string | null;
+};
+
 type FindingRow = {
   id: string;
   severity: string;
@@ -19,18 +39,11 @@ type FindingRow = {
   scan_id?: string | null;
   scan_run_id?: string | null;
   scan_result_id?: string | null;
-  scan: {
-    id: string;
-    name: string;
-    type: string;
-    status: string;
-    date: string;
-    completed_at: string | null;
-    target_id: string | null;
-    target_name: string | null;
-    target_type: string | null;
-    target_value: string | null;
-  } | null;
+  scan_target_id?: string | null;
+  agent_type?: string | null;
+  asset_id?: string | null;
+  scan: ScanSummary | null;
+  asset: AssetSummary | null;
 };
 
 type FindingsResponse = {
@@ -45,6 +58,11 @@ type Filters = {
   severity: string;
   status: string;
   scanRunId: string;
+  agentType: string;
+  assetId: string;
+  scanTargetId: string;
+  scanDateAfter: string;
+  scanDateBefore: string;
 };
 
 const initialFilters: Filters = {
@@ -53,6 +71,11 @@ const initialFilters: Filters = {
   severity: "",
   status: "",
   scanRunId: "",
+  agentType: "",
+  assetId: "",
+  scanTargetId: "",
+  scanDateAfter: "",
+  scanDateBefore: "",
 };
 
 const findingStatuses = [
@@ -62,6 +85,8 @@ const findingStatuses = [
   "resolved",
   "risk_accepted",
 ] as const;
+
+const agentTypes = ["mock", "network", "web", "vulnerability"] as const;
 
 function getSeverityClass(severity: string): string {
   const normalized = severity.toLowerCase();
@@ -116,6 +141,11 @@ export function FindingsClient({ initialFilters: initialFilterOverrides }: Findi
       if (nextFilters.severity.trim()) params.set("severity", nextFilters.severity.trim());
       if (nextFilters.status.trim()) params.set("status", nextFilters.status.trim());
       if (nextFilters.scanRunId.trim()) params.set("scanRunId", nextFilters.scanRunId.trim());
+      if (nextFilters.agentType.trim()) params.set("agentType", nextFilters.agentType.trim());
+      if (nextFilters.assetId.trim()) params.set("assetId", nextFilters.assetId.trim());
+      if (nextFilters.scanTargetId.trim()) params.set("scanTargetId", nextFilters.scanTargetId.trim());
+      if (nextFilters.scanDateAfter.trim()) params.set("scanDateAfter", nextFilters.scanDateAfter.trim());
+      if (nextFilters.scanDateBefore.trim()) params.set("scanDateBefore", nextFilters.scanDateBefore.trim());
 
       const query = params.toString();
       const response = await fetch(`/api/findings${query ? `?${query}` : ""}`, { method: "GET" });
@@ -154,6 +184,11 @@ export function FindingsClient({ initialFilters: initialFilterOverrides }: Findi
       severity: params.get("severity") ?? "",
       status: params.get("status") ?? "",
       scanRunId: "",
+      agentType: params.get("agentType") ?? "",
+      assetId: params.get("assetId") ?? "",
+      scanTargetId: params.get("scanTargetId") ?? "",
+      scanDateAfter: params.get("scanDateAfter") ?? "",
+      scanDateBefore: params.get("scanDateBefore") ?? "",
     };
     if (nextFilters.tenantId || nextFilters.scanId) {
       setFilters(nextFilters);
@@ -161,6 +196,7 @@ export function FindingsClient({ initialFilters: initialFilterOverrides }: Findi
         void loadFindings(nextFilters);
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function updateFindingInState(id: string, next: Partial<FindingRow>) {
@@ -247,12 +283,13 @@ export function FindingsClient({ initialFilters: initialFilterOverrides }: Findi
   return (
     <>
       <form onSubmit={onSubmit} className="sw-form">
+        {/* Row 1: core identity filters */}
         <label className="sw-field">
           Tenant ID
           <input
             value={filters.tenantId}
             onChange={(e) => setFilters((prev) => ({ ...prev, tenantId: e.target.value }))}
-            placeholder="uuid (optional)"
+            placeholder="uuid (required)"
             className="sw-input"
           />
         </label>
@@ -267,6 +304,27 @@ export function FindingsClient({ initialFilters: initialFilterOverrides }: Findi
           />
         </label>
 
+        <label className="sw-field">
+          Scan Target ID
+          <input
+            value={filters.scanTargetId}
+            onChange={(e) => setFilters((prev) => ({ ...prev, scanTargetId: e.target.value }))}
+            placeholder="scan target uuid (optional)"
+            className="sw-input"
+          />
+        </label>
+
+        <label className="sw-field">
+          Asset ID
+          <input
+            value={filters.assetId}
+            onChange={(e) => setFilters((prev) => ({ ...prev, assetId: e.target.value }))}
+            placeholder="asset uuid (optional)"
+            className="sw-input"
+          />
+        </label>
+
+        {/* Row 2: classification filters */}
         <label className="sw-field">
           Severity
           <select
@@ -299,6 +357,41 @@ export function FindingsClient({ initialFilters: initialFilterOverrides }: Findi
           </select>
         </label>
 
+        <label className="sw-field">
+          Scan / Agent Type
+          <select
+            value={filters.agentType}
+            onChange={(e) => setFilters((prev) => ({ ...prev, agentType: e.target.value }))}
+            className="sw-input"
+          >
+            <option value="">All</option>
+            {agentTypes.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </label>
+
+        {/* Row 3: scan date range */}
+        <label className="sw-field">
+          Scan Date After
+          <input
+            type="date"
+            value={filters.scanDateAfter}
+            onChange={(e) => setFilters((prev) => ({ ...prev, scanDateAfter: e.target.value }))}
+            className="sw-input"
+          />
+        </label>
+
+        <label className="sw-field">
+          Scan Date Before
+          <input
+            type="date"
+            value={filters.scanDateBefore}
+            onChange={(e) => setFilters((prev) => ({ ...prev, scanDateBefore: e.target.value }))}
+            className="sw-input"
+          />
+        </label>
+
         <button type="submit" className="sw-button" disabled={loading}>
           {loading ? "Loading..." : "Apply Filters"}
         </button>
@@ -323,9 +416,11 @@ export function FindingsClient({ initialFilters: initialFilterOverrides }: Findi
               <th>Category</th>
               <th>Title</th>
               <th>Scan Source</th>
+              <th>Agent / Scan Type</th>
               <th>Scan Date</th>
               <th>Scan Target</th>
               <th>Scan Status</th>
+              <th>Related Asset</th>
               <th>Status</th>
               <th>Assigned To</th>
               <th>Notes</th>
@@ -337,7 +432,7 @@ export function FindingsClient({ initialFilters: initialFilterOverrides }: Findi
           <tbody>
             {findings.length === 0 ? (
               <tr>
-                <td colSpan={16}>No findings match the current filters.</td>
+                <td colSpan={18}>No findings match the current filters.</td>
               </tr>
             ) : findings.map((finding) => (
               <tr key={finding.id}>
@@ -351,6 +446,7 @@ export function FindingsClient({ initialFilters: initialFilterOverrides }: Findi
                 <td>{finding.exposure}</td>
                 <td>{finding.category ?? "-"}</td>
                 <td>{finding.title}</td>
+                {/* Scan Source → links to Scan Result detail */}
                 <td>
                   {finding.scan ? (
                     <Link href={`/scan-runs/${finding.scan.id}`} className="sw-link">
@@ -360,6 +456,8 @@ export function FindingsClient({ initialFilters: initialFilterOverrides }: Findi
                     "-"
                   )}
                 </td>
+                {/* Agent / scanner family */}
+                <td>{finding.agent_type ?? finding.scan?.type ?? "-"}</td>
                 <td>{finding.scan?.date ? new Date(finding.scan.date).toLocaleString() : "-"}</td>
                 <td>
                   {finding.scan
@@ -369,6 +467,28 @@ export function FindingsClient({ initialFilters: initialFilterOverrides }: Findi
                     : "-"}
                 </td>
                 <td>{finding.scan?.status ?? "-"}</td>
+                {/* Related Asset → links to asset inventory page */}
+                <td>
+                  {finding.asset ? (
+                    <Link
+                      href="/assets"
+                      className="sw-link"
+                      title={`Asset ID: ${finding.asset.id}`}
+                    >
+                      {finding.asset.display_name ?? finding.asset.identifier}
+                    </Link>
+                  ) : finding.asset_id ? (
+                    <Link
+                      href="/assets"
+                      className="sw-link"
+                      title={`Asset ID: ${finding.asset_id}`}
+                    >
+                      Asset record
+                    </Link>
+                  ) : (
+                    "-"
+                  )}
+                </td>
                 <td>
                   <select
                     className="sw-input"

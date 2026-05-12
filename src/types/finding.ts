@@ -13,6 +13,16 @@ export interface Finding {
   id: string;
   tenant_id: string;
   scan_run_id: string;
+  /** Alias for scan_run_id; set at insert time by the traceability trigger. */
+  scan_id: string | null;
+  /** Alias for scan_run_id used by scan-result detail views. */
+  scan_result_id: string | null;
+  /** Direct FK to scan_targets; denormalized for filtering without a join. */
+  scan_target_id: string | null;
+  /** Scanner adapter family that produced this finding (e.g. web, network, vulnerability). */
+  agent_type: string | null;
+  /** FK to asset_inventory; populated by the scan workflow after upserting the target asset. */
+  asset_id: string | null;
   severity: FindingSeverity;
   category: string | null;
   title: string;
