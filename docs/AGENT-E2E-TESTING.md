@@ -4,7 +4,7 @@ This document defines where the "agents" are in v4 (Inngest architecture) and ho
 
 ## Agent inventory in v4
 
-The n8n webhook agents were replaced by code-native modules and Inngest workflows.
+Agent orchestration is code-native (Next.js service layer + **Inngest** workflows); legacy external workflow engines are not used in v4.
 
 - Decisioning Agent (logical): `src/lib/decisionEngine.ts`
 - Compliance Agent (hook): `src/lib/complianceAgent.ts`

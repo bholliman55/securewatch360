@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { INCIDENT_STATES, isIncidentState, type IncidentState } from "@/lib/incidentStateMachine";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { requireTenantAccess } from "@/lib/tenant-guard";
+import { parsePagination } from "@/lib/apiPagination";
 
 type IncidentPayload = {
   incident?: {
@@ -27,8 +28,12 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get("tenantId")?.trim() ?? "";
     const state = searchParams.get("state")?.trim().toLowerCase() ?? "";
-    const limitParam = searchParams.get("limit")?.trim() ?? "";
-    const limit = limitParam.length > 0 ? Number(limitParam) : 100;
+    const pagination = parsePagination({
+      rawLimit: searchParams.get("limit"),
+      rawOffset: searchParams.get("offset"),
+      defaultLimit: 100,
+      maxLimit: 500,
+    });
 
     if (!tenantId || !isUuid(tenantId)) {
       return NextResponse.json({ ok: false, error: "tenantId must be a valid UUID" }, { status: 400 });
@@ -39,11 +44,8 @@ export async function GET(request: Request) {
         { status: 400 }
       );
     }
-    if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
-      return NextResponse.json(
-        { ok: false, error: "limit must be an integer between 1 and 500" },
-        { status: 400 }
-      );
+    if (!pagination.ok) {
+      return NextResponse.json({ ok: false, error: pagination.error }, { status: 400 });
     }
 
     const guard = await requireTenantAccess({
@@ -61,7 +63,7 @@ export async function GET(request: Request) {
       .eq("tenant_id", tenantId)
       .eq("evidence_type", "incident_response")
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .range(pagination.offset, pagination.offset + pagination.limit - 1);
 
     if (error) {
       throw new Error(error.message);
@@ -90,6 +92,10 @@ export async function GET(request: Request) {
         ok: true,
         incidents,
         count: incidents.length,
+        pagination: {
+          limit: pagination.limit,
+          offset: pagination.offset,
+        },
       },
       { status: 200 }
     );

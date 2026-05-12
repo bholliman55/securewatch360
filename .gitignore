@@ -16,6 +16,7 @@
 .env
 .env.local
 .env.*.local
+.env.protonrefs.local
 
 # logs / debug
 npm-debug.log*
@@ -27,8 +28,28 @@ yarn-error.log*
 .DS_Store
 *.tsbuildinfo
 
+# Simulation run artifacts (local; regenerate with npm run sim:run / sim:report / demo:stack)
+.simulation-results/
+simulation-results/
+
+# Per-run report files (default naming; SIMULATION_RESULTS_DIR may point anywhere)
+*-simulation-report.json
+*-simulation-report.md
+*-securewatch-simulation-report.json
+*-securewatch-simulation-report.md
+
+# Human-readable exports under simulator (keep README only)
+simulator/reports/output/*
+!simulator/reports/output/README.md
+
 # local terraform plugin cache (reference policy pack)
 iac/**/.terraform/
 iac/**/terraform.tfstate
 iac/**/terraform.tfstate.backup
 iac/**/crash.log
+
+# local Ansible policy-evidence output (GV.PO-01 role; see policy pack readme)
+iac/securewatch360-policy-pack/policy-evidence-out/
+
+# Claude Code ephemeral worktrees (not application source)
+.claude/worktrees/

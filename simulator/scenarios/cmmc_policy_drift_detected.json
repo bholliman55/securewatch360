@@ -1,0 +1,88 @@
+{
+  "id": "lab-cmmc-drift-003",
+  "name": "LAB: CMMC-oriented policy posture drift (compliance simulator)",
+  "description": "Synthetic posture delta vs a baseline policy pack for a CMMC-aligned workspace. Describes misconfiguration metadata only — no cloud API calls or live enforcement changes.",
+  "severity": "high",
+  "attack_category": "compliance_drift",
+  "mitre_attack_techniques": ["T1552"],
+  "target_type": "cloud_resource",
+  "assurance": "fixture_replay",
+  "tags": ["cmmc", "compliance_drift", "iam"],
+  "simulated_events": [
+    {
+      "ref": "evt-01",
+      "kind": "external_intel.synthetic",
+      "payload": {
+        "intel_type": "cloud_posture_stub",
+        "provider": "synthetic_hyperscaler",
+        "resource_id": "lab-rg-console-audittrail-disabled-08",
+        "finding_code": "LAB-CMMC-CONFIG-DRIFT-STUB",
+        "detail": "Activity log retention below lab baseline threshold (fixture values only)."
+      }
+    },
+    {
+      "ref": "evt-02",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: Access control drift vs CMMC Level 2 pack (synthetic)",
+        "severity": "high",
+        "category": "compliance_gap",
+        "asset_type": "subscription",
+        "target_value": "lab-subscription-cedar-442.example.invalid",
+        "framework_hints": ["CMMC", "NIST_SP_800_171"]
+      }
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "seq-01",
+      "agent_key": "compliance-agent",
+      "capability": "gap_record_written",
+      "match": {
+        "framework_family": "cmmc_related"
+      }
+    },
+    {
+      "id": "seq-02",
+      "agent_key": "policy-engine",
+      "capability": "remediation_recommendation_simulated",
+      "match": {}
+    },
+    {
+      "id": "seq-03",
+      "agent_key": "evidence-service",
+      "capability": "evidence_export_stub_or_manifest_line",
+      "match": {}
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "CMMC_LEVEL_2",
+      "control_id": "AU.L2-8.311",
+      "control_label": "Protect audit information (lab mapping stub)"
+    },
+    {
+      "framework": "NIST_SP_800_171",
+      "control_id": "3.14.6",
+      "control_label": "Monitor organizational systems (fixture reference)"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "LAB expectation: emit prioritized configuration delta, propose evidence collection pack, optionally open GRC workflow without altering production.",
+    "expected_action_types": ["posture_ticket", "policy_diff_export", "stakeholder_notification"],
+    "human_in_the_loop": true
+  },
+  "expected_report_sections": [
+    "policy_baseline_comparison",
+    "control_mapping_table",
+    "risk_and_priority",
+    "remediation_tasks",
+    "evidence_needed"
+  ],
+  "pass_fail_rules": {
+    "agent_sequence_order_required": true,
+    "all_report_sections_required": false,
+    "min_controls_matched": 2,
+    "require_all_agent_steps": true
+  }
+}

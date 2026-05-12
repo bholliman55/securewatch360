@@ -36,6 +36,19 @@ type DecisionProvider = {
 const AUTO_REMEDIATE_TARGET_TYPES = new Set(["container_image", "package_manifest", "dependency_manifest"]);
 const PUBLIC_EXPOSURE = new Set(["internet", "external"]);
 const RESOLVED_STATUSES = new Set(["resolved", "risk_accepted"]);
+const SUPPORTED_REGULATED_FRAMEWORKS = new Set([
+  "soc2",
+  "cmmc",
+  "hipaa",
+  "nist",
+  "iso27001",
+  "pci_dss",
+  "cis",
+  "gdpr",
+  "fedramp",
+  "ccpa",
+  "cobit",
+]);
 
 function withPolicy(state: MutableDecisionState, policy: EnginePolicyRef) {
   state.matchedPolicies.push({
@@ -129,6 +142,34 @@ const rules: DecisionRule[] = [
       state.reasonCodes.add("compliance_control_required");
       state.reasonCodes.add("documentation_required");
       state.metadata.documentationRequired = true;
+    },
+  },
+  {
+    policy: {
+      policyId: "sw360.rule.regulated-framework-context",
+      policyName: "Regulated framework context requires strict review",
+      version: "v1",
+    },
+    applies: (input) => {
+      const fromField = Array.isArray(input.regulatedFrameworks)
+        ? input.regulatedFrameworks.filter((x): x is string => typeof x === "string")
+        : [];
+      const fromMeta = Array.isArray(input.metadata?.regulatedFrameworks)
+        ? (input.metadata?.regulatedFrameworks as unknown[]).filter((x): x is string => typeof x === "string")
+        : [];
+      const regs = [...fromField, ...fromMeta].map((r) => r.toLowerCase());
+      return regs.some((r) => SUPPORTED_REGULATED_FRAMEWORKS.has(r));
+    },
+    apply: (state, input) => {
+      state.requiresApproval = true;
+      state.reasonCodes.add("compliance_control_required");
+      state.reasonCodes.add("documentation_required");
+      if (input.severity === "critical" && !!input.exposure && PUBLIC_EXPOSURE.has(input.exposure)) {
+        state.action = pickStrongerAction(state.action, "escalate");
+      } else if (input.severity === "high") {
+        state.action = pickStrongerAction(state.action, "create_remediation");
+      }
+      state.metadata.frameworkStrictReview = true;
     },
   },
   {

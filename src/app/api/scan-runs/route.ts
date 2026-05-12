@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { SCAN_RUN_STATUSES } from "@/lib/statuses";
 import { requireTenantAccess } from "@/lib/tenant-guard";
+import { parsePagination } from "@/lib/apiPagination";
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -16,11 +17,13 @@ type ScanRunRow = {
   status: string;
   scanner_name: string | null;
   scanner_type: string | null;
+  result_summary: Record<string, unknown> | null;
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
   error_message: string | null;
   scan_target: {
+    id: string | null;
     target_name: string | null;
     target_type: string | null;
     target_value: string | null;
@@ -32,6 +35,12 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get("tenantId")?.trim() ?? "";
     const status = searchParams.get("status")?.trim().toLowerCase() ?? "";
+    const pagination = parsePagination({
+      rawLimit: searchParams.get("limit"),
+      rawOffset: searchParams.get("offset"),
+      defaultLimit: 300,
+      maxLimit: 500,
+    });
 
     if (!tenantId) {
       return NextResponse.json(
@@ -56,6 +65,9 @@ export async function GET(request: Request) {
         { status: 400 }
       );
     }
+    if (!pagination.ok) {
+      return NextResponse.json({ ok: false, error: pagination.error }, { status: 400 });
+    }
 
     const guard = await requireTenantAccess({
       tenantId,
@@ -69,10 +81,10 @@ export async function GET(request: Request) {
     let scanRunQuery = supabase
       .from("scan_runs")
       .select(
-        "id, tenant_id, scan_target_id, status, scanner_name, scanner_type, created_at, started_at, completed_at, error_message, scan_target:scan_targets(target_name, target_type, target_value)"
+        "id, tenant_id, scan_target_id, status, scanner_name, scanner_type, result_summary, created_at, started_at, completed_at, error_message, scan_target:scan_targets(id, target_name, target_type, target_value)"
       )
       .order("created_at", { ascending: false })
-      .limit(300);
+      .range(pagination.offset, pagination.offset + pagination.limit - 1);
 
     scanRunQuery = scanRunQuery.eq("tenant_id", tenantId);
     if (status.length > 0) {
@@ -98,6 +110,7 @@ export async function GET(request: Request) {
         status: row.status,
         scanner_name: row.scanner_name,
         scanner_type: row.scanner_type,
+        result_summary: row.result_summary,
         created_at: row.created_at,
         started_at: row.started_at,
         completed_at: row.completed_at,
@@ -108,7 +121,18 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json({ ok: true, scanRuns: enriched, count: enriched.length }, { status: 200 });
+    return NextResponse.json(
+      {
+        ok: true,
+        scanRuns: enriched,
+        count: enriched.length,
+        pagination: {
+          limit: pagination.limit,
+          offset: pagination.offset,
+        },
+      },
+      { status: 200 }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(

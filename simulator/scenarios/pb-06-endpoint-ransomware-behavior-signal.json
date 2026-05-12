@@ -1,0 +1,145 @@
+{
+  "id": "pb-lab-06-endpoint-ransomware-signal",
+  "name": "Safe synthetic playbook: Endpoint ransomware-like behavior telemetry",
+  "description": "Describes heuristic signals commonly associated with destructive malware (entropy, mass file operations) on an isolated lab VM. No ransomware binary, no encryption keys, no recovery circumvention.",
+  "severity": "critical",
+  "attack_category": "ransomware_behavior",
+  "mitre_attack_techniques": ["T1486", "T1490"],
+  "target_type": "endpoint",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["playbook", "endpoint", "destructive_behavior_signal", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "precursor_entropy",
+      "synthetic_narrative": "EDR stub raises entropy heuristic on lab endpoint lab-desktop-iris-09."
+    },
+    {
+      "t_offset_seconds": 240,
+      "phase": "mass_io_pattern",
+      "synthetic_narrative": "Synthetic counters show rapid file churn in user profile tree (fixture path labels only)."
+    },
+    {
+      "t_offset_seconds": 420,
+      "phase": "isolation_offer",
+      "synthetic_narrative": "Network isolation playbook arm suggested in simulation namespace."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "pb06-evt-01",
+      "kind": "monitoring.alert.synthetic",
+      "payload": {
+        "alert_type": "edr.destructive_pattern_synthetic",
+        "hostname": "lab-desktop-iris-09.example.invalid",
+        "signal_tags": ["high_entropy_writes", "shadow_copy_attempt_synthetic", "rapid_rename_fixture"],
+        "severity": "critical"
+      },
+      "metadata": { "simulator": true }
+    },
+    {
+      "ref": "pb06-evt-02",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: Possible ransomware-like activity (synthetic)",
+        "severity": "critical",
+        "category": "endpoint_malicious_behavior_signal",
+        "asset_type": "endpoint",
+        "target_value": "host:lab-desktop-iris-09.example.invalid"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "pb06-evt-01",
+      "headline": "EDR heuristic alert",
+      "synthetic_detail": "Lab-only heuristic bundle; excludes live malware hashes."
+    },
+    {
+      "ref": "pb06-evt-02",
+      "headline": "Incident-scale finding created",
+      "synthetic_detail": "Aligns endpoint with backup and IR runbook pointers (metadata)."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "pb06-seq-01",
+      "agent_key": "incident-coordinator",
+      "capability": "critical_incident_opened",
+      "match": {}
+    },
+    {
+      "id": "pb06-seq-02",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": {}
+    },
+    {
+      "id": "pb06-seq-03",
+      "agent_key": "scanner-external-recon",
+      "capability": "lateral_context_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "Destructive-pattern alert requires IR orchestration lane."
+    },
+    {
+      "agent_id": "agent-3-compliance-policy",
+      "triggered_reason_synthetic": "Backup and recovery control posture reviewed against signal."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "DE.CM-1",
+      "control_label": "Network monitored"
+    },
+    {
+      "framework": "hipaa",
+      "control_label": "Security incident procedures (high-level mapping)"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Simulated host isolation, backup integrity check artifact, forensic collection request (no hostile disk imaging instructions).",
+    "expected_action_types": ["isolate_host_simulation", "backup_validation_request", "forensic_ticketing_stub"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Trigger lab network segmentation flag for affected host group.",
+      "automation_boundary": "conditional_operator_confirm"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "host_isolation",
+      "synthetic_rationale": "Isolation impacts user productivity and clinical/business uptime."
+    },
+    {
+      "gate": "recovery_restore_point",
+      "synthetic_rationale": "Selecting restore timeframe needs data owner confirmation."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "endpoint_timeline",
+    "impact_assessment_fixture",
+    "recommended_controls",
+    "remediation_timeline"
+  ],
+  "expected_final_report": {
+    "title": "Ransomware behavior signal — synthetic playbook outcome",
+    "synthetic_executive_summary": "Heuristic bundle suggested destructive malware activity on a lab host; playbook stops at containment and backup validation planning.",
+    "sections": ["alerts_summarized", "containment_steps", "backup_posture", "lessons_placeholder"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  }
+}

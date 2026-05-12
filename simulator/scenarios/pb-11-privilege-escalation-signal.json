@@ -1,0 +1,142 @@
+{
+  "id": "pb-lab-11-privilege-escalation-signal",
+  "name": "Safe synthetic playbook: Privilege escalation signal (role change)",
+  "description": "Identity governance alert where a non-admin principal receives a privileged cloud role assignment outside change windows. Describes IAM graph deltas only—no abuse of delegated admin, no takeover steps.",
+  "severity": "high",
+  "attack_category": "privilege_escalation_signal",
+  "mitre_attack_techniques": ["T1098", "T1078"],
+  "target_type": "cloud_identity",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["playbook", "iam", "cloud", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "assignment_event",
+      "synthetic_narrative": "Cloud audit stub records RoleBinding LAB_ADMIN_BRIDGE attached to user lab-contractor-grey-77."
+    },
+    {
+      "t_offset_seconds": 180,
+      "phase": "policy_violation",
+      "synthetic_narrative": "SoD rule simulation flags contractor + admin archetype conflict."
+    },
+    {
+      "t_offset_seconds": 600,
+      "phase": "response",
+      "synthetic_narrative": "Automatic revocation simulated pending human validation of change ticket linkage."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "pb11-evt-01",
+      "kind": "monitoring.alert.synthetic",
+      "payload": {
+        "alert_type": "identity.privileged_assignment_synthetic",
+        "principal": "lab-contractor-grey-77",
+        "role_name_fixture": "LAB_ADMIN_BRIDGE",
+        "change_ticket_linked": false,
+        "severity": "high"
+      }
+    },
+    {
+      "ref": "pb11-evt-02",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: Privileged role drift (synthetic)",
+        "severity": "high",
+        "category": "privilege_escalation_signal",
+        "asset_type": "cloud_identity",
+        "target_value": "principal:lab-contractor-grey-77"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "pb11-evt-01",
+      "headline": "Privileged assignment without ticket linkage",
+      "synthetic_detail": "Demonstrates IAM governance lapse detection pathway."
+    },
+    {
+      "ref": "pb11-evt-02",
+      "headline": "Consolidated privilege risk finding",
+      "synthetic_detail": "Feeds SoD dashboards and remediation queue."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "pb11-seq-01",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": {}
+    },
+    {
+      "id": "pb11-seq-02",
+      "agent_key": "incident-coordinator",
+      "capability": "iam_review_case_stub",
+      "match": {}
+    },
+    {
+      "id": "pb11-seq-03",
+      "agent_key": "compliance-assessor",
+      "capability": "sod_rule_trace_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-3-compliance-policy",
+      "triggered_reason_synthetic": "Segregation-of-duties expectations invoked by unexpected admin bridge."
+    },
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "Escalation path for possible malicious admin activity (simulation)."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "PR.AC-4",
+      "control_label": "Access permissions and authorizations"
+    },
+    {
+      "framework": "soc2",
+      "control_id": "CC6.2",
+      "control_label": "Registration and authorization"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Revoke role binding, require MFA + PAM for future admin actions, review identity provider logs (stub).",
+    "expected_action_types": ["iam_revocation_simulation", "pam_enforcement_plan", "access_review_campaign"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Open emergency IAM ticket with auto-assigned owner group.",
+      "automation_boundary": "recommended_automation_simulation"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "revoke_vs_rollback",
+      "synthetic_rationale": "Confirm whether assignment was legitimate emergency access requiring documentation instead of blind revoke."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "iam_change_timeline",
+    "sod_rules_triggered",
+    "recommended_controls",
+    "remediation_timeline"
+  ],
+  "expected_final_report": {
+    "title": "Privilege escalation signal — synthetic playbook outcome",
+    "synthetic_executive_summary": "Unexpected privileged binding was detected; playbook models IAM rollback and governance follow-up without executing takeover.",
+    "sections": ["graph_delta_fixture", "ticket_correlation", "revocation_proof", "lessons_learned"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  }
+}

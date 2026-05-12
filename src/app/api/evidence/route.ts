@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 import { requireTenantAccess } from "@/lib/tenant-guard";
+import { parsePagination } from "@/lib/apiPagination";
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -15,8 +16,12 @@ export async function GET(request: Request) {
     const findingId = searchParams.get("findingId")?.trim() ?? "";
     const controlId = searchParams.get("controlId")?.trim() ?? "";
     const framework = searchParams.get("framework")?.trim().toLowerCase() ?? "";
-    const limitParam = searchParams.get("limit")?.trim() ?? "";
-    const limit = limitParam.length > 0 ? Number(limitParam) : 200;
+    const pagination = parsePagination({
+      rawLimit: searchParams.get("limit"),
+      rawOffset: searchParams.get("offset"),
+      defaultLimit: 200,
+      maxLimit: 500,
+    });
 
     if (!tenantId || !isUuid(tenantId)) {
       return NextResponse.json({ ok: false, error: "tenantId must be a valid UUID" }, { status: 400 });
@@ -24,11 +29,8 @@ export async function GET(request: Request) {
     if (findingId.length > 0 && !isUuid(findingId)) {
       return NextResponse.json({ ok: false, error: "findingId must be a valid UUID" }, { status: 400 });
     }
-    if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
-      return NextResponse.json(
-        { ok: false, error: "limit must be an integer between 1 and 500" },
-        { status: 400 }
-      );
+    if (!pagination.ok) {
+      return NextResponse.json({ ok: false, error: pagination.error }, { status: 400 });
     }
 
     const guard = await requireTenantAccess({
@@ -47,7 +49,7 @@ export async function GET(request: Request) {
       )
       .eq("tenant_id", tenantId)
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .range(pagination.offset, pagination.offset + pagination.limit - 1);
 
     if (findingId.length > 0) query = query.eq("finding_id", findingId);
     if (controlId.length > 0) query = query.eq("control_id", controlId);
@@ -63,6 +65,10 @@ export async function GET(request: Request) {
         ok: true,
         evidence: data ?? [],
         count: data?.length ?? 0,
+        pagination: {
+          limit: pagination.limit,
+          offset: pagination.offset,
+        },
       },
       { status: 200 }
     );

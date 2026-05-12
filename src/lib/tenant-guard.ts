@@ -26,8 +26,12 @@ type TenantGuardResult =
     };
 
 function isDemoTenantBypassEnabled(tenantId: string): boolean {
+  // Bypass is only permitted in explicit local-dev mode. Never in production,
+  // staging, or CI — NODE_ENV alone is insufficient because staging often
+  // runs with NODE_ENV=production. Require all three guards simultaneously.
   if (process.env.NODE_ENV === "production") return false;
   if (process.env.INNGEST_DEV !== "1") return false;
+  if (process.env.ALLOW_DEMO_TENANT_BYPASS !== "1") return false;
   const demoTenantId = process.env.TEST_TENANT_ID?.trim();
   return Boolean(demoTenantId && tenantId === demoTenantId);
 }

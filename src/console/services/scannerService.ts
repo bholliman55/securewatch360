@@ -1,0 +1,415 @@
+import { apiJson } from "../lib/apiFetch";
+
+export interface Scan {
+  scan_results_id: string;
+  scan_type: string;
+  target: string;
+  target_type: string | null;
+  status: string;
+  severity_summary: {
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+    info?: number;
+  };
+  vulnerabilities_found: number;
+  assets_scanned: number;
+  started_at: string;
+  scan_duration_seconds: number | null;
+  critical_findings: number;
+  high_findings: number;
+  medium_findings: number;
+  low_findings: number;
+}
+
+export interface Vulnerability {
+  vulnerability_id: string;
+  scan_id: string | null;
+  scan_result_id: string | null;
+  scan_run_id: string | null;
+  scan_name: string | null;
+  scan_type: string | null;
+  scan_date: string | null;
+  scan_target: string | null;
+  scan_target_id: string | null;
+  scan_status: string | null;
+  client_id: number;
+  asset_id: number;
+  cve_id: string | null;
+  title: string;
+  description: string | null;
+  severity: string;
+  cvss_score: number | null;
+  status: string;
+  discovered_date: string | null;
+  fixed_date: string | null;
+  remediation_steps: string | null;
+  package_name: string | null;
+  package_version: string | null;
+  affected_asset?: string | null;
+}
+
+export interface Asset {
+  asset_id: number;
+  asset_name: string;
+  asset_type: string;
+  asset_identifier: string | null;
+  operating_system: string | null;
+  criticality: string;
+  last_scan_date: string | null;
+  vulnerability_count: number;
+  environment: string | null;
+  owner: string | null;
+}
+
+export interface ScannerMetrics {
+  totalScans: number;
+  activeScans: number;
+  totalVulnerabilities: number;
+  criticalVulnerabilities: number;
+  highVulnerabilities: number;
+  assetsMonitored: number;
+  lastScanTime: string | null;
+}
+
+type FindingRow = {
+  id: string;
+  severity: string;
+  category: string | null;
+  title: string;
+  description: string | null;
+  status: string;
+  asset_type: string | null;
+  exposure: string | null;
+  scan_run_id: string | null;
+  scan_id: string | null;
+  scan_result_id: string | null;
+  scan_target_id: string | null;
+  scan_run?: {
+    id: string;
+    scanner_name: string | null;
+    scanner_type: string | null;
+    status: string | null;
+    created_at: string | null;
+    started_at: string | null;
+    completed_at: string | null;
+    scan_target:
+      | {
+          id: string | null;
+          target_name: string | null;
+          target_type: string | null;
+          target_value: string | null;
+        }
+      | {
+          id: string | null;
+          target_name: string | null;
+          target_type: string | null;
+          target_value: string | null;
+        }[]
+      | null;
+  } | null;
+  created_at: string;
+  updated_at: string | null;
+  scan?: {
+    id: string;
+    name: string;
+    type: string;
+    status: string;
+    date: string;
+    target_name: string | null;
+    target_type: string | null;
+    target_value: string | null;
+  } | null;
+};
+
+type ScanRunRow = {
+  id: string;
+  status: string;
+  scanner_name: string | null;
+  scanner_type: string | null;
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  error_message: string | null;
+  target_name: string | null;
+  target_type: string | null;
+  target_value: string | null;
+  result_summary?: unknown;
+};
+
+type ScanTargetRow = {
+  id: string;
+  target_name: string;
+  target_type: string;
+  target_value: string;
+  status: string;
+  created_at: string;
+};
+
+function requireTenant(tenantId: string | null | undefined): string {
+  if (!tenantId || tenantId.trim() === "") {
+    throw new Error("Select a tenant to load scanner data.");
+  }
+  return tenantId;
+}
+
+function mapFindingToVulnerability(row: FindingRow): Vulnerability {
+  const scanTarget = Array.isArray(row.scan_run?.scan_target)
+    ? row.scan_run?.scan_target[0]
+    : row.scan_run?.scan_target;
+  const scanId = row.scan_id || row.scan_run_id || row.scan?.id || row.scan_run?.id || null;
+  const scanDate = row.scan?.date || row.scan_run?.started_at || row.scan_run?.created_at || null;
+  const scanTargetLabel =
+    row.scan?.target_value ||
+    row.scan?.target_name ||
+    scanTarget?.target_value ||
+    scanTarget?.target_name ||
+    row.asset_type ||
+    row.exposure ||
+    null;
+
+  return {
+    vulnerability_id: row.id,
+    scan_id: scanId,
+    scan_result_id: row.scan_result_id || scanId,
+    scan_run_id: row.scan_run_id || scanId,
+    scan_name: row.scan?.name || row.scan_run?.scanner_name || row.scan_run?.scanner_type || null,
+    scan_type: row.scan?.type || row.scan_run?.scanner_type || row.scan_run?.scanner_name || null,
+    scan_date: scanDate,
+    scan_target: scanTargetLabel,
+    scan_target_id: row.scan_target_id || scanTarget?.id || null,
+    scan_status: row.scan?.status || row.scan_run?.status || null,
+    client_id: 0,
+    asset_id: 0,
+    cve_id: null,
+    title: row.title,
+    description: row.description,
+    severity: row.severity,
+    cvss_score: null,
+    status: row.status,
+    discovered_date: row.created_at,
+    fixed_date: null,
+    remediation_steps: null,
+    package_name: null,
+    package_version: null,
+    affected_asset: row.asset_type || row.exposure || null,
+  };
+}
+
+function summaryFromResult(resultSummary: unknown): Scan["severity_summary"] {
+  const empty = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+  if (!resultSummary || typeof resultSummary !== "object") return empty;
+  const s = resultSummary as Record<string, unknown>;
+  const counts = (s.severity_counts ?? s.severityCounts) as Record<string, number> | undefined;
+  if (counts && typeof counts === "object") {
+    return {
+      critical: Number(counts.critical) || 0,
+      high: Number(counts.high) || 0,
+      medium: Number(counts.medium) || 0,
+      low: Number(counts.low) || 0,
+      info: Number(counts.info) || 0,
+    };
+  }
+  return empty;
+}
+
+function mapScanRun(row: ScanRunRow & { result_summary?: unknown }): Scan {
+  const sev = summaryFromResult((row as { result_summary?: unknown }).result_summary);
+  const totalFindings =
+    sev.critical + sev.high + sev.medium + sev.low + (sev.info ?? 0);
+  return {
+    scan_results_id: row.id,
+    scan_type: row.scanner_name || row.scanner_type || "scan",
+    target: row.target_value || row.target_name || "",
+    target_type: row.target_type,
+    status: row.status,
+    severity_summary: sev,
+    vulnerabilities_found: totalFindings,
+    assets_scanned: 0,
+    started_at: row.started_at || row.created_at,
+    scan_duration_seconds:
+      row.started_at && row.completed_at
+        ? Math.max(
+            0,
+            Math.round(
+              (new Date(row.completed_at).getTime() - new Date(row.started_at).getTime()) / 1000
+            )
+          )
+        : null,
+    critical_findings: sev.critical,
+    high_findings: sev.high,
+    medium_findings: sev.medium,
+    low_findings: sev.low,
+  };
+}
+
+class ScannerService {
+  async getMetrics(tenantId?: string | null): Promise<ScannerMetrics> {
+    const tid = requireTenant(tenantId);
+    const [cc, findingsRes, runsRes, targetsRes] = await Promise.all([
+      apiJson<{
+        ok: boolean;
+        summary?: {
+          totalFindings: number;
+          highCriticalFindings: number;
+        };
+        recentScans?: { created_at: string }[];
+      }>(`/api/command-center?tenantId=${encodeURIComponent(tid)}&recentLimit=8`),
+      apiJson<{ ok: boolean; findings?: FindingRow[] }>(
+        `/api/findings?tenantId=${encodeURIComponent(tid)}&limit=300`
+      ).catch(() => ({ ok: false, findings: [] })),
+      apiJson<{ ok: boolean; scanRuns?: ScanRunRow[] }>(
+        `/api/scan-runs?tenantId=${encodeURIComponent(tid)}`
+      ).catch(() => ({ ok: false, scanRuns: [] })),
+      apiJson<{ ok: boolean; scanTargets?: ScanTargetRow[] }>(
+        `/api/scan-targets?tenantId=${encodeURIComponent(tid)}&status=active`
+      ).catch(() => ({ ok: false, scanTargets: [] })),
+    ]);
+
+    const findings = findingsRes.findings ?? [];
+    const criticalCount = findings.filter((f) => f.severity?.toLowerCase() === "critical").length;
+    const highCount = findings.filter((f) => f.severity?.toLowerCase() === "high").length;
+
+    const runs = runsRes.scanRuns ?? [];
+    const activeScans = runs.filter((r) => r.status === "running").length;
+
+    const lastScan =
+      cc.recentScans && cc.recentScans.length > 0 ? cc.recentScans[0].created_at : null;
+
+    return {
+      totalScans: runs.length,
+      activeScans,
+      totalVulnerabilities: cc.summary?.totalFindings ?? findings.length,
+      criticalVulnerabilities: criticalCount,
+      highVulnerabilities: highCount,
+      assetsMonitored: targetsRes.scanTargets?.length ?? 0,
+      lastScanTime: lastScan,
+    };
+  }
+
+  async getRecentScans(limit: number = 10, tenantId?: string | null): Promise<Scan[]> {
+    const tid = requireTenant(tenantId);
+    const res = await apiJson<{ ok: boolean; scanRuns?: ScanRunRow[] }>(
+      `/api/scan-runs?tenantId=${encodeURIComponent(tid)}`
+    );
+    const rows = res.scanRuns ?? [];
+    return rows.slice(0, limit).map((r) => mapScanRun(r));
+  }
+
+  async getScanById(id: string, tenantId?: string | null): Promise<Scan | null> {
+    const tid = requireTenant(tenantId);
+    const res = await apiJson<{ ok: boolean; scanRuns?: ScanRunRow[] }>(
+      `/api/scan-runs?tenantId=${encodeURIComponent(tid)}`
+    );
+    const row = (res.scanRuns ?? []).find((r) => r.id === id);
+    return row ? mapScanRun(row) : null;
+  }
+
+  async getVulnerabilitiesByScan(scanId: string, tenantId?: string | null): Promise<Vulnerability[]> {
+    const tid = requireTenant(tenantId);
+    const res = await apiJson<{ ok: boolean; findings?: FindingRow[] }>(
+      `/api/findings?tenantId=${encodeURIComponent(tid)}&scanRunId=${encodeURIComponent(scanId)}&limit=200`
+    );
+    return (res.findings ?? []).map(mapFindingToVulnerability);
+  }
+
+  async getAllVulnerabilities(limit: number = 50, tenantId?: string | null): Promise<Vulnerability[]> {
+    const tid = requireTenant(tenantId);
+    const res = await apiJson<{ ok: boolean; findings?: FindingRow[] }>(
+      `/api/findings?tenantId=${encodeURIComponent(tid)}&limit=${limit}`
+    );
+    return (res.findings ?? []).map(mapFindingToVulnerability);
+  }
+
+  async getVulnerabilitiesByStatus(status: string, tenantId?: string | null): Promise<Vulnerability[]> {
+    const tid = requireTenant(tenantId);
+    const res = await apiJson<{ ok: boolean; findings?: FindingRow[] }>(
+      `/api/findings?tenantId=${encodeURIComponent(tid)}&status=${encodeURIComponent(status)}&limit=200`
+    );
+    return (res.findings ?? []).map(mapFindingToVulnerability);
+  }
+
+  async getAssets(tenantId?: string | null): Promise<Asset[]> {
+    const tid = requireTenant(tenantId);
+    const [targetsRes, findingsRes] = await Promise.all([
+      apiJson<{ ok: boolean; scanTargets?: ScanTargetRow[] }>(
+        `/api/scan-targets?tenantId=${encodeURIComponent(tid)}`
+      ),
+      apiJson<{ ok: boolean; findings?: FindingRow[] }>(
+        `/api/findings?tenantId=${encodeURIComponent(tid)}&limit=500`
+      ).catch(() => ({ ok: false, findings: [] })),
+    ]);
+
+    const findings = findingsRes.findings ?? [];
+    const targets = targetsRes.scanTargets ?? [];
+
+    return targets.map((target, index) => {
+      const vulnCount = findings.filter((f) => {
+        const haystack = `${f.title ?? ""} ${f.description ?? ""} ${f.exposure ?? ""}`.toLowerCase();
+        return haystack.includes(target.target_value.toLowerCase()) || haystack.includes(target.target_name.toLowerCase());
+      }).length;
+      return {
+        asset_id: index + 1,
+        asset_name: target.target_name,
+        asset_type: target.target_type,
+        asset_identifier: target.target_value,
+        operating_system: null,
+        criticality: "medium",
+        last_scan_date: null,
+        vulnerability_count: vulnCount,
+        environment: null,
+        owner: null,
+      };
+    });
+  }
+
+  async getAssetById(id: number, tenantId?: string | null): Promise<Asset | null> {
+    const assets = await this.getAssets(tenantId);
+    return assets.find((asset) => asset.asset_id === id) ?? null;
+  }
+
+  async updateVulnerabilityStatus(id: string, status: string): Promise<void> {
+    const apiStatus =
+      status === "ignored"
+        ? "risk_accepted"
+        : status === "new"
+          ? "open"
+          : status;
+    await apiJson(`/api/findings/${encodeURIComponent(id)}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: apiStatus }),
+    });
+  }
+
+  async createScan(_scan: Partial<Scan>): Promise<Scan> {
+    throw new Error("Use scan target creation and /api/scans/request instead.");
+  }
+
+  async updateScan(_id: string, _updates: Partial<Scan>): Promise<void> {
+    /* no-op: scan runs are workflow-driven */
+  }
+
+  async getSeverityDistribution(tenantId?: string | null): Promise<{ name: string; value: number; color: string }[]> {
+    const tid = requireTenant(tenantId);
+    const res = await apiJson<{ ok: boolean; findings?: { severity: string }[] }>(
+      `/api/findings?tenantId=${encodeURIComponent(tid)}&limit=500`
+    );
+    const counts = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+    for (const f of res.findings ?? []) {
+      const sev = f.severity?.toLowerCase();
+      if (sev && sev in counts) {
+        counts[sev as keyof typeof counts]++;
+      }
+    }
+    return [
+      { name: "Critical", value: counts.critical, color: "#ef4444" },
+      { name: "High", value: counts.high, color: "#f97316" },
+      { name: "Medium", value: counts.medium, color: "#eab308" },
+      { name: "Low", value: counts.low, color: "#3b82f6" },
+      { name: "Info", value: counts.info, color: "#6b7280" },
+    ];
+  }
+}
+
+export const scannerService = new ScannerService();

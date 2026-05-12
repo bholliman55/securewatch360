@@ -9,6 +9,7 @@ export const AUDIT_ENTITY_TYPES = [
   "scan",
   "policy_decision",
   "notification",
+  "action_execution",
   "system",
 ] as const;
 

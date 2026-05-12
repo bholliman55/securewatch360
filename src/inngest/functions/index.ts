@@ -4,14 +4,21 @@ import { remediationExecutionRequested } from "./remediation-execution-requested
 import { scanTenantRequested } from "./scan-tenant";
 import { scheduledDailyScans, scheduledWeeklyScans } from "./scheduled-scans";
 import { awarenessSignalsRefresh } from "./awareness-signals-refresh";
-import { approvalRiskSlaSweep } from "./approval-risk-sla-sweep";
 import { compliancePostureDaily } from "./compliance-posture-daily";
 import { notificationDigest } from "./notification-digest";
+import { runExternalDiscovery } from "./runExternalDiscovery";
+import { runAgent2VulnerabilityScan } from "./runAgent2VulnerabilityScan";
+import { runOsintCollectionFunction } from "./runOsintCollection";
+import { runComplianceStatusFunction } from "./runComplianceStatus";
+import { runRiskQueryFunction } from "./runRiskQuery";
+import { runAlertSummaryFunction } from "./runAlertSummary";
+import { runVendorRiskAssessmentFunction } from "./runVendorRiskAssessment";
+import { generateRemediationPlaybookFunction } from "./generateRemediationPlaybook";
+import { generateThreatDigestFunction } from "./generateThreatDigest";
+import { slaBreachSweepFunction } from "./slaBreachSweep";
+import { approvalRiskSlaSweep } from "./approval-risk-sla-sweep";
+import { runScheduledReportsFunction } from "./runScheduledReports";
 
-/**
- * All functions registered in one place so `serve()` stays a one-liner.
- * Add a new file under this folder, export the function, and append here.
- */
 export const inngestFunctions = [
   scanTenantRequested,
   remediationExecutionRequested,
@@ -20,7 +27,18 @@ export const inngestFunctions = [
   scheduledDailyScans,
   scheduledWeeklyScans,
   awarenessSignalsRefresh,
-  approvalRiskSlaSweep,
   compliancePostureDaily,
   notificationDigest,
+  runExternalDiscovery,
+  runAgent2VulnerabilityScan,
+  runOsintCollectionFunction,
+  runComplianceStatusFunction,
+  runRiskQueryFunction,
+  runAlertSummaryFunction,
+  runVendorRiskAssessmentFunction,
+  generateRemediationPlaybookFunction,
+  generateThreatDigestFunction,
+  slaBreachSweepFunction,
+  approvalRiskSlaSweep,
+  runScheduledReportsFunction,
 ];

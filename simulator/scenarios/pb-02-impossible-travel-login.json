@@ -1,0 +1,152 @@
+{
+  "id": "pb-lab-02-impossible-travel",
+  "name": "Safe synthetic playbook: Impossible-travel login signal",
+  "description": "Lab metadata for geographically inconsistent authentications on a test identity. No real travel data, no live IP geolocation API required; timestamps and regions are fixtures.",
+  "severity": "high",
+  "attack_category": "suspicious_login",
+  "mitre_attack_techniques": ["T1078", "T1110"],
+  "target_type": "user_identity",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["playbook", "identity", "geo_anomaly", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "baseline_login",
+      "synthetic_narrative": "Fixture login event labeled LAB-GEO-A (region A)."
+    },
+    {
+      "t_offset_seconds": 1800,
+      "phase": "anomalous_second_login",
+      "synthetic_narrative": "Second fixture login LAB-GEO-B flagged as incompatible with plausible travel velocity (synthetic)."
+    },
+    {
+      "t_offset_seconds": 2100,
+      "phase": "triage",
+      "synthetic_narrative": "IdP rule simulation elevates severity and requests adaptive step-up (fixture only)."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "pb02-evt-01",
+      "kind": "monitoring.alert.synthetic",
+      "payload": {
+        "alert_type": "identity.risk.impossible_travel_synthetic",
+        "user_id": "lab-user-travel-02",
+        "region_a_label": "LAB_REGION_A",
+        "region_b_label": "LAB_REGION_B",
+        "delta_minutes_fixture": 30,
+        "severity": "high"
+      },
+      "metadata": { "simulator": true, "data_classification": "lab_synthetic" }
+    },
+    {
+      "ref": "pb02-evt-02",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: Suspicious login pattern (impossible travel, synthetic)",
+        "severity": "high",
+        "category": "identity_anomaly",
+        "asset_type": "saas_session",
+        "target_value": "user:lab-user-travel-02"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "pb02-evt-01",
+      "headline": "Risk engine impossible-travel heuristic",
+      "synthetic_detail": "Two regional fixtures within a timeframe that violates policy thresholds in the lab profile."
+    },
+    {
+      "ref": "pb02-evt-02",
+      "headline": "Finding for identity anomaly",
+      "synthetic_detail": "Normalized synthetic finding ties the alert to a user principal for remediation planning."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "pb02-seq-01",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": { "severity": "high" }
+    },
+    {
+      "id": "pb02-seq-02",
+      "agent_key": "incident-coordinator",
+      "capability": "case_open_medium_or_high",
+      "match": {}
+    },
+    {
+      "id": "pb02-seq-03",
+      "agent_key": "scanner-external-recon",
+      "capability": "context_refresh_stub",
+      "match": { "scope": "correlation_only" }
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "High-severity identity alert requires SOC queue simulation."
+    },
+    {
+      "agent_id": "agent-3-compliance-policy",
+      "triggered_reason_synthetic": "Access policies and conditional access mappings are evaluated against the synthetic risk score."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "PR.AC-1",
+      "control_label": "Identities and credentials are managed"
+    },
+    {
+      "framework": "iso27001",
+      "control_id": "A.9.2.1",
+      "control_label": "User registration and de-registration"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Simulated session revocation offer, forced re-auth, and identity review ticket; live revocation only after human gate in production templates.",
+    "expected_action_types": ["session_review", "step_up_auth_simulation", "case_escalation"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Write high-priority evaluation artifact and tag incident (stub).",
+      "automation_boundary": "lab_stub_only"
+    },
+    {
+      "synthetic_action": "Notify user of suspicious sign-in via lab notification channel (no real SMS/email unless enabled).",
+      "automation_boundary": "recommended_automation_simulation"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "session_termination_scope",
+      "synthetic_rationale": "Operator chooses whether to revoke all sessions for the principal or only the flagged session."
+    },
+    {
+      "gate": "account_lock_contingency",
+      "synthetic_rationale": "Account lock impacts availability; humans confirm blast radius."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "identity_timeline",
+    "risk_factors",
+    "recommended_controls",
+    "remediation_timeline"
+  ],
+  "expected_final_report": {
+    "title": "Impossible travel — synthetic playbook outcome",
+    "synthetic_executive_summary": "Two fixture logins violated lab travel velocity rules; playbook expects identity containment options to be modeled, not blindly executed.",
+    "sections": ["timeline", "geo_fixtures_explained", "policy_mapping", "human_decisions_logged", "residual_risk"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  }
+}

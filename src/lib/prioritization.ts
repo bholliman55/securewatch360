@@ -67,11 +67,17 @@ export function inferExposure(targetType: string, targetValue: string): FindingE
     ) {
       return "internal";
     }
+    if (/^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\./.test(value)) {
+      return "internal";
+    }
     return "external";
   }
 
   if (normalizedType === "cidr") {
     if (value.startsWith("10.") || value.startsWith("192.168.") || value.startsWith("172.")) {
+      return "internal";
+    }
+    if (/^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\//.test(value)) {
       return "internal";
     }
     return "external";

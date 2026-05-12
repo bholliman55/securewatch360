@@ -1,0 +1,127 @@
+import fs from "node:fs";
+import path from "node:path";
+import { describe, it, expect } from "vitest";
+import {
+  scenarioDefinitionSchema,
+  parseSimulationResult,
+  parseSimulationScenarioDocument,
+  attackPlaybookSchema,
+  simulationResultSchema,
+} from "../schema";
+
+const scenariosDir = path.join(__dirname, "../scenarios");
+
+const playbookFiles = fs
+  .readdirSync(scenariosDir)
+  .filter((f) => f.startsWith("pb-") && f.endsWith(".json"))
+  .sort();
+
+const goldenPathDir = path.join(scenariosDir, "golden-path");
+const goldenPathFiles = fs.existsSync(goldenPathDir)
+  ? fs.readdirSync(goldenPathDir).filter((f) => f.endsWith(".json")).sort()
+  : [];
+
+describe("scenarioDefinitionSchema", () => {
+  it.each([
+    "phishing_email_clicked.json",
+    "ransomware_behavior_detected.json",
+    "cmmc_policy_drift_detected.json",
+  ])("parses fixture %s", (file) => {
+    const raw = JSON.parse(fs.readFileSync(path.join(scenariosDir, file), "utf8"));
+    const r = scenarioDefinitionSchema.safeParse(raw);
+    expect(r.success, r.success ? "" : JSON.stringify(r.error.format(), null, 2)).toBe(
+      true,
+    );
+  });
+
+  it("has fifteen safe synthetic playbook JSON files under scenarios/", () => {
+    expect(playbookFiles.length).toBe(15);
+  });
+
+  it("has five golden-path investor playbook JSON files under scenarios/golden-path/", () => {
+    expect(goldenPathFiles.length).toBe(5);
+  });
+
+  it.each(goldenPathFiles)("parses golden-path playbook fixture golden-path/%s", (file) => {
+    const raw = JSON.parse(fs.readFileSync(path.join(goldenPathDir, file), "utf8"));
+    expect(attackPlaybookSchema.safeParse(raw).success).toBe(true);
+    expect(() => parseSimulationScenarioDocument(raw)).not.toThrow();
+  });
+
+  it.each(playbookFiles)("parses safe synthetic playbook fixture %s", (file) => {
+    const raw = JSON.parse(fs.readFileSync(path.join(scenariosDir, file), "utf8"));
+    const playbook = attackPlaybookSchema.safeParse(raw);
+    expect(
+      playbook.success,
+      playbook.success ? "" : JSON.stringify(playbook.error.format(), null, 2),
+    ).toBe(true);
+
+    let threw = false;
+    try {
+      parseSimulationScenarioDocument(raw);
+    } catch {
+      threw = true;
+    }
+    expect(threw).toBe(false);
+  });
+
+  it("applies assurance default when omitted", () => {
+    const minimal = {
+      id: "lab-min-default",
+      name: "Minimal",
+      description: "Synthetic only.",
+      severity: "low",
+      attack_category: "suspicious_login",
+      mitre_attack_techniques: [],
+      target_type: "user_identity",
+      simulated_events: [
+        {
+          kind: "monitoring.alert.synthetic",
+          payload: { note: "lab" },
+        },
+      ],
+      expected_agent_sequence: [
+        {
+          id: "a1",
+          agent_key: "decision-engine",
+          capability: "noop_stub",
+        },
+      ],
+      expected_controls_triggered: [],
+      expected_remediation: {
+        summary: "None.",
+      },
+      expected_report_sections: ["executive_summary"],
+      pass_fail_rules: {
+        agent_sequence_order_required: false,
+        all_report_sections_required: true,
+      },
+    };
+
+    const out = scenarioDefinitionSchema.parse(minimal);
+    expect(out.assurance).toBe("synthetic_metadata_only");
+  });
+});
+
+describe("simulationResultSchema", () => {
+  it("parses a plausible lab outcome document", () => {
+    const doc = {
+      run_id: "run-lab-7f3",
+      scenario_id: "lab-phish-001",
+      passed: true,
+      validations: [
+        {
+          expectation_id: "seq-01",
+          passed: true,
+          detail: "Awareness stub fired",
+          observed: { route: "/api/lab/awareness.stub" },
+        },
+      ],
+      summary: "All synthetic expectations met.",
+      finished_at: "2026-05-02T17:45:12.000Z",
+    };
+
+    expect(() => parseSimulationResult(doc)).not.toThrow();
+    expect(simulationResultSchema.safeParse(doc).success).toBe(true);
+  });
+});

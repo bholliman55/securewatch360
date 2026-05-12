@@ -1,0 +1,198 @@
+{
+  "id": "golden-ransomware-isolated-incident-report",
+  "name": "Golden path: ransomware-like behavior isolated and memorialized with executive incident report",
+  "description": "Crisis-era storytelling without live malware: EDR-compatible heuristics mimic destructive-file patterns on one endpoint; containment isolates lateral movement hypotheses, restores confidence through backup/control attestations, and produces board-usable timelines and regulatory-flavored appendix structure (synthetic).",
+  "severity": "critical",
+  "attack_category": "ransomware_behavior",
+  "mitre_attack_techniques": ["T1486", "T1490"],
+  "target_type": "endpoint_critical_business_unit",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["golden_path", "investor_demo", "incident_report", "isolation_playbook", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "high_confidence_precursor_alert",
+      "synthetic_narrative": "EDR sends SecureWatch deterministic bundle: entropy spike + rapid renaming on FIN-CLUSTER-EDGE-LAPTOP-22 (fixture labels only)—mapped to treasury-adjacent business context for prioritization speech."
+    },
+    {
+      "t_offset_seconds": 120,
+      "phase": "network_isolation_and_identity_friction",
+      "synthetic_narrative": "Automated containment stub isolates host; conditional access simulations challenge privileged breakout paths; CIO bridge line opened with scripted stakeholder list."
+    },
+    {
+      "t_offset_seconds": 900,
+      "phase": "backup_and_recovery_attestation_window",
+      "synthetic_narrative": "Immutable backup snapshots verified for restore-point currency; ransomware-style integrity checks synthesized as passed for demo readers."
+    },
+    {
+      "t_offset_seconds": 3600,
+      "phase": "executive_incident_report_issued",
+      "synthetic_narrative": "SecureWatch composes chronological narrative linking detect→contain→validate→resume with references to SOC 2 / SEC cyber disclosure talking-point placeholders (generic)."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "gp-rw-e1",
+      "kind": "monitoring.alert.synthetic",
+      "payload": {
+        "alert_type": "edr.destructive_pattern_synthetic",
+        "hostname": "fin-cluster-edge-laptop-22.lab.example.invalid",
+        "business_unit_fixture": "Treasury Ops (demo segmentation)",
+        "signal_tags": ["high_entropy_writes", "shadow_volume_touch_synthetic", "mass_rename_heuristic_fixture"],
+        "severity": "critical"
+      },
+      "metadata": { "golden_path": true }
+    },
+    {
+      "ref": "gp-rw-e2",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "DEMO: Ransomware-like endpoint behavior escalated under IR protocol (synthetic)",
+        "severity": "critical",
+        "category": "endpoint_malicious_behavior_signal",
+        "asset_type": "endpoint",
+        "target_value": "host:fin-cluster-edge-laptop-22.lab.example.invalid"
+      }
+    },
+    {
+      "ref": "gp-rw-e3",
+      "kind": "custom.synthetic",
+      "payload": {
+        "telemetry_type": "incident.executive_summary_issued.synthetic",
+        "incident_id_fixture": "INC-GOLD-DEMO-9001",
+        "board_ready": true
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "gp-rw-e1",
+      "headline": "Detection articulated for non-technical leaders",
+      "synthetic_detail": "Plain-language parallels to business continuity KPIs—not vendor signatures."
+    },
+    {
+      "ref": "gp-rw-e2",
+      "headline": "Containment decision recorded with RACI cues",
+      "synthetic_detail": "Demonstrates deterministic policy routing into IR lanes under stress."
+    },
+    {
+      "ref": "gp-rw-e3",
+      "headline": "Executive incident report finalized",
+      "synthetic_detail": "Board appendix references control families and timelines without regulated content."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "gp-rw-s1",
+      "agent_key": "incident-coordinator",
+      "capability": "critical_incident_opened",
+      "match": {}
+    },
+    {
+      "id": "gp-rw-s2",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": {}
+    },
+    {
+      "id": "gp-rw-s3",
+      "agent_key": "scanner-external-recon",
+      "capability": "lateral_context_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "Destructive heuristic triggers full IR escalation model with deterministic comms scaffolding."
+    },
+    {
+      "agent_id": "agent-3-compliance-policy",
+      "triggered_reason_synthetic": "Backup/recovery attestations intersect with modeled compliance regimes for audit readiness language."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "DE.CM-1",
+      "control_label": "Networks monitored"
+    },
+    {
+      "framework": "nist_csf",
+      "control_id": "RS.MI-1",
+      "control_label": "Incidents handled per plan"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Sustain isolation until forensic clone stub completes, validate backup restore drill outcomes, uplift detection for analogous host cohort, finalize incident report with regulators-ready annex skeleton.",
+    "expected_action_types": ["network_isolation", "disk_forensic_stub", "backup_attestation", "executive_wr_comm"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Trigger isolation workflows and ephemeral jump-box restrictions for responders.",
+      "automation_boundary": "recommended_automation_simulation"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "ceo_pr_and_disclosure_review",
+      "synthetic_rationale": "Executive communications calibrated to legal—not technical—risk appetite."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary_timeline",
+    "impact_and_customer_communications_stub",
+    "technical_indicators_plain_language",
+    "controls_and_recovery_attestations",
+    "lessons_and_investments"
+  ],
+  "expected_final_report": {
+    "title": "Incident leadership packet — ransomware-like containment with defensible timelines",
+    "synthetic_executive_summary": "We detected behavior consistent with ransomware precursors on a prioritized endpoint, enforced isolation before lateral movement narratives took hold, demonstrated backup immutable restore readiness, and published an executive-ready incident record suitable for auditors, insurers, and public-company rehearsal teams—built entirely from synthetic markers.",
+    "sections": ["chronology", "decision_points", "containment_evidence", "recovery_confidence_statement", "next_quarter_budget_asks"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  },
+  "golden_path_demo": {
+    "executive_timeline_summary": "Sub-two-minute routing from alert to deterministic containment playbook; first executive readout drafted within hour-one with expanding precision through forensic and backup validations—shows muscle memory enterprises pay retainers for.",
+    "expected_database_outputs": [
+      {
+        "logical_table_family": "findings",
+        "business_outcome": "Demonstrates escalation states with board-facing severity tagging.",
+        "synthetic_row_preview": "{\"severity\":\"critical\", \"containment\":\"isolated_fixture\", \"incident\":\"INC-GOLD-DEMO-9001\"}"
+      },
+      {
+        "logical_table_family": "remediation_actions",
+        "business_outcome": "Line-item containment + recovery milestones with RACI overlays.",
+        "synthetic_row_preview": "{\"tasks\":[\"isolate\",\"image\",\"restore_drill\"]}"
+      },
+      {
+        "logical_table_family": "evidence_records",
+        "business_outcome": "Immutable references to timelines, transcripts, telemetry bundles (fixtures).",
+        "synthetic_row_preview": "{\"bundle\":\"EXEC_IR_PACKET_DEMO_V2\"}"
+      },
+      {
+        "logical_table_family": "audit_logs",
+        "business_outcome": "Chain-of-command events for escalation strength and approvals.",
+        "synthetic_row_preview": "{\"events\":[\"escalated\",\"contain_approved\"]}"
+      }
+    ],
+    "expected_dashboard_summary": {
+      "headline": "When seconds cost millions — deterministic IR orchestration surfaced for leadership",
+      "kpis": [
+        "Elapsed time detect → containment command acknowledged",
+        "Percent of prioritized endpoints enrolled in analogous isolation playbook",
+        "Mean time to executive incident summary issuance",
+        "Backup immutability attestation completeness score",
+        "Cross-functional bridge participants engaged vs runbook mandate"
+      ],
+      "narrative": "Visualization centers on decisive timeline deltas and fiduciary-grade documentation readiness—what boards ask after headline cyber events—with zero sensationalism thanks to deterministic synthetic scaffolding."
+    }
+  }
+}

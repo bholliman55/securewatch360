@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_screenshot",
+      "mcp__Claude_Preview__preview_console_logs",
+      "mcp__Claude_Preview__preview_snapshot",
+      "mcp__d21b5ecf-ac5b-482e-b183-4da601bf4ed4__search_workflows",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__Claude_Preview__preview_logs",
+      "mcp__Claude_Preview__preview_network",
+      "mcp__d21b5ecf-ac5b-482e-b183-4da601bf4ed4__get_workflow_details",
+      "mcp__Claude_Preview__preview_list",
+      "mcp__Claude_Preview__preview_inspect",
+      "mcp__61233557-7894-4b77-be8c-c5d5fb732cb8__slack_search_public_and_private",
+      "mcp__5befe314-53cb-40b0-ae7f-23aef7f5f559__list_tables",
+      "Bash(npm run typecheck *)"
+    ]
+  }
+}

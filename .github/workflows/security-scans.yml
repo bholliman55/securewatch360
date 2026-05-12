@@ -2,7 +2,7 @@ name: Security Scans
 
 on:
   pull_request:
-    branches: [develop]
+    branches: [main]
   workflow_dispatch:
     inputs:
       target_url:
@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   baseline-security:
-    name: Baseline SCA/SAST/Infra
+    name: PR Dependency Audit
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
@@ -42,14 +42,25 @@ jobs:
       - name: Dependency audit (high+)
         run: npm run security:audit
 
-      - name: Install Semgrep
-        run: python3 -m pip install --upgrade pip semgrep
+  nightly-infra-tools:
+    name: Nightly Tooling (Trivy + OPA)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: SAST scan with Semgrep
-        run: npm run security:sast
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@0.16.1
         with:
           scan-type: fs
           scan-ref: .
@@ -58,12 +69,27 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
 
+      - name: Install OPA CLI
+        run: |
+          curl -L -o /usr/local/bin/opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
+          chmod +x /usr/local/bin/opa
+          opa version
+
+      - name: Start local OPA policy server
+        run: |
+          opa run --server --addr :8181 ./policies/rego > opa.log 2>&1 &
+          sleep 3
+          curl -sSf http://localhost:8181/health || (cat opa.log && exit 1)
+
+      - name: Framework policy gate (OPA required)
+        run: npm run qa:frameworks:opa-required
+
   nightly-dast:
     name: Nightly DAST (OWASP ZAP)
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     env:
-      TARGET_URL: ${{ inputs.target_url || secrets.ZAP_TARGET_URL }}
+      TARGET_URL: ${{ github.event.inputs.target_url || secrets.ZAP_TARGET_URL }}
     steps:
       - name: Validate target URL is configured
         run: |

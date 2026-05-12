@@ -17,14 +17,15 @@ function getAnonKey(): string {
 
 // --- browser: anon key only, RLS applies ------------------------------------------------------
 
-let browserClient: SupabaseClient | undefined;
+let browserClient: ReturnType<typeof createBrowserClient> | undefined;
 
 /**
  * For Client Components in the browser. Never use the service role here.
  */
-export function getSupabaseBrowserClient(): SupabaseClient {
-  if (browserClient) return browserClient;
-  browserClient = createBrowserClient(getPublicUrl(), getAnonKey());
+export function getSupabaseBrowserClient(): ReturnType<typeof createBrowserClient> {
+  if (!browserClient) {
+    browserClient = createBrowserClient(getPublicUrl(), getAnonKey());
+  }
   return browserClient;
 }
 

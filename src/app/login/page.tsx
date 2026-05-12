@@ -32,7 +32,8 @@ export default function LoginPage() {
       }
 
       setSuccess("Signed in. Redirecting...");
-      router.push("/account");
+      const next = new URLSearchParams(window.location.search).get("next") ?? "/console";
+      router.push(next);
       router.refresh();
     } finally {
       setLoading(false);

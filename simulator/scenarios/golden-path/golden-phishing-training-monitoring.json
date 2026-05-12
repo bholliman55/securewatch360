@@ -1,0 +1,185 @@
+{
+  "id": "golden-phishing-training-monitoring",
+  "name": "Golden path: phishing click drives training, monitoring uplift, and closed accountability",
+  "description": "People-centric golden path suited to CIO/CISO storytelling: voluntary user signals are correlated against awareness programs, deterministic policy decisions route micro-training and monitoring enhancements, and the organization closes with measurable lift in simulated click-through avoidance—no harvested credentials.",
+  "severity": "medium",
+  "attack_category": "phishing",
+  "mitre_attack_techniques": ["T1566", "T1204"],
+  "target_type": "workforce_identity",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["golden_path", "investor_demo", "awareness", "human_firewall", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "user_initiated_signal",
+      "synthetic_narrative": "Employee uses corporate reporting control to flag a suspicious payroll-themed message; SecureWatch normalizes the report into a positive security culture signal."
+    },
+    {
+      "t_offset_seconds": 180,
+      "phase": "correlation_and_risk_scoring",
+      "synthetic_narrative": "URL maps to a benign demo landing host; risk engine still elevates training debt because similar themes trend in industry feeds (Fixture SOC Intel)."
+    },
+    {
+      "t_offset_seconds": 600,
+      "phase": "awareness_intervention",
+      "synthetic_narrative": "Micro-learning module assigned with optional manager digest; completion tracked to HRIS-friendly summary fields (synthetic)."
+    },
+    {
+      "t_offset_seconds": 3600,
+      "phase": "monitoring_hardening",
+      "synthetic_narrative": "Mail gateway / browser policy simulation adds heuristic for payroll-themed BEC patterns; alerting tuned to suppress noise while widening coverage windows."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "gp-phish-e1",
+      "kind": "monitoring.alert.synthetic",
+      "payload": {
+        "alert_type": "security_awareness.report",
+        "subject": "DEMO: User-reported suspicious payroll-themed message",
+        "reporter_user_id": "demo-user-rpatel01",
+        "claimed_url_host": "payportal-demo.example.invalid",
+        "threat_category": "credential_phishing_signal_synthetic",
+        "severity": "medium"
+      },
+      "metadata": { "golden_path": true }
+    },
+    {
+      "ref": "gp-phish-e2",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "DEMO: BEC-themed engagement correlated to workforce segment (synthetic)",
+        "severity": "medium",
+        "category": "social_engineering_signal",
+        "asset_type": "user_identity",
+        "target_value": "user:demo-user-rpatel01"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "gp-phish-e1",
+      "headline": "Psychological safety preserving signal captured",
+      "synthetic_detail": "Leadership KPIs emphasize willing reporting—not punishment metrics—in demo narrative."
+    },
+    {
+      "ref": "gp-phish-e2",
+      "headline": "Closed loop: Training + telemetry uplift packaged",
+      "synthetic_detail": "Dashboard shows completion rate and tightened detection rulesets as paired outcomes."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "gp-phish-s1",
+      "agent_key": "awareness-workflow",
+      "capability": "training_nudge_or_ticket_opened",
+      "match": {}
+    },
+    {
+      "id": "gp-phish-s2",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": { "severity": "medium" }
+    },
+    {
+      "id": "gp-phish-s3",
+      "agent_key": "incident-coordinator",
+      "capability": "low_fidelity_case_opened_or_tagged",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-4-awareness-phishing-training",
+      "triggered_reason_synthetic": "User-report pipeline drives calibrated training nudges and leadership digest."
+    },
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "Monitoring uplift and playbooks tightened for BEC heuristic coverage."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "PR.AT-1",
+      "control_label": "Roles and responsibilities understood"
+    },
+    {
+      "framework": "soc2",
+      "control_id": "CC2.2",
+      "control_label": "Communication relevant to obligations"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Complete targeted phishing-resilience curriculum slice, widen BEC detection heuristics, publish executive summary emphasizing culture metrics.",
+    "expected_action_types": ["micro_training_launch", "detection_tune_request", "executive_visibility_packet"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Send adaptive training assignment with SLA based on segmentation rules.",
+      "automation_boundary": "conditional_operator_confirm"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "comms_tone_and_escalation",
+      "synthetic_rationale": "HR and Legal confirm messaging avoids punitive optics while maintaining accountability narrative."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "user_context",
+    "awareness_assets",
+    "monitoring_changes",
+    "measurable_outcomes"
+  ],
+  "expected_final_report": {
+    "title": "Workforce resilience briefing — phishing signal converted into measurable uplift",
+    "synthetic_executive_summary": "We rewarded proactive reporting with fast feedback loops: targeted education shipped in hours, BEC-style monitoring tightened without alert fatigue spikes, and the board sees culture metrics alongside technical coverage—articulated as shareholder-friendly operational resilience.",
+    "sections": ["what_the_user_did_right", "how_we_responded", "how_effectiveness_is_measured", "what_changes_next_quarter"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  },
+  "golden_path_demo": {
+    "executive_timeline_summary": "Under an hour from report ingestion to deterministic routing; within the business day awareness and SOC surfaces move in tandem so leadership hears one coordinated narrative—employees helped, tooling improved.",
+    "expected_database_outputs": [
+      {
+        "logical_table_family": "findings",
+        "business_outcome": "Demonstrates BEC-theme engagement tied to personas and remediation states.",
+        "synthetic_row_preview": "{\"segment\":\"finance_adjacent_demo\", \"status\":\"guided_to_training_complete\"}"
+      },
+      {
+        "logical_table_family": "audit_logs",
+        "business_outcome": "Immutable record mapping policy decisions to outbound comms stubs.",
+        "synthetic_row_preview": "{\"action\":\"awareness.training_issued\", \"reason\":\"bec_theme_risk_fixture\"}"
+      },
+      {
+        "logical_table_family": "notification_subscription_rules",
+        "business_outcome": "Demonstrates calibrated alerting uplift with documented rollback metadata.",
+        "synthetic_row_preview": "{\"topic\":\"gateway.bec.heuristic\", \"version\":\"demo_v7\"}"
+      },
+      {
+        "logical_table_family": "risk_exceptions",
+        "business_outcome": "Optional temporary risk acceptance objects if business rejects aggressive filtering (none in demo).",
+        "synthetic_row_preview": "{\"count_expected\":\"zero_in_golden_path\"}"
+      }
+    ],
+    "expected_dashboard_summary": {
+      "headline": "Employees + automation — dual-track resilience investors can cite",
+      "kpis": [
+        "Reporting culture index (voluntary phishing reports vs headcount segmentation)",
+        "Time-to-micro-training-completion for prioritized cohort",
+        "BEC-aligned detection fidelity delta post-tuning (precision/recall stubs)",
+        "Noise ratio trend for analogous campaigns (SOC satisfaction proxy)",
+        "Board KPI pack auto-generated completeness score"
+      ],
+      "narrative": "Dashboards juxtapose humane metrics (education velocity) with SOC metrics (detection deltas) so growth investors perceive both efficacy and disciplined automation."
+    }
+  }
+}

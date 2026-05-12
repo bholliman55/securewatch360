@@ -1,0 +1,203 @@
+{
+  "id": "golden-vulnerable-dependency-ticket",
+  "name": "Golden path: vulnerable dependency prioritized and tracked to IT ticket closure",
+  "description": "Software-supply-chain narrative framed for CTOs and application owners: a critical CVE aligns with internet-exposed workloads; SecureWatch merges intel, SLA math, CAB-friendly ticket payload, and evidence of patch validation—stressing orderly change management without exploit detail.",
+  "severity": "critical",
+  "attack_category": "vulnerable_dependency",
+  "mitre_attack_techniques": ["T1190", "T1068"],
+  "target_type": "cloud_workload_edge",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["golden_path", "investor_demo", "vuln_management", "it_ticket", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "intel_landscape_refresh",
+      "synthetic_narrative": "OSINT-aligned stub ties CVE DEMO-9000-LAB (synthetic advisory token) to customer-facing storefront container running on internet edge cluster DEMO-EAST-CLUSTER."
+    },
+    {
+      "t_offset_seconds": 300,
+      "phase": "business_context_enrichment",
+      "synthetic_narrative": "Platform inventories revenue-impact tags, uptime windows, rollback owners—language suitable for CAB cover sheet."
+    },
+    {
+      "t_offset_seconds": 1200,
+      "phase": "ticket_creation_and_escalation",
+      "synthetic_narrative": "Integrated ITSM artifact opens with prioritized queue, SLA clock, deterministic patch bundle reference (fixture)."
+    },
+    {
+      "t_offset_seconds": 5400,
+      "phase": "validation_and_residual_documentation",
+      "synthetic_narrative": "Post-deployment scanner stub closes finding; residual posture notes transient compensating WAF tightening for weekend coverage."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "gp-dep-e1",
+      "kind": "external_intel.synthetic",
+      "payload": {
+        "source": "lab_vuln_intel_stub",
+        "cve_id_fixture": "CVE-DEMO-9000-LAB",
+        "affected_component": "nodejs_runtime_dependency_fixture",
+        "asset_id": "demo-storefront-edge-frontend",
+        "severity": "critical"
+      }
+    },
+    {
+      "ref": "gp-dep-e2",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "DEMO: Critical dependency with edge exposure footprint (synthetic)",
+        "severity": "critical",
+        "category": "vulnerable_component",
+        "asset_type": "host",
+        "target_value": "service:demo-storefront-edge.example.invalid"
+      }
+    },
+    {
+      "ref": "gp-dep-e3",
+      "kind": "custom.synthetic",
+      "payload": {
+        "telemetry_type": "itsm.ticket_created.synthetic",
+        "ticket_key_fixture": "CHG-DEMO-18402",
+        "priority": "P1_demo",
+        "summary": "Patch demo dependency CVE-DEMO-9000-LAB on edge storefront workloads"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "gp-dep-e1",
+      "headline": "Intel synthesized into CIO-ready risk statement",
+      "synthetic_detail": "Articulates urgency as business continuity + brand trust—not vendor fear."
+    },
+    {
+      "ref": "gp-dep-e2",
+      "headline": "Finding prioritized by exposure × severity matrix",
+      "synthetic_detail": "Metric transparent to auditors: math, not opinion."
+    },
+    {
+      "ref": "gp-dep-e3",
+      "headline": "IT ticket shows governed execution",
+      "synthetic_detail": "Board sees integration into existing change tooling rather than rogue scripts."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "gp-dep-s1",
+      "agent_key": "osint-vuln-feed",
+      "capability": "intel_ingest_stub",
+      "match": {}
+    },
+    {
+      "id": "gp-dep-s2",
+      "agent_key": "decision-engine",
+      "capability": "sla_escalation_stub",
+      "match": {}
+    },
+    {
+      "id": "gp-dep-s3",
+      "agent_key": "incident-coordinator",
+      "capability": "emergency_change_ticket_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-2-osint-vuln-intel",
+      "triggered_reason_synthetic": "CVE alignment and exposure correlation drive intel agent workloads."
+    },
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "Critical dependency issue couples with SOC validation and CAB orchestration stubs."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "PR.IP-12",
+      "control_label": "Vulnerability management lifecycle"
+    },
+    {
+      "framework": "iso27001",
+      "control_id": "A.12.6.1",
+      "control_label": "Management of technical vulnerabilities"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Execute emergency-compatible patch path, document rollback, validate externally observable surface, retire compensating WAF rules after stabilization.",
+    "expected_action_types": ["emergency_change", "patch_apply", "post_patch_scan", "waf_tune_compensating"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Auto-open P1 IT ticket with CAB packet, SLA timer, stakeholder matrix.",
+      "automation_boundary": "lab_stub_only"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "c_emergency_dual_control",
+      "synthetic_rationale": "Two-person integrity for production-facing dependency moves even under expedited SLA."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "risk_equation_exposure_times_severity",
+    "ticket_and_sla_proof",
+    "validation_evidence",
+    "residual_risk_statement"
+  ],
+  "expected_final_report": {
+    "title": "Supply-chain remediation briefing — from CVE rumor to validated patch with audit trail",
+    "synthetic_executive_summary": "We merged authoritative vulnerability cues with realistic application context, prioritized with transparent math understandable to boards, routed work through sanctioned change tooling, and closed the loop with third-party styled validation—all narrated without operational secrets or exploit scaffolding.",
+    "sections": ["how_priority_was_derived", "how_workflow_integrated_ITSM", "how_we_avoid_false_confidence", "what_leadership_reads_next_month"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  },
+  "golden_path_demo": {
+    "executive_timeline_summary": "From intel refresh to CAB-trackable ticket in tens of minutes, then through controlled execution and validation snapshots suitable for auditors—demonstrating SecureWatch as orchestration membrane across AppSec + IT Ops + SOC.",
+    "expected_database_outputs": [
+      {
+        "logical_table_family": "cve_catalog",
+        "business_outcome": "Demonstrates linkage between advisory identifiers and tenant asset graph.",
+        "synthetic_row_preview": "{\"cve\":\"CVE-DEMO-9000-LAB\", \"exploitability_grade\":\"elevated_fixture\"}"
+      },
+      {
+        "logical_table_family": "findings",
+        "business_outcome": "Single prioritized row with SLA clock and CAB references.",
+        "synthetic_row_preview": "{\"sla_target_hours\":\"demo_8h\", \"itsm_ticket\":\"CHG-DEMO-18402\"}"
+      },
+      {
+        "logical_table_family": "remediation_actions",
+        "business_outcome": "Shows closed-loop remediation with validation artifacts.",
+        "synthetic_row_preview": "{\"steps\":[\"patch\",\"scan\",\"rollback_ready\"],\"status\":\"validated\"}"
+      },
+      {
+        "logical_table_family": "approval_requests",
+        "business_outcome": "Dual-control approvals recorded for expedited tier.",
+        "synthetic_row_preview": "{\"approvals_required\":2, \"dual_control_demo\":\"complete\"}"
+      },
+      {
+        "logical_table_family": "audit_logs",
+        "business_outcome": "End-to-end history for SOC 2 / ISO auditors.",
+        "synthetic_row_preview": "{\"trail\":\"cve_finding_ticket_patch_validate\"}"
+      }
+    ],
+    "expected_dashboard_summary": {
+      "headline": "Critical dependency debt collapsed into governed execution investors trust",
+      "kpis": [
+        "Median time from CVE correlation → approved change record (golden cohort)",
+        "Percent of criticals with ITSM linkage vs spreadsheets",
+        "Patch validation completeness score (automated scanners + manual sign-off stubs)",
+        "Incident of repeat findings on same semantic component (should trend downward)",
+          "Engineering interruption minutes vs traditional war-room anecdote benchmarks"
+      ],
+      "narrative": "Dashboard overlays vulnerability velocity with organizational friction metrics so Series B/C narratives sound like disciplined operations—not heroics."
+    }
+  }
+}

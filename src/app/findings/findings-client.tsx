@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 
 type FindingRow = {
@@ -16,6 +16,9 @@ type FindingRow = {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  scan_id?: string | null;
+  scan_run_id?: string | null;
+  scan_result_id?: string | null;
   scan: {
     id: string;
     name: string;
@@ -41,6 +44,7 @@ type Filters = {
   scanId: string;
   severity: string;
   status: string;
+  scanRunId: string;
 };
 
 const initialFilters: Filters = {
@@ -48,6 +52,7 @@ const initialFilters: Filters = {
   scanId: "",
   severity: "",
   status: "",
+  scanRunId: "",
 };
 
 const findingStatuses = [
@@ -110,6 +115,7 @@ export function FindingsClient({ initialFilters: initialFilterOverrides }: Findi
       if (nextFilters.scanId.trim()) params.set("scanId", nextFilters.scanId.trim());
       if (nextFilters.severity.trim()) params.set("severity", nextFilters.severity.trim());
       if (nextFilters.status.trim()) params.set("status", nextFilters.status.trim());
+      if (nextFilters.scanRunId.trim()) params.set("scanRunId", nextFilters.scanRunId.trim());
 
       const query = params.toString();
       const response = await fetch(`/api/findings${query ? `?${query}` : ""}`, { method: "GET" });
@@ -139,6 +145,23 @@ export function FindingsClient({ initialFilters: initialFilterOverrides }: Findi
     }
     void loadFindings(filters);
   }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const nextFilters: Filters = {
+      tenantId: params.get("tenantId") ?? "",
+      scanId: params.get("scanId") ?? params.get("scanRunId") ?? params.get("scanResultId") ?? "",
+      severity: params.get("severity") ?? "",
+      status: params.get("status") ?? "",
+      scanRunId: "",
+    };
+    if (nextFilters.tenantId || nextFilters.scanId) {
+      setFilters(nextFilters);
+      if (nextFilters.tenantId) {
+        void loadFindings(nextFilters);
+      }
+    }
+  }, []);
 
   function updateFindingInState(id: string, next: Partial<FindingRow>) {
     setFindings((prev) => prev.map((finding) => (finding.id === id ? { ...finding, ...next } : finding)));

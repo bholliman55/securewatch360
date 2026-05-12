@@ -1,23 +1,135 @@
-@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap");
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+@import "tailwindcss";
+@source "../**/*.{ts,tsx}";
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  :root {
+    /* Legacy palette tokens (used by Next.js pages) */
+    --sw-navy-deep: #07111f;
+    --sw-navy-dark: #0d1e33;
+    --sw-navy-mid: #112d4e;
+    --sw-blue-primary: #1565c0;
+    --sw-blue-bright: #1e88e5;
+    --sw-blue-electric: #29b6f6;
+    --sw-cyan: #00e5ff;
+    --sw-silver: #b0c4de;
+    --sw-green: #22c55e;
+
+    /* Semantic design tokens (used by console UI components) */
+    --sw-bg: #07111f;
+    --sw-surface: #0d1e33;
+    --sw-surface-elevated: #112d4e;
+    --sw-border: rgba(176, 196, 222, 0.24);
+    --sw-text-primary: #ffffff;
+    --sw-text-muted: #8ab4d4;
+    --sw-accent: #1565c0;
+    --sw-accent-hover: #1e88e5;
+    --sw-accent-bright: #29b6f6;
+    --sw-pulse: #00e5ff;
+    --sw-success: #22c55e;
+    --sw-nav-active-bg: linear-gradient(135deg, #1565c0 0%, #112d4e 100%);
+    --sw-nav-active-text: #ffffff;
+    --sw-card-shadow: 0 14px 34px -20px rgba(0, 0, 0, 0.55);
+    --sw-card-shadow-hover: 0 20px 40px -18px rgba(0, 0, 0, 0.65);
+    --sw-focus-ring: 0 0 0 3px rgba(41, 182, 246, 0.35);
+  }
+
+  .dark {
+    --sw-bg: #07111f;
+    --sw-surface: #0d1e33;
+    --sw-surface-elevated: #112d4e;
+    --sw-border: rgba(41, 182, 246, 0.2);
+    --sw-text-primary: #ffffff;
+    --sw-text-muted: #8ab4d4;
+    --sw-accent: #1565c0;
+    --sw-accent-hover: #1e88e5;
+    --sw-accent-bright: #29b6f6;
+    --sw-nav-active-bg: linear-gradient(135deg, #1565c0 0%, #112d4e 100%);
+    --sw-nav-active-text: #ffffff;
+    --sw-card-shadow: 0 14px 34px -20px rgba(0, 0, 0, 0.55);
+    --sw-card-shadow-hover: 0 20px 40px -18px rgba(0, 0, 0, 0.65);
+    --sw-focus-ring: 0 0 0 3px rgba(41, 182, 246, 0.35);
+  }
+
+  html,
+  body {
+    min-height: 100%;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+    box-shadow: var(--sw-focus-ring);
+  }
 }
 
-:root {
-  --sw-navy-deep: #07111f;
-  --sw-navy-dark: #0d1e33;
-  --sw-navy-mid: #112d4e;
-  --sw-blue-primary: #1565c0;
-  --sw-blue-bright: #1e88e5;
-  --sw-blue-electric: #29b6f6;
-  --sw-cyan: #00e5ff;
-  --sw-silver: #b0c4de;
-  --sw-text-muted: #8ab4d4;
-  --sw-green: #22c55e;
+@layer components {
+  /* Console panel card */
+  .sw-panel {
+    background: linear-gradient(175deg, var(--sw-surface) 0%, var(--sw-surface-elevated) 100%);
+    border: 1px solid var(--sw-border);
+    border-radius: 16px;
+    box-shadow: var(--sw-card-shadow);
+  }
+
+  .sw-panel:hover {
+    box-shadow: var(--sw-card-shadow-hover);
+  }
+
+  .sw-kicker {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--sw-accent-bright);
+    font-weight: 700;
+  }
+
+  .sw-chip {
+    border: 1px solid var(--sw-border);
+    border-radius: 9999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    background: color-mix(in srgb, var(--sw-surface-elevated) 84%, transparent);
+    color: var(--sw-text-muted);
+  }
 }
+
+@layer utilities {
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .animate-slide-in  { animation: slideIn 0.5s ease-out; }
+  .animate-fade-in   { animation: fadeIn 0.3s ease-out; }
+  .animate-scale-in  { animation: scaleIn 0.3s ease-out; }
+}
+
+::-webkit-scrollbar       { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--sw-surface); }
+::-webkit-scrollbar-thumb { background: var(--sw-accent); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--sw-accent-hover); }
 
 html,
 body {
@@ -25,8 +137,8 @@ body {
   margin: 0;
   font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   line-height: 1.5;
-  background: var(--sw-navy-deep);
-  color: #fff;
+  background: var(--sw-bg, var(--sw-navy-deep));
+  color: var(--sw-text-primary, #fff);
 }
 
 .sw-app-shell {

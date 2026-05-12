@@ -1,0 +1,178 @@
+{
+  "id": "golden-cmmc-drift-corrected",
+  "name": "Golden path: CMMC-aligned drift detected early and posture corrected",
+  "description": "Defense-industrial storyline: programmatic comparison of authored policy versus observed identity controls reveals a lapse in MFA evidence collection for scoped users—corrective actions reconcile IdP attestations before an assessor-review window closes. Narrative emphasizes audit-friendly traceability without CUI payloads.",
+  "severity": "medium",
+  "attack_category": "compliance_drift",
+  "mitre_attack_techniques": [],
+  "target_type": "regulated_program_boundary",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["golden_path", "investor_demo", "cmmc", "grc_closed_loop", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "continuous_control_monitoring",
+      "synthetic_narrative": "SecureWatch merges IdP attestations against an modeled CMMC L2-aligned access profile for DEMO-BOUNDARY-77; discrepancy engine flags MFA proof documents older than contractual refresh."
+    },
+    {
+      "t_offset_seconds": 2400,
+      "phase": "governance_triage",
+      "synthetic_narrative": "Compliance analyst assigns owners; POA&M template pre-filled with deterministic due dates anchored to customer's assessor rehearsal calendar."
+    },
+    {
+      "t_offset_seconds": 7200,
+      "phase": "corrective_action_executed",
+      "synthetic_narrative": "IdP reconciliation job records fresh MFA attestations across all in-scope admins; SSO policy snapshot exported for assessor binder (synthetic)."
+    },
+    {
+      "t_offset_seconds": 14400,
+      "phase": "closure_and_attestation_prep",
+      "synthetic_narrative": "Control mapping regenerated; executive attestation drafted showing drift resolved ahead of blackout period—no regulated data payloads in simulator."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "gp-cmmc-e1",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "DEMO: CMMC-modeled access drift — stale MFA attestations (synthetic)",
+        "severity": "medium",
+        "category": "compliance_gap",
+        "asset_type": "organizational_boundary",
+        "target_value": "boundary:DEMO-BOUNDARY-77"
+      }
+    },
+    {
+      "ref": "gp-cmmc-e2",
+      "kind": "custom.synthetic",
+      "payload": {
+        "telemetry_type": "grc.evidence_review.synthetic",
+        "framework": "CMMC_MODEL_LAB_DEMO",
+        "practice_fixture": "AC.L2-demo-stub",
+        "gap_plain_language": "MFA enforcement evidence stale vs policy-defined refresh horizon."
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "gp-cmmc-e1",
+      "headline": "Drift surfaced as prioritized GRC backlog item",
+      "synthetic_detail": "Issue links to SSP narrative paragraphs and reviewer contacts without embedding export-controlled wording."
+    },
+    {
+      "ref": "gp-cmmc-e2",
+      "headline": "Evidence refresh satisfied program office",
+      "synthetic_detail": "Auditor-visible folder structure populated with deterministic synthetic hashes only."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "gp-cmmc-s1",
+      "agent_key": "compliance-assessor",
+      "capability": "mapping_stub",
+      "match": {}
+    },
+    {
+      "id": "gp-cmmc-s2",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": {}
+    },
+    {
+      "id": "gp-cmmc-s3",
+      "agent_key": "incident-coordinator",
+      "capability": "poam_tracking_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-3-compliance-policy",
+      "triggered_reason_synthetic": "Framework-aligned drift consumes compliance agent mapping and SSP-adjacent metadata."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "cmmc",
+      "control_id": "AC.L2-demo-stub",
+      "control_label": "Demo authorized access evidence refresh"
+    },
+    {
+      "framework": "nist_csf",
+      "control_id": "GV.RM-3",
+      "control_label": "Risk responses are prioritized"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Refresh MFA attestations across in-scope admins, reconcile IdP configuration snapshot to modeled CMMC mode, regenerate evidence index for assessor rehearsal.",
+    "expected_action_types": ["evidence_refresh", "ssp_section_update_stub", "assessor_evidence_bundle"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Auto-build POA&M rows with RACI placeholders and blackout-date awareness.",
+      "automation_boundary": "lab_stub_only"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "issm_attestation_review",
+      "synthetic_rationale": "Responsible official signs closure narrative before assessor-ready export."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "practices_touched",
+    "evidence_index",
+    "poam_resolution",
+    "readiness_projection"
+  ],
+  "expected_final_report": {
+    "title": "Program briefing — modeled CMMC drift remediated ahead of rehearsal window",
+    "synthetic_executive_summary": "We converted a brittle evidence posture into audit-ready MFA proof across modeled L2-scope administrators, tightened traceability against the system security narrative, and closed the corrective record with deterministic exports suitable for primes and MSSPs managing DIB subcontractors.",
+    "sections": ["drift_detected", "corrective_plan", "evidence_refresh", "assessor_readiness", "risk_to_schedule"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  },
+  "golden_path_demo": {
+    "executive_timeline_summary": "The platform moves compliance from point-in-time binders to living telemetry: drift is detected on a management-friendly clock, owners are named, evidence is refreshed, and closure is expressed in language primes use with their assessors—without operational drag on engineering teams.",
+    "expected_database_outputs": [
+      {
+        "logical_table_family": "findings",
+        "business_outcome": "Single source of truth for drift severity, responsible org, and closure state.",
+        "synthetic_row_preview": "{\"category\":\"compliance_gap\", \"framework_tags\":[\"cmmc_demo\"], \"status\":\"closed\"}"
+      },
+      {
+        "logical_table_family": "tenant_compliance_posture",
+        "business_outcome": "Roll-up scoring shows improving posture after evidence refresh (demo arithmetic).",
+        "synthetic_row_preview": "{\"readiness_band\":\"green_trend\", \"delta\":\"+12_points_fixture\"}"
+      },
+      {
+        "logical_table_family": "evidence_records",
+        "business_outcome": "Immutable pointers to IdP exports and analyst notes for assessor workflows.",
+        "synthetic_row_preview": "{\"classification\":\"demo_synthetic_only\", \"hash_sha256_fixture\":\"bbbb...cccc\"}"
+      },
+      {
+        "logical_table_family": "audit_logs",
+        "business_outcome": "Chain-of-custody for human approvals attaching to deterministic policy decisions.",
+        "synthetic_row_preview": "{\"action\":\"compliance.drift.closed\", \"summary\":\"ISSM_review_complete\"}"
+      }
+    ],
+    "expected_dashboard_summary": {
+      "headline": "Assessor-ready continuity — drift trending down ahead of blackout week",
+      "kpis": [
+        "Mean time to reconcile modeled CMMC evidence gaps vs plan-of-action clock",
+        "Percent of modeled L2 admin population with refreshed MFA attestations",
+        "Count of SSP paragraphs auto-linked to validated evidence stubs",
+        "Program risk heatmap: ACCESS family trending green post-refresh",
+        "Cross-program comparables vs peer contractors (benchmark stub)"
+      ],
+      "narrative": "Executives consume a readiness dial: backlog is shrinking by owner, blackout risks are proactively retired, and the platform narrates backlog as business outcomes—not ticket counts."
+    }
+  }
+}

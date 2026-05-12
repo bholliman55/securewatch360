@@ -1,0 +1,142 @@
+{
+  "id": "pb-lab-12-admin-account-outside-policy",
+  "name": "Safe synthetic playbook: New admin account created outside policy",
+  "description": "Directory alert for a net-new administrator principal that lacks required approval metadata in the lab IdP. Focuses on provisioning workflow integrity—no password material, no impersonation guidance.",
+  "severity": "high",
+  "attack_category": "privilege_escalation_signal",
+  "mitre_attack_techniques": ["T1136", "T1098"],
+  "target_type": "user_identity",
+  "assurance": "synthetic_metadata_only",
+  "tags": ["playbook", "provisioning", "admin", "safe_synthetic_lab"],
+  "playbook_kind": "safe_synthetic_lab",
+  "simulated_timeline": [
+    {
+      "t_offset_seconds": 0,
+      "phase": "account_creation",
+      "synthetic_narrative": "HRIS feed stub shows new user lab-admin-shadow-33 with admin group membership."
+    },
+    {
+      "t_offset_seconds": 120,
+      "phase": "policy_check",
+      "synthetic_narrative": "Provisioning validator notes missing CAB reference field for admin elevation."
+    },
+    {
+      "t_offset_seconds": 480,
+      "phase": "suspension_discussion",
+      "synthetic_narrative": "Identity team simulation debates temporary disable versus evidence collection-first."
+    }
+  ],
+  "simulated_events": [
+    {
+      "ref": "pb12-evt-01",
+      "kind": "monitoring.alert.synthetic",
+      "payload": {
+        "alert_type": "identity.admin_created_without_ticket_synthetic",
+        "user_principal": "lab-admin-shadow-33",
+        "admin_group": "LAB_GLOBAL_ADMIN",
+        "cab_reference_present": false,
+        "severity": "high"
+      }
+    },
+    {
+      "ref": "pb12-evt-02",
+      "kind": "finding.synthetic",
+      "payload": {
+        "title": "LAB: Admin account lacking governance metadata (synthetic)",
+        "severity": "high",
+        "category": "provisioning_violation",
+        "asset_type": "directory_user",
+        "target_value": "user:lab-admin-shadow-33"
+      }
+    }
+  ],
+  "events_emitted": [
+    {
+      "ref": "pb12-evt-01",
+      "headline": "Privileged account creation alert",
+      "synthetic_detail": "Highlights break in joiner/mover/leaver controls for admin tier."
+    },
+    {
+      "ref": "pb12-evt-02",
+      "headline": "Governance finding",
+      "synthetic_detail": "Maps to change management expectations in lab control library."
+    }
+  ],
+  "expected_agent_sequence": [
+    {
+      "id": "pb12-seq-01",
+      "agent_key": "incident-coordinator",
+      "capability": "identity_incident_stub",
+      "match": {}
+    },
+    {
+      "id": "pb12-seq-02",
+      "agent_key": "decision-engine",
+      "capability": "evaluation_record_written",
+      "match": {}
+    },
+    {
+      "id": "pb12-seq-03",
+      "agent_key": "compliance-assessor",
+      "capability": "change_mgmt_evidence_stub",
+      "match": {}
+    }
+  ],
+  "expected_agents_triggered": [
+    {
+      "agent_id": "agent-5-monitoring-incident-response",
+      "triggered_reason_synthetic": "Unauthorized-by-policy admin creation may indicate insider or compromised provisioning."
+    },
+    {
+      "agent_id": "agent-3-compliance-policy",
+      "triggered_reason_synthetic": "Change management and access certification policies apply."
+    }
+  ],
+  "expected_controls_triggered": [
+    {
+      "framework": "nist_csf",
+      "control_id": "PR.IP-3",
+      "control_label": "Configuration change control processes"
+    },
+    {
+      "framework": "iso27001",
+      "control_id": "A.9.2.2",
+      "control_label": "User access provisioning"
+    }
+  ],
+  "expected_remediation": {
+    "summary": "Disable account pending validation, reconcile with HRIS, restore least-privilege template, open provisioning root-cause review.",
+    "expected_action_types": ["account_suspension_simulation", "hris_reconciliation_stub", "rca_ticket"],
+    "human_in_the_loop": true
+  },
+  "expected_autonomous_remediation": [
+    {
+      "synthetic_action": "Flag account for step-up review in IdP sandbox (no production lock without approval).",
+      "automation_boundary": "conditional_operator_confirm"
+    }
+  ],
+  "expected_human_approval_gates": [
+    {
+      "gate": "disable_account",
+      "synthetic_rationale": "False positives could lock out valid emergency administrators."
+    }
+  ],
+  "expected_report_sections": [
+    "executive_summary",
+    "provisioning_chain",
+    "control_evidence_gaps",
+    "recommended_controls",
+    "remediation_timeline"
+  ],
+  "expected_final_report": {
+    "title": "Admin account outside policy — synthetic playbook outcome",
+    "synthetic_executive_summary": "A new admin lacked required approval metadata; playbook centers on safe containment and process repair, not account takeover.",
+    "sections": ["timeline", "hris_correlation", "actions_taken_stub", "control_hardening"]
+  },
+  "pass_fail_rules": {
+    "agent_sequence_order_required": false,
+    "all_report_sections_required": false,
+    "min_controls_matched": 0,
+    "require_all_agent_steps": false
+  }
+}

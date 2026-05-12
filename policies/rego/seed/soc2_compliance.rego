@@ -3,10 +3,10 @@ package securewatch.compliance
 
 default evidence_required = false
 
-evidence_required {
+evidence_required if {
   input.severity == "high"
 }
 
-evidence_required {
+evidence_required if {
   input.severity == "critical"
 }

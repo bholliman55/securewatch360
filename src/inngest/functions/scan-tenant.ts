@@ -10,6 +10,7 @@ import { buildAwarenessTrainingPlan } from "@/lib/securityAwareness";
 import { getLatestAwarenessSignals } from "@/lib/awarenessSignals";
 import { createIncidentResponseIfNeeded } from "@/lib/incidentResponse";
 import { calculatePriorityScore, inferExposure } from "@/lib/prioritization";
+import { buildApprovalSlaFields } from "@/lib/sla";
 import { normalizeFindings } from "@/scanner/analyzer";
 import { runScanForTarget } from "@/scanner";
 import type { DecisionInput, DecisionOutput, DecisionResult } from "@/types/policy";
@@ -105,6 +106,70 @@ function shouldGenerateDecisionEvidence(decision: DecisionOutput): boolean {
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+const FRAMEWORK_SIGNAL_MAP: Record<string, string[]> = {
+  soc2: ["soc2", "soc 2", "trust services criteria"],
+  cmmc: ["cmmc", "cybersecurity maturity model certification", "cui"],
+  hipaa: ["hipaa", "ephi", "phi", "medical", "health"],
+  nist: ["nist", "800-53", "800-171", "cybersecurity framework", "csf"],
+  iso27001: ["iso27001", "iso 27001", "annex a"],
+  pci_dss: ["pci", "pci-dss", "cardholder", "payment card"],
+  cis: ["cis", "center for internet security", "cis controls"],
+  gdpr: ["gdpr", "personal data", "data subject", "eu privacy"],
+  fedramp: ["fedramp", "fisma", "moderate baseline"],
+  ccpa: ["ccpa", "california consumer privacy act", "california consumer"],
+  cobit: ["cobit", "control objectives for information and related technologies"],
+};
+
+function hasFrameworkSignal(value: unknown, signalTerms: string[]): boolean {
+  if (typeof value !== "string") return false;
+  const normalized = value.toLowerCase();
+  return signalTerms.some((term) => normalized.includes(term));
+}
+
+function inferRegulatedFrameworks(options: {
+  targetName: string;
+  targetValue: string;
+  category: string | null;
+  title: string;
+  evidence: Record<string, unknown>;
+}): string[] {
+  const frameworkMatches = new Set<string>();
+  const candidateValues: unknown[] = [
+    options.targetName,
+    options.targetValue,
+    options.category,
+    options.title,
+    options.evidence.category,
+    options.evidence.tags,
+    options.evidence.framework,
+    options.evidence.frameworks,
+    options.evidence.compliance,
+    options.evidence.complianceFrameworks,
+    options.evidence.regulatedFrameworks,
+  ];
+
+  const frameworks = Object.keys(FRAMEWORK_SIGNAL_MAP);
+  for (const candidate of candidateValues) {
+    if (Array.isArray(candidate)) {
+      for (const item of candidate) {
+        for (const framework of frameworks) {
+          if (hasFrameworkSignal(item, FRAMEWORK_SIGNAL_MAP[framework])) {
+            frameworkMatches.add(framework);
+          }
+        }
+      }
+      continue;
+    }
+    for (const framework of frameworks) {
+      if (hasFrameworkSignal(candidate, FRAMEWORK_SIGNAL_MAP[framework])) {
+        frameworkMatches.add(framework);
+      }
+    }
+  }
+
+  return Array.from(frameworkMatches);
 }
 
 /**
@@ -331,6 +396,13 @@ export const scanTenantRequested = inngest.createFunction(
         const evaluated: EvaluatedFindingRow[] = [];
 
         for (const finding of insertedFindings) {
+          const regulatedFrameworks = inferRegulatedFrameworks({
+            targetName: target.target_name,
+            targetValue: target.target_value,
+            category: finding.category,
+            title: finding.title,
+            evidence: finding.evidence,
+          });
           const decisionInput: DecisionInput = {
             tenantId: payload.tenantId,
             findingId: finding.id,
@@ -342,6 +414,7 @@ export const scanTenantRequested = inngest.createFunction(
             targetType: target.target_type,
             exposure,
             scannerName: scanResult.scannerName,
+            regulatedFrameworks: regulatedFrameworks.length > 0 ? regulatedFrameworks : null,
             currentFindingStatus:
               finding.status === "open" ||
               finding.status === "acknowledged" ||
@@ -350,6 +423,12 @@ export const scanTenantRequested = inngest.createFunction(
               finding.status === "risk_accepted"
                 ? finding.status
                 : "open",
+            metadata:
+              regulatedFrameworks.length > 0
+                ? {
+                    regulatedFrameworks,
+                  }
+                : undefined,
           };
           const decisionOutput = await evaluateDecision(decisionInput);
           const policyDecisionResult = mapDecisionResult(decisionOutput);
@@ -637,6 +716,8 @@ export const scanTenantRequested = inngest.createFunction(
           if (item.approvalStatus !== "pending") continue;
 
           pendingApprovalActions += 1;
+          const now = new Date().toISOString();
+          const slaFields = buildApprovalSlaFields(now);
           const { error: approvalError } = await supabase.from("approval_requests").insert({
             tenant_id: payload.tenantId,
             finding_id: item.findingId,
@@ -651,7 +732,10 @@ export const scanTenantRequested = inngest.createFunction(
               decisionOutput: item.decisionOutput,
             },
             response_payload: {},
-            updated_at: new Date().toISOString(),
+            updated_at: now,
+            sla_due_at: slaFields.slaDueAt,
+            sla_first_reminder_at: slaFields.slaFirstReminderAt,
+            escalation_level: slaFields.escalationLevel,
           });
 
           if (approvalError) {
