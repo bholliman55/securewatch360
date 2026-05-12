@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 
 type FindingRow = {
   id: string;
@@ -15,6 +16,18 @@ type FindingRow = {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  scan: {
+    id: string;
+    name: string;
+    type: string;
+    status: string;
+    date: string;
+    completed_at: string | null;
+    target_id: string | null;
+    target_name: string | null;
+    target_type: string | null;
+    target_value: string | null;
+  } | null;
 };
 
 type FindingsResponse = {
@@ -25,12 +38,14 @@ type FindingsResponse = {
 
 type Filters = {
   tenantId: string;
+  scanId: string;
   severity: string;
   status: string;
 };
 
 const initialFilters: Filters = {
   tenantId: "",
+  scanId: "",
   severity: "",
   status: "",
 };
@@ -52,8 +67,15 @@ function getSeverityClass(severity: string): string {
   return "sw-sev-info";
 }
 
-export function FindingsClient() {
-  const [filters, setFilters] = useState<Filters>(initialFilters);
+type FindingsClientProps = {
+  initialFilters?: Partial<Filters>;
+};
+
+export function FindingsClient({ initialFilters: initialFilterOverrides }: FindingsClientProps) {
+  const [filters, setFilters] = useState<Filters>({
+    ...initialFilters,
+    ...initialFilterOverrides,
+  });
   const [findings, setFindings] = useState<FindingRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +107,7 @@ export function FindingsClient() {
     try {
       const params = new URLSearchParams();
       if (nextFilters.tenantId.trim()) params.set("tenantId", nextFilters.tenantId.trim());
+      if (nextFilters.scanId.trim()) params.set("scanId", nextFilters.scanId.trim());
       if (nextFilters.severity.trim()) params.set("severity", nextFilters.severity.trim());
       if (nextFilters.status.trim()) params.set("status", nextFilters.status.trim());
 
@@ -212,6 +235,16 @@ export function FindingsClient() {
         </label>
 
         <label className="sw-field">
+          Scan ID
+          <input
+            value={filters.scanId}
+            onChange={(e) => setFilters((prev) => ({ ...prev, scanId: e.target.value }))}
+            placeholder="scan/run uuid (optional)"
+            className="sw-input"
+          />
+        </label>
+
+        <label className="sw-field">
           Severity
           <select
             value={filters.severity}
@@ -256,7 +289,7 @@ export function FindingsClient() {
       {loading ? <p>Loading findings...</p> : null}
       {!loading && !error && findings.length === 0 && filters.tenantId.trim() ? <p>No findings found.</p> : null}
 
-      {!loading && !error && findings.length > 0 ? (
+      {!loading && !error && filters.tenantId.trim() ? (
         <table className="sw-table">
           <thead>
             <tr>
@@ -266,6 +299,10 @@ export function FindingsClient() {
               <th>Exposure</th>
               <th>Category</th>
               <th>Title</th>
+              <th>Scan Source</th>
+              <th>Scan Date</th>
+              <th>Scan Target</th>
+              <th>Scan Status</th>
               <th>Status</th>
               <th>Assigned To</th>
               <th>Notes</th>
@@ -275,7 +312,11 @@ export function FindingsClient() {
             </tr>
           </thead>
           <tbody>
-            {findings.map((finding) => (
+            {findings.length === 0 ? (
+              <tr>
+                <td colSpan={16}>No findings match the current filters.</td>
+              </tr>
+            ) : findings.map((finding) => (
               <tr key={finding.id}>
                 <td>{finding.priority_score}</td>
                 <td>
@@ -287,6 +328,24 @@ export function FindingsClient() {
                 <td>{finding.exposure}</td>
                 <td>{finding.category ?? "-"}</td>
                 <td>{finding.title}</td>
+                <td>
+                  {finding.scan ? (
+                    <Link href={`/scan-runs/${finding.scan.id}`} className="sw-link">
+                      {finding.scan.name || finding.scan.type}
+                    </Link>
+                  ) : (
+                    "-"
+                  )}
+                </td>
+                <td>{finding.scan?.date ? new Date(finding.scan.date).toLocaleString() : "-"}</td>
+                <td>
+                  {finding.scan
+                    ? finding.scan.target_name
+                      ? `${finding.scan.target_name} (${finding.scan.target_value ?? "unknown"})`
+                      : finding.scan.target_value ?? "-"
+                    : "-"}
+                </td>
+                <td>{finding.scan?.status ?? "-"}</td>
                 <td>
                   <select
                     className="sw-input"

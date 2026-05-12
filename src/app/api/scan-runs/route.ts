@@ -15,12 +15,14 @@ type ScanRunRow = {
   scan_target_id: string | null;
   status: string;
   scanner_name: string | null;
+  scanner_type: string | null;
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
   error_message: string | null;
   scan_target: {
     target_name: string | null;
+    target_type: string | null;
     target_value: string | null;
   }[] | null;
 };
@@ -67,7 +69,7 @@ export async function GET(request: Request) {
     let scanRunQuery = supabase
       .from("scan_runs")
       .select(
-        "id, tenant_id, scan_target_id, status, scanner_name, created_at, started_at, completed_at, error_message, scan_target:scan_targets(target_name, target_value)"
+        "id, tenant_id, scan_target_id, status, scanner_name, scanner_type, created_at, started_at, completed_at, error_message, scan_target:scan_targets(target_name, target_type, target_value)"
       )
       .order("created_at", { ascending: false })
       .limit(300);
@@ -86,6 +88,7 @@ export async function GET(request: Request) {
     const enriched = rows.map((row) => {
       const target = row.scan_target?.[0];
       const targetName = target?.target_name ?? null;
+      const targetType = target?.target_type ?? null;
       const targetValue = target?.target_value ?? null;
 
       return {
@@ -94,11 +97,13 @@ export async function GET(request: Request) {
         scan_target_id: row.scan_target_id,
         status: row.status,
         scanner_name: row.scanner_name,
+        scanner_type: row.scanner_type,
         created_at: row.created_at,
         started_at: row.started_at,
         completed_at: row.completed_at,
         error_message: row.error_message,
         target_name: targetName,
+        target_type: targetType,
         target_value: targetValue,
       };
     });

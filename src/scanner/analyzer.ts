@@ -7,6 +7,7 @@ export type FindingSeverity = "info" | "low" | "medium" | "high" | "critical";
 type NormalizeInput = {
   tenantId: string;
   scanRunId: string;
+  scanTargetId?: string | null;
   source: string;
   assetType: string;
   exposure: string;
@@ -16,6 +17,9 @@ type NormalizeInput = {
 export type NormalizedFindingInsert = {
   tenant_id: string;
   scan_run_id: string;
+  scan_id: string;
+  scan_result_id: string;
+  scan_target_id: string | null;
   severity: FindingSeverity;
   category: string;
   title: string;
@@ -54,6 +58,9 @@ export function normalizeFindings(input: NormalizeInput): NormalizedFindingInser
       }),
       tenant_id: input.tenantId,
       scan_run_id: input.scanRunId,
+      scan_id: input.scanRunId,
+      scan_result_id: input.scanRunId,
+      scan_target_id: input.scanTargetId ?? null,
       category: item.category,
       title: item.title,
       description: item.description,

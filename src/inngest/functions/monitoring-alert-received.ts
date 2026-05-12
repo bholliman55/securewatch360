@@ -106,6 +106,9 @@ export const monitoringAlertReceived = inngest.createFunction(
             .insert({
               tenant_id: payload.tenantId,
               scan_run_id: scanRunId,
+              scan_id: scanRunId,
+              scan_result_id: scanRunId,
+              scan_target_id: null,
               severity: enriched.normalizedSeverity,
               asset_type: assetType,
               exposure,

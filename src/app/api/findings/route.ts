@@ -16,7 +16,11 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get("tenantId")?.trim() ?? "";
-    const scanRunId = searchParams.get("scanRunId")?.trim() ?? "";
+    const scanRunId =
+      searchParams.get("scanRunId")?.trim() ??
+      searchParams.get("scanId")?.trim() ??
+      searchParams.get("scanResultId")?.trim() ??
+      "";
     const severity = searchParams.get("severity")?.trim().toLowerCase() ?? "";
     const status = searchParams.get("status")?.trim().toLowerCase() ?? "";
     const category = searchParams.get("category")?.trim() ?? "";
@@ -81,7 +85,7 @@ export async function GET(request: Request) {
     let query = supabase
       .from("findings")
       .select(
-        "id, tenant_id, scan_run_id, severity, category, title, description, status, asset_type, exposure, priority_score, assigned_to_user_id, notes, created_at, updated_at"
+        "id, tenant_id, scan_run_id, scan_id, scan_result_id, scan_target_id, severity, category, title, description, status, asset_type, exposure, priority_score, assigned_to_user_id, notes, created_at, updated_at, scan_run:scan_runs!findings_scan_run_id_fkey(id, status, scanner_name, scanner_type, created_at, started_at, completed_at, scan_target:scan_targets(id, target_name, target_type, target_value))"
       )
       .order("priority_score", { ascending: false })
       .order("created_at", { ascending: false })
@@ -106,11 +110,36 @@ export async function GET(request: Request) {
       throw new Error(error.message);
     }
 
+    const findings = (data ?? []).map((row) => {
+      const scanRun = Array.isArray(row.scan_run) ? row.scan_run[0] : row.scan_run;
+      const scanTarget = Array.isArray(scanRun?.scan_target)
+        ? scanRun?.scan_target[0]
+        : scanRun?.scan_target;
+
+      return {
+        ...row,
+        scan: scanRun
+          ? {
+              id: scanRun.id,
+              name: scanRun.scanner_name ?? scanRun.scanner_type ?? "Scan",
+              type: scanRun.scanner_type ?? scanRun.scanner_name ?? "scan",
+              status: scanRun.status,
+              date: scanRun.started_at ?? scanRun.created_at,
+              completed_at: scanRun.completed_at,
+              target_id: scanTarget?.id ?? row.scan_target_id ?? null,
+              target_name: scanTarget?.target_name ?? null,
+              target_type: scanTarget?.target_type ?? null,
+              target_value: scanTarget?.target_value ?? null,
+            }
+          : null,
+      };
+    });
+
     return NextResponse.json(
       {
         ok: true,
-        findings: data ?? [],
-        count: data?.length ?? 0,
+        findings,
+        count: findings.length,
       },
       { status: 200 }
     );

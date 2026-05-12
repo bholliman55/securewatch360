@@ -24,6 +24,7 @@ export default function Scanner() {
   const { metrics, scans, vulnerabilities, assets, severityDistribution, loading, error, refresh } = useScannerData();
   const [searchTerm, setSearchTerm] = useState('');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
+  const [scanFilter, setScanFilter] = useState<string>('all');
   const [isNewScanModalOpen, setIsNewScanModalOpen] = useState(false);
   const [selectedVulnerability, setSelectedVulnerability] = useState<Vulnerability | null>(null);
   const [selectedScan, setSelectedScan] = useState<Scan | null>(null);
@@ -60,9 +61,11 @@ export default function Scanner() {
 
   const filteredVulnerabilities = vulnerabilities.filter(vuln => {
     const matchesSearch = (vuln.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (vuln.asset_id?.toString() || '').includes(searchTerm);
+                         (vuln.asset_id?.toString() || '').includes(searchTerm) ||
+                         (vuln.scan_target || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSeverity = severityFilter === 'all' || vuln.severity === severityFilter;
-    return matchesSearch && matchesSeverity;
+    const matchesScan = scanFilter === 'all' || vuln.scan_id === scanFilter;
+    return matchesSearch && matchesSeverity && matchesScan;
   });
 
   const filteredAssets = assets.filter(asset =>
@@ -95,7 +98,7 @@ export default function Scanner() {
 
   useEffect(() => {
     setVulnerabilityPage(1);
-  }, [searchTerm, severityFilter, viewMode]);
+  }, [searchTerm, severityFilter, scanFilter, viewMode]);
 
   if (loading) {
     return (
@@ -411,6 +414,22 @@ export default function Scanner() {
                   <option value="low">Low</option>
                 </select>
               )}
+              {viewMode === 'vulnerabilities' && (
+                <select
+                  aria-label="Filter vulnerabilities by scan"
+                  title="Filter vulnerabilities by scan"
+                  value={scanFilter}
+                  onChange={(e) => setScanFilter(e.target.value)}
+                  className="px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Scans</option>
+                  {scans.map((scan) => (
+                    <option key={scan.scan_results_id} value={scan.scan_results_id}>
+                      {scan.scan_type} · {scan.target || scan.scan_results_id.slice(0, 8)}
+                    </option>
+                  ))}
+                </select>
+              )}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
@@ -468,8 +487,20 @@ export default function Scanner() {
                         <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
                           <span className="flex items-center gap-1">
                             <Server className="w-4 h-4" />
-                            Asset ID: {vuln.asset_id}
+                            {vuln.scan_target || `Asset ID: ${vuln.asset_id}`}
                           </span>
+                          {vuln.scan_id && (
+                            <span className="flex items-center gap-1">
+                              <Radar className="w-4 h-4" />
+                              {vuln.scan_name || vuln.scan_type || 'Scan'} · {vuln.scan_status || 'unknown'}
+                            </span>
+                          )}
+                          {vuln.scan_date && (
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              {formatDistanceToNow(vuln.scan_date)}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <ChevronRight className="w-5 h-5 text-slate-400" />

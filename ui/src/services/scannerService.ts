@@ -38,6 +38,12 @@ export interface Vulnerability {
   package_name: string | null;
   package_version: string | null;
   affected_asset?: string | null;
+  scan_id?: string | null;
+  scan_name?: string | null;
+  scan_type?: string | null;
+  scan_date?: string | null;
+  scan_target?: string | null;
+  scan_status?: string | null;
 }
 
 export interface Asset {
@@ -74,17 +80,29 @@ type FindingRow = {
   exposure: string | null;
   created_at: string;
   updated_at: string | null;
+  scan?: {
+    id: string;
+    name: string;
+    type: string;
+    status: string;
+    date: string;
+    target_name: string | null;
+    target_type: string | null;
+    target_value: string | null;
+  } | null;
 };
 
 type ScanRunRow = {
   id: string;
   status: string;
   scanner_name: string | null;
+  scanner_type: string | null;
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
   error_message: string | null;
   target_name: string | null;
+  target_type: string | null;
   target_value: string | null;
 };
 
@@ -105,6 +123,10 @@ function requireTenant(tenantId: string | null | undefined): string {
 }
 
 function mapFindingToVulnerability(row: FindingRow): Vulnerability {
+  const scanTarget = row.scan?.target_name
+    ? `${row.scan.target_name} (${row.scan.target_value ?? "unknown"})`
+    : row.scan?.target_value ?? row.asset_type ?? row.exposure ?? null;
+
   return {
     vulnerability_id: row.id,
     client_id: 0,
@@ -121,6 +143,12 @@ function mapFindingToVulnerability(row: FindingRow): Vulnerability {
     package_name: null,
     package_version: null,
     affected_asset: row.asset_type || row.exposure || null,
+    scan_id: row.scan?.id ?? null,
+    scan_name: row.scan?.name ?? null,
+    scan_type: row.scan?.type ?? null,
+    scan_date: row.scan?.date ?? null,
+    scan_target: scanTarget,
+    scan_status: row.scan?.status ?? null,
   };
 }
 
@@ -147,7 +175,7 @@ function mapScanRun(row: ScanRunRow & { result_summary?: unknown }): Scan {
     sev.critical + sev.high + sev.medium + sev.low + (sev.info ?? 0);
   return {
     scan_results_id: row.id,
-    scan_type: row.scanner_name || "scan",
+    scan_type: row.scanner_name || row.scanner_type || "scan",
     target: row.target_value || row.target_name || "",
     status: row.status,
     severity_summary: sev,

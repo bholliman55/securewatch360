@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Loader2, AlertTriangle, Clock, Server, Shield } from 'lucide-react';
 import { Scan, Vulnerability } from '../services/scannerService';
 import { scannerService } from '../services/scannerService';
+import { useTenant } from '../contexts/TenantContext';
 import { formatDistanceToNow } from '../utils/formatters';
 
 interface ScanDetailModalProps {
@@ -11,30 +12,36 @@ interface ScanDetailModalProps {
 }
 
 export default function ScanDetailModal({ scan, isOpen, onClose }: ScanDetailModalProps) {
+  const { selectedTenantId } = useTenant();
   const [vulnerabilities, setVulnerabilities] = useState<Vulnerability[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (scan && isOpen) {
-      loadVulnerabilities();
-    }
-  }, [scan, isOpen]);
-
-  const loadVulnerabilities = async () => {
+  const loadVulnerabilities = useCallback(async () => {
     if (!scan) return;
 
     setLoading(true);
     try {
-      const vulns = await scannerService.getVulnerabilitiesByScan(scan.scan_results_id);
+      const vulns = await scannerService.getVulnerabilitiesByScan(scan.scan_results_id, selectedTenantId);
       setVulnerabilities(vulns);
     } catch (error) {
       console.error('Failed to load vulnerabilities:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [scan, selectedTenantId]);
+
+  useEffect(() => {
+    if (scan && isOpen) {
+      loadVulnerabilities();
+    }
+  }, [scan, isOpen, loadVulnerabilities]);
 
   if (!isOpen || !scan) return null;
+  const nextBaseUrl = import.meta.env.VITE_NEXT_DEV_URL ?? 'http://127.0.0.1:3000';
+  const scanDetailUrl = `${nextBaseUrl}/scan-runs/${scan.scan_results_id}`;
+  const scanFindingsUrl = selectedTenantId
+    ? `${nextBaseUrl}/findings?tenantId=${selectedTenantId}&scanId=${scan.scan_results_id}`
+    : scanDetailUrl;
 
   const getSeverityColor = (severity: string) => {
     switch (severity.toLowerCase()) {
@@ -197,6 +204,12 @@ export default function ScanDetailModal({ scan, isOpen, onClose }: ScanDetailMod
           </div>
 
           <div className="flex gap-3 p-6 border-t border-slate-200 dark:border-slate-700">
+            <a
+              href={scanFindingsUrl}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-center"
+            >
+              Open Scan Findings
+            </a>
             <button
               onClick={onClose}
               className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
