@@ -4,6 +4,7 @@ import { runOsintCollection } from "@/agents/agent2-osint/osintCollectionService
 import type { OsintCollectionResult } from "@/agents/agent2-osint/osintTypes";
 import { upsertIntelligenceEvents } from "@/repositories/externalIntelligenceRepository";
 import { randomUUID } from "crypto";
+import { SCAN_RUN_STATUSES, FINDING_STATUSES } from "@/lib/statuses";
 
 const OSINT_SEVERITY_MAP: Record<string, string> = {
   critical: "critical",
@@ -11,6 +12,10 @@ const OSINT_SEVERITY_MAP: Record<string, string> = {
   medium: "medium",
   low: "low",
   info: "info",
+  CRITICAL: "critical",
+  HIGH: "high",
+  MEDIUM: "medium",
+  LOW: "low",
 };
 
 export const runOsintCollectionFunction = inngest.createFunction(
@@ -42,9 +47,9 @@ export const runOsintCollectionFunction = inngest.createFunction(
       const supabase = getSupabaseAdminClient();
       await supabase
         .from("scan_runs")
-        .update({ status: "running" })
+        .update({ status: SCAN_RUN_STATUSES[1] })
         .eq("id", resolvedScanId)
-        .eq("status", "pending"); // only update if still pending (Agent 1 may have already set it)
+        .eq("status", SCAN_RUN_STATUSES[0]); // only update if still queued (Agent 1 may have already set it)
     });
 
     let result: OsintCollectionResult;
@@ -67,7 +72,7 @@ export const runOsintCollectionFunction = inngest.createFunction(
         await supabase
           .from("scan_runs")
           .update({
-            status: "failed",
+            status: SCAN_RUN_STATUSES[3],
             error_message: (err as Error).message,
             completed_at: new Date().toISOString(),
           })
@@ -100,7 +105,7 @@ export const runOsintCollectionFunction = inngest.createFunction(
           id: newRunId,
           tenant_id: tenantId,
           workflow_run_id: `osint-standalone-${resolvedScanId}`,
-          status: "running",
+          status: SCAN_RUN_STATUSES[1],
           scanner_name: "Agent 2: OSINT Collection",
           started_at: new Date().toISOString(),
         });
@@ -110,6 +115,9 @@ export const runOsintCollectionFunction = inngest.createFunction(
       const findings = result.events.map((evt) => ({
         tenant_id: tenantId,
         scan_run_id: targetScanRunId,
+        scan_id: targetScanRunId,
+        scan_result_id: targetScanRunId,
+        scan_target_id: null,
         severity: OSINT_SEVERITY_MAP[evt.severity ?? "info"] ?? "info",
         category: "osint_intelligence",
         title: `${evt.eventType.replace(/_/g, " ")}: ${domain}`,
@@ -124,7 +132,7 @@ export const runOsintCollectionFunction = inngest.createFunction(
           domain,
           companyName,
         },
-        status: "new",
+        status: FINDING_STATUSES[0],
       }));
 
       await supabase.from("findings").insert(findings);
@@ -133,7 +141,7 @@ export const runOsintCollectionFunction = inngest.createFunction(
       if (!scanId) {
         await supabase
           .from("scan_runs")
-          .update({ status: "succeeded", completed_at: new Date().toISOString() })
+          .update({ status: SCAN_RUN_STATUSES[2], completed_at: new Date().toISOString() })
           .eq("id", targetScanRunId);
       }
     });
@@ -145,7 +153,7 @@ export const runOsintCollectionFunction = inngest.createFunction(
       const supabase = getSupabaseAdminClient();
       await supabase
         .from("scan_runs")
-        .update({ status: "succeeded", completed_at: new Date().toISOString() })
+        .update({ status: SCAN_RUN_STATUSES[2], completed_at: new Date().toISOString() })
         .eq("id", resolvedScanId);
     });
 

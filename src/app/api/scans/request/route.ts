@@ -55,6 +55,15 @@ export async function POST(request: Request) {
     const tenantId = (body.tenantId as string).trim();
     const scanTargetId = (body.scanTargetId as string).trim();
 
+    console.info("[scans/request] scan request received", {
+      scan_id: null,
+      scan_type: "standard",
+      target: scanTargetId,
+      client_id: null,
+      tenant_id: tenantId,
+      backend_route_called: "/api/scans/request",
+    });
+
     const guard = await requireTenantAccess({
       tenantId,
       allowedRoles: [...API_TENANT_ROLES.remediationAndScan],
@@ -72,6 +81,16 @@ export async function POST(request: Request) {
       .single();
 
     if (targetError || !target) {
+      console.error("[scans/request] scan target lookup failed", {
+        scan_id: null,
+        scan_type: "standard",
+        target: scanTargetId,
+        client_id: null,
+        tenant_id: tenantId,
+        backend_route_called: "/api/scans/request",
+        response_status: 404,
+        error_message: targetError?.message ?? "scanTargetId is not in the tenant scope",
+      });
       return NextResponse.json(
         { ok: false, error: targetError?.message ?? "scanTargetId is not in the tenant scope" },
         { status: 404 }
@@ -99,6 +118,16 @@ export async function POST(request: Request) {
       },
     });
 
+    console.info("[scans/request] scan request accepted", {
+      scan_id: null,
+      scan_type: "standard",
+      target: scanTargetId,
+      client_id: null,
+      tenant_id: tenantId,
+      backend_route_called: "/api/scans/request",
+      response_status: 202,
+    });
+
     return NextResponse.json(
       {
         ok: true,
@@ -114,6 +143,16 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
+    console.error("[scans/request] scan request failed", {
+      scan_id: null,
+      scan_type: "standard",
+      target: null,
+      client_id: null,
+      tenant_id: null,
+      backend_route_called: "/api/scans/request",
+      response_status: 500,
+      error_message: message,
+    });
     return NextResponse.json(
       { ok: false, error: "Failed to request scan", message },
       { status: 500 }

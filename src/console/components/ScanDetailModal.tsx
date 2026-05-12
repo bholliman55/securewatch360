@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Loader2, AlertTriangle, Clock, Server, Shield } from 'lucide-react';
+import { X, Loader2, AlertTriangle, Clock, Server, Shield, ExternalLink } from 'lucide-react';
 import { Scan, Vulnerability } from '../services/scannerService';
 import { scannerService } from '../services/scannerService';
 import { formatDistanceToNow } from '../utils/formatters';
@@ -163,9 +163,20 @@ export default function ScanDetailModal({ scan, isOpen, onClose }: ScanDetailMod
             </div>
 
             <div>
-              <h5 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">
-                Discovered Vulnerabilities
-              </h5>
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <h5 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  Discovered Vulnerabilities
+                </h5>
+                {selectedTenantId && (
+                  <a
+                    href={`/findings?tenantId=${encodeURIComponent(selectedTenantId)}&scanRunId=${encodeURIComponent(scan.scan_results_id)}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    View all findings for this scan
+                  </a>
+                )}
+              </div>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
@@ -183,8 +194,14 @@ export default function ScanDetailModal({ scan, isOpen, onClose }: ScanDetailMod
                             {vuln.title}
                           </h6>
                           <p className="text-sm text-slate-600 dark:text-slate-400">
-                            Asset ID: {vuln.asset_id}
+                            {vuln.scan_target || `Asset ID: ${vuln.asset_id}`}
                           </p>
+                          <a
+                            href={`/scan-runs/${scan.scan_results_id}`}
+                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            Scan source: {scan.scan_type} · {scan.status}
+                          </a>
                         </div>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${getSeverityColor(vuln.severity)}`}>
                           {vuln.severity}

@@ -159,6 +159,11 @@ export default async function ScanRunDetailPage({ params }: PageProps) {
       ) : null}
 
       <h2>Findings ({findings.length})</h2>
+      <p>
+        <a href={`/findings?tenantId=${run.tenant_id}&scanRunId=${run.id}`}>
+          Open filtered findings for this scan
+        </a>
+      </p>
       {findings.length === 0 ? (
         <p>No findings for this run.</p>
       ) : (

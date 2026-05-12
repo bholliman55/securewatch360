@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 type FindingRow = {
   id: string;
@@ -15,6 +15,9 @@ type FindingRow = {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  scan_id?: string | null;
+  scan_run_id?: string | null;
+  scan_result_id?: string | null;
 };
 
 type FindingsResponse = {
@@ -27,12 +30,14 @@ type Filters = {
   tenantId: string;
   severity: string;
   status: string;
+  scanRunId: string;
 };
 
 const initialFilters: Filters = {
   tenantId: "",
   severity: "",
   status: "",
+  scanRunId: "",
 };
 
 const findingStatuses = [
@@ -87,6 +92,7 @@ export function FindingsClient() {
       if (nextFilters.tenantId.trim()) params.set("tenantId", nextFilters.tenantId.trim());
       if (nextFilters.severity.trim()) params.set("severity", nextFilters.severity.trim());
       if (nextFilters.status.trim()) params.set("status", nextFilters.status.trim());
+      if (nextFilters.scanRunId.trim()) params.set("scanRunId", nextFilters.scanRunId.trim());
 
       const query = params.toString();
       const response = await fetch(`/api/findings${query ? `?${query}` : ""}`, { method: "GET" });
@@ -116,6 +122,22 @@ export function FindingsClient() {
     }
     void loadFindings(filters);
   }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const nextFilters = {
+      tenantId: params.get("tenantId") ?? "",
+      severity: params.get("severity") ?? "",
+      status: params.get("status") ?? "",
+      scanRunId: params.get("scanRunId") ?? params.get("scanId") ?? "",
+    };
+    if (nextFilters.tenantId || nextFilters.scanRunId) {
+      setFilters(nextFilters);
+      if (nextFilters.tenantId) {
+        void loadFindings(nextFilters);
+      }
+    }
+  }, []);
 
   function updateFindingInState(id: string, next: Partial<FindingRow>) {
     setFindings((prev) => prev.map((finding) => (finding.id === id ? { ...finding, ...next } : finding)));
@@ -212,6 +234,16 @@ export function FindingsClient() {
         </label>
 
         <label className="sw-field">
+          Scan Run ID
+          <input
+            value={filters.scanRunId}
+            onChange={(e) => setFilters((prev) => ({ ...prev, scanRunId: e.target.value }))}
+            placeholder="uuid (optional)"
+            className="sw-input"
+          />
+        </label>
+
+        <label className="sw-field">
           Severity
           <select
             value={filters.severity}
@@ -266,6 +298,7 @@ export function FindingsClient() {
               <th>Exposure</th>
               <th>Category</th>
               <th>Title</th>
+              <th>Scan</th>
               <th>Status</th>
               <th>Assigned To</th>
               <th>Notes</th>
@@ -287,6 +320,15 @@ export function FindingsClient() {
                 <td>{finding.exposure}</td>
                 <td>{finding.category ?? "-"}</td>
                 <td>{finding.title}</td>
+                <td>
+                  {finding.scan_id || finding.scan_run_id || finding.scan_result_id ? (
+                    <a href={`/scan-runs/${finding.scan_id ?? finding.scan_run_id ?? finding.scan_result_id}`}>
+                      {(finding.scan_id ?? finding.scan_run_id ?? finding.scan_result_id)?.slice(0, 8)}
+                    </a>
+                  ) : (
+                    "-"
+                  )}
+                </td>
                 <td>
                   <select
                     className="sw-input"

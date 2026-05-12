@@ -1,8 +1,10 @@
 import { apiJson } from "../lib/apiFetch";
+import { getScanTypeRoute, type ScanTypeValue } from "@/lib/scanTypeRouting";
 
 export type ExternalIntelligenceRequest = {
   tenantId: string;
   targetValue: string;
+  scanType?: ScanTypeValue;
   companyName?: string;
   knownEmails?: string[];
   runAgent1?: boolean;
@@ -33,19 +35,46 @@ export async function triggerExternalIntelligenceScan(
   if (!domain) {
     throw new Error("Provide a valid domain, URL, or IP target value.");
   }
+  const route = getScanTypeRoute(request.scanType ?? "external");
+  const runAgent1 = request.runAgent1 ?? route.runAgent1;
+  const runAgent2 = request.runAgent2 ?? route.runAgent2;
+  const backendRoute = route.backendRoute;
 
-  return apiJson<{ success: boolean; scanId: string; triggered: string[] }>(
-    "/api/security/external-intelligence/run",
+  console.info("[scanner-ui] launching scan", {
+    scan_id: null,
+    scan_type: route.scanType,
+    target: domain,
+    client_id: null,
+    tenant_id: request.tenantId,
+    backend_route_called: backendRoute,
+  });
+
+  const result = await apiJson<{ success: boolean; scanId: string; triggered: string[]; message?: string }>(
+    backendRoute,
     {
       method: "POST",
       body: JSON.stringify({
         tenantId: request.tenantId,
+        scanType: route.scanType,
         domain,
         companyName: request.companyName,
         knownEmails: request.knownEmails ?? [],
-        runAgent1: request.runAgent1 ?? true,
-        runAgent2: request.runAgent2 ?? true,
+        runAgent1,
+        runAgent2,
+        agent2Mode: route.agent2Mode,
       }),
     }
   );
+
+  console.info("[scanner-ui] scan launch completed", {
+    scan_id: result.scanId,
+    scan_type: route.scanType,
+    target: domain,
+    client_id: null,
+    tenant_id: request.tenantId,
+    backend_route_called: backendRoute,
+    response_status: "success",
+  });
+
+  return result;
 }
