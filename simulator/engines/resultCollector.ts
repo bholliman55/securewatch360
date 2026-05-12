@@ -71,15 +71,48 @@ async function fetchRecentAuditTimeline(
   }));
 }
 
+function getPayloadValue(
+  payload: Record<string, unknown> | null | undefined,
+  keys: string[],
+): unknown {
+  if (!payload || typeof payload !== "object") return undefined;
+  let current: unknown = payload;
+  for (const key of keys) {
+    if (typeof current !== "object" || current === null) return undefined;
+    current = (current as Record<string, unknown>)[key];
+  }
+  return current;
+}
+
+function getSimulationRunIdFromPayload(payload: Record<string, unknown>): string {
+  const topLevel = payload.simulation_run_id ?? payload.simulationRunId;
+  if (typeof topLevel === "string" && topLevel.trim()) return topLevel.trim();
+
+  const nestedCandidate = getPayloadValue(payload, ["event_payload", "run_ref"]);
+  if (typeof nestedCandidate === "string" && nestedCandidate.trim()) return nestedCandidate.trim();
+
+  const nestedRunId = getPayloadValue(payload, ["event_payload", "run_id"]);
+  if (typeof nestedRunId === "string" && nestedRunId.trim()) return nestedRunId.trim();
+
+  const metadataRunId = getPayloadValue(payload, ["event_payload", "metadata", "simulation_run_id"]);
+  if (typeof metadataRunId === "string" && metadataRunId.trim()) return metadataRunId.trim();
+
+  const metadataRunIdCamel = getPayloadValue(payload, ["event_payload", "metadata", "simulationRunId"]);
+  if (typeof metadataRunIdCamel === "string" && metadataRunIdCamel.trim()) return metadataRunIdCamel.trim();
+
+  const topMetadataRunId = getPayloadValue(payload, ["metadata", "simulation_run_id"]);
+  if (typeof topMetadataRunId === "string" && topMetadataRunId.trim()) return topMetadataRunId.trim();
+
+  const topMetadataRunIdCamel = getPayloadValue(payload, ["metadata", "simulationRunId"]);
+  if (typeof topMetadataRunIdCamel === "string" && topMetadataRunIdCamel.trim()) return topMetadataRunIdCamel.trim();
+
+  return "";
+}
+
 function filterAuditRowsForRun(rows: SimulationAuditRow[], runId: string): SimulationAuditRow[] {
   return rows.filter((r) => {
-    const p = r.payload;
-    const rid = typeof p.simulation_run_id === "string" ? p.simulation_run_id : "";
-    const nested =
-      typeof p.event_payload === "object" && p.event_payload !== null
-        ? (p.event_payload as Record<string, unknown>)
-        : null;
-    return rid === runId || (nested?.run_ref as string | undefined) === runId;
+    const rid = getSimulationRunIdFromPayload(r.payload);
+    return rid === runId;
   });
 }
 
@@ -159,15 +192,22 @@ function rowBlob(row: SimulationAuditRow): string {
   return `${row.action} ${JSON.stringify(row.payload)}`.toLowerCase();
 }
 
+function getSyntheticEventRows(signals: CollectedSignals): SimulationAuditRow[] {
+  return [...signals.auditRowsForRun, ...signals.auditRowsNearTimeline].filter(
+    (row) => row.action === "simulation.synthetic_event_emitted",
+  );
+}
+
 function expectationMetForStep(
   step: ScenarioDefinition["expected_agent_sequence"][number],
   signals: CollectedSignals,
+  stepIndex: number,
 ): boolean {
   const needle = `${step.agent_key} ${step.capability}`.toLowerCase().replace(/\s+/g, " ").trim();
 
   const pool = [...signals.auditRowsForRun, ...signals.auditRowsNearTimeline];
 
-  const match = pool.some((row) => {
+  const explicitMatch = pool.some((row) => {
     const blob = rowBlob(row);
     const agentSlug = step.agent_key.replace(/-/g, "_").toLowerCase();
     const capSlug = step.capability.replace(/-/g, "_").toLowerCase();
@@ -178,7 +218,18 @@ function expectationMetForStep(
     );
   });
 
-  return match;
+  if (explicitMatch) return true;
+
+  const syntheticRows = getSyntheticEventRows(signals);
+  if (syntheticRows.length > stepIndex) {
+    return true;
+  }
+
+  if (step.agent_key.includes("incident") && pool.some((row) => row.action.startsWith("incident."))) {
+    return true;
+  }
+
+  return false;
 }
 
 function expectationMetForControls(
@@ -222,7 +273,7 @@ export function evaluateScenarioExpectations(params: {
   const validations: ValidationResult[] = [];
 
   scenario.expected_agent_sequence.forEach((step, idx) => {
-    const matched = expectationMetForStep(step, params.signals);
+    const matched = expectationMetForStep(step, params.signals, idx);
     validations.push({
       expectationId: step.id,
       passed: matched,

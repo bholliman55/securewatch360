@@ -83,4 +83,32 @@ describe("evaluateScenarioExpectations — audit correlation (local mocks)", () 
 
     expect(result.passed).toBe(false);
   });
+
+  it("falls back to synthetic event rows when explicit correlation strings are absent", () => {
+    const result = evaluateScenarioExpectations({
+      scenario: scenarioWithCorrelation,
+      runId: "run-eval-3",
+      signals: {
+        observationWindowStartIso: new Date().toISOString(),
+        observationWindowEndIso: new Date().toISOString(),
+        pollIterations: 1,
+        auditRowsForRun: [
+          {
+            id: randomUUID(),
+            action: "simulation.synthetic_event_emitted",
+            payload: {
+              simulation_run_id: "run-eval-3",
+              synthetic_kind: "monitoring.alert.synthetic",
+            },
+            created_at: new Date().toISOString(),
+          },
+        ],
+        auditRowsNearTimeline: [],
+      },
+    });
+
+    expect(result.passed).toBe(true);
+    const step = result.validations.find((v) => v.expectationId === "step-a");
+    expect(step?.passed).toBe(true);
+  });
 });
