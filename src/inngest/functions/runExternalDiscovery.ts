@@ -3,6 +3,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase";
 import { runExternalDiscoveryScan } from "@/agents/agent1-scanner/externalDiscoveryService";
 import type { ExternalDiscoveryResult } from "@/agents/agent1-scanner/externalDiscoveryTypes";
 import { upsertExternalAssets } from "@/repositories/externalAssetsRepository";
+import { SCAN_RUN_STATUSES, FINDING_STATUSES } from "@/lib/statuses";
 
 const ASSET_TYPE_SEVERITY: Record<string, string> = {
   admin_portal: "high",
@@ -36,10 +37,19 @@ export const runExternalDiscovery = inngest.createFunction(
     // Mark running
     await step.run("mark-running", async () => {
       const supabase = getSupabaseAdminClient();
-      await supabase
+      console.info("[agent1.external_discovery] execution started", {
+        scan_id: scanId,
+        scan_type: "agent1",
+        target: domain,
+        client_id: clientId ?? null,
+        tenant_id: tenantId,
+        backend_route_called: "inngest:securewatch/agent1.external_discovery.requested",
+      });
+      const { error } = await supabase
         .from("scan_runs")
-        .update({ status: "running" })
+        .update({ status: SCAN_RUN_STATUSES[1] })
         .eq("id", scanId);
+      if (error) throw new Error(`Failed to mark Agent 1 scan running: ${error.message}`);
     });
 
     let result: ExternalDiscoveryResult;
@@ -51,10 +61,32 @@ export const runExternalDiscovery = inngest.createFunction(
     } catch (err) {
       await step.run("mark-failed", async () => {
         const supabase = getSupabaseAdminClient();
+        const errorMessage = (err as Error).message;
         await supabase
           .from("scan_runs")
-          .update({ status: "failed", error_message: (err as Error).message, completed_at: new Date().toISOString() })
+          .update({
+            status: SCAN_RUN_STATUSES[3],
+            error_message: errorMessage,
+            completed_at: new Date().toISOString(),
+            result_summary: {
+              scanType: "agent1",
+              scannerName: "Agent 1: External Discovery",
+              configured: false,
+              message: "Agent 1 external discovery failed.",
+              errorMessage,
+            },
+          })
           .eq("id", scanId);
+        console.error("[agent1.external_discovery] execution failed", {
+          scan_id: scanId,
+          scan_type: "agent1",
+          target: domain,
+          client_id: clientId ?? null,
+          tenant_id: tenantId,
+          backend_route_called: "inngest:securewatch/agent1.external_discovery.requested",
+          response_status: "failed",
+          error_message: errorMessage,
+        });
       });
       throw err;
     }
@@ -74,6 +106,9 @@ export const runExternalDiscovery = inngest.createFunction(
       const findings = result.assets.map((asset) => ({
         tenant_id: tenantId,
         scan_run_id: scanId,
+        scan_id: scanId,
+        scan_result_id: scanId,
+        scan_target_id: null,
         severity: ASSET_TYPE_SEVERITY[asset.assetType] ?? "info",
         category: "external_attack_surface",
         title: `${asset.assetType.replace(/_/g, " ")}: ${asset.assetValue}`,
@@ -87,19 +122,46 @@ export const runExternalDiscovery = inngest.createFunction(
           confidence: asset.confidence,
           domain,
         },
-        status: "new",
+        status: FINDING_STATUSES[0],
       }));
 
-      await supabase.from("findings").insert(findings);
+      const { error } = await supabase.from("findings").insert(findings);
+      if (error) throw new Error(`Failed to write Agent 1 findings: ${error.message}`);
     });
 
     // Mark scan_run succeeded
     await step.run("mark-succeeded", async () => {
       const supabase = getSupabaseAdminClient();
-      await supabase
+      const { error } = await supabase
         .from("scan_runs")
-        .update({ status: "succeeded", completed_at: new Date().toISOString() })
+        .update({
+          status: SCAN_RUN_STATUSES[2],
+          completed_at: new Date().toISOString(),
+          error_message: null,
+          scanner_name: "Agent 1: External Discovery",
+          scanner_type: "web",
+          result_summary: {
+            scanType: "agent1",
+            scannerName: "Agent 1: External Discovery",
+            totalDiscovered: result.totalDiscovered,
+            findingsCreated: result.assets.length,
+            errors: result.errors,
+            message: result.errors.length > 0
+              ? "Agent 1 completed with non-fatal discovery errors."
+              : "Agent 1 external attack surface discovery completed.",
+          },
+        })
         .eq("id", scanId);
+      if (error) throw new Error(`Failed to mark Agent 1 scan completed: ${error.message}`);
+      console.info("[agent1.external_discovery] execution completed", {
+        scan_id: scanId,
+        scan_type: "agent1",
+        target: domain,
+        client_id: clientId ?? null,
+        tenant_id: tenantId,
+        backend_route_called: "inngest:securewatch/agent1.external_discovery.requested",
+        response_status: "completed",
+      });
     });
 
     await step.sendEvent("emit-discovered", {

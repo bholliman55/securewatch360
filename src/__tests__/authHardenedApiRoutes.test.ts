@@ -10,11 +10,13 @@ const minimalUser = { id: USER_ID } as User;
 
 const syncDb = vi.hoisted(() => ({
   mockSingle: vi.fn(),
+  mockUpsert: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase", () => ({
   getSupabaseAdminClient: vi.fn(() => ({
     from: vi.fn(() => ({
+      upsert: syncDb.mockUpsert,
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
           eq: vi.fn(() => ({
@@ -170,6 +172,7 @@ describe("POST /api/security/external-intelligence/run (auth + tenant guard)", (
   beforeEach(() => {
     vi.clearAllMocks();
     mockInngestSend.mockResolvedValue(undefined);
+    syncDb.mockUpsert.mockResolvedValue({ error: null });
     vi.mocked(getCurrentUser).mockReset();
     vi.mocked(requireTenantAccess).mockReset();
   });
@@ -247,7 +250,54 @@ describe("POST /api/security/external-intelligence/run (auth + tenant guard)", (
     expect(mockInngestSend).toHaveBeenCalledTimes(1);
     const events = mockInngestSend.mock.calls[0][0] as { name: string }[];
     expect(events.some((e) => e.name === "securewatch/agent1.external_discovery.requested")).toBe(true);
-    expect(events.some((e) => e.name === "securewatch/agent2.osint_collection.requested")).toBe(true);
+    expect(events.some((e) => e.name === "securewatch/agent2.scan.requested")).toBe(true);
+  });
+
+  it("routes explicit Agent 1 scans without Agent 2", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValueOnce(minimalUser);
+    vi.mocked(requireTenantAccess).mockResolvedValueOnce({
+      ok: true,
+      userId: USER_ID,
+      role: "admin",
+    });
+
+    const res = await postExternalIntel(
+      jsonRequest("http://localhost/api/security/external-intelligence/run", {
+        tenantId: TENANT_ID,
+        domain: "example.org",
+        scanType: "agent1",
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.triggered).toEqual(["agent1"]);
+    const events = mockInngestSend.mock.calls[0][0] as { name: string }[];
+    expect(events.map((e) => e.name)).toEqual(["securewatch/agent1.external_discovery.requested"]);
+  });
+
+  it("routes explicit Agent 2 scans to vulnerability analysis", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValueOnce(minimalUser);
+    vi.mocked(requireTenantAccess).mockResolvedValueOnce({
+      ok: true,
+      userId: USER_ID,
+      role: "admin",
+    });
+
+    const res = await postExternalIntel(
+      jsonRequest("http://localhost/api/security/external-intelligence/run", {
+        tenantId: TENANT_ID,
+        domain: "example.org",
+        scanType: "agent2",
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.triggered).toEqual(["agent2"]);
+    const events = mockInngestSend.mock.calls[0][0] as Array<{ name: string; data: { scanType?: string } }>;
+    expect(events.map((e) => e.name)).toEqual(["securewatch/agent2.scan.requested"]);
+    expect(events[0].data.scanType).toBe("vulnerability_analysis");
   });
 
   it("returns 500 when Inngest send fails", async () => {

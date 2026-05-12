@@ -17,7 +17,11 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get("tenantId")?.trim() ?? "";
-    const scanRunId = searchParams.get("scanRunId")?.trim() ?? "";
+    const scanRunId =
+      searchParams.get("scanRunId")?.trim() ??
+      searchParams.get("scanId")?.trim() ??
+      searchParams.get("scanResultId")?.trim() ??
+      "";
     const severity = searchParams.get("severity")?.trim().toLowerCase() ?? "";
     const status = searchParams.get("status")?.trim().toLowerCase() ?? "";
     const category = searchParams.get("category")?.trim() ?? "";
@@ -83,7 +87,7 @@ export async function GET(request: Request) {
     let query = supabase
       .from("findings")
       .select(
-        "id, tenant_id, scan_run_id, severity, category, title, description, status, asset_type, exposure, priority_score, assigned_to_user_id, notes, created_at, updated_at"
+        "id, tenant_id, scan_run_id, scan_id, scan_result_id, scan_target_id, severity, category, title, description, status, asset_type, exposure, priority_score, assigned_to_user_id, notes, created_at, updated_at, scan_run:scan_runs!findings_scan_run_id_fkey(id, scanner_name, scanner_type, status, created_at, started_at, completed_at, scan_target:scan_targets(id, target_name, target_type, target_value))"
       )
       .order("priority_score", { ascending: false })
       .order("created_at", { ascending: false })

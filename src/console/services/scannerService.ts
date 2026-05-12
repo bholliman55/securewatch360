@@ -4,6 +4,7 @@ export interface Scan {
   scan_results_id: string;
   scan_type: string;
   target: string;
+  target_type: string | null;
   status: string;
   severity_summary: {
     critical: number;
@@ -24,6 +25,15 @@ export interface Scan {
 
 export interface Vulnerability {
   vulnerability_id: string;
+  scan_id: string | null;
+  scan_result_id: string | null;
+  scan_run_id: string | null;
+  scan_name: string | null;
+  scan_type: string | null;
+  scan_date: string | null;
+  scan_target: string | null;
+  scan_target_id: string | null;
+  scan_status: string | null;
   client_id: number;
   asset_id: number;
   cve_id: string | null;
@@ -72,6 +82,33 @@ type FindingRow = {
   status: string;
   asset_type: string | null;
   exposure: string | null;
+  scan_run_id: string | null;
+  scan_id: string | null;
+  scan_result_id: string | null;
+  scan_target_id: string | null;
+  scan_run?: {
+    id: string;
+    scanner_name: string | null;
+    scanner_type: string | null;
+    status: string | null;
+    created_at: string | null;
+    started_at: string | null;
+    completed_at: string | null;
+    scan_target:
+      | {
+          id: string | null;
+          target_name: string | null;
+          target_type: string | null;
+          target_value: string | null;
+        }
+      | {
+          id: string | null;
+          target_name: string | null;
+          target_type: string | null;
+          target_value: string | null;
+        }[]
+      | null;
+  } | null;
   created_at: string;
   updated_at: string | null;
 };
@@ -80,12 +117,15 @@ type ScanRunRow = {
   id: string;
   status: string;
   scanner_name: string | null;
+  scanner_type: string | null;
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
   error_message: string | null;
   target_name: string | null;
+  target_type: string | null;
   target_value: string | null;
+  result_summary?: unknown;
 };
 
 type ScanTargetRow = {
@@ -105,8 +145,29 @@ function requireTenant(tenantId: string | null | undefined): string {
 }
 
 function mapFindingToVulnerability(row: FindingRow): Vulnerability {
+  const scanTarget = Array.isArray(row.scan_run?.scan_target)
+    ? row.scan_run?.scan_target[0]
+    : row.scan_run?.scan_target;
+  const scanId = row.scan_id || row.scan_run_id || row.scan_run?.id || null;
+  const scanDate = row.scan_run?.started_at || row.scan_run?.created_at || null;
+  const scanTargetLabel =
+    scanTarget?.target_value ||
+    scanTarget?.target_name ||
+    row.asset_type ||
+    row.exposure ||
+    null;
+
   return {
     vulnerability_id: row.id,
+    scan_id: scanId,
+    scan_result_id: row.scan_result_id || scanId,
+    scan_run_id: row.scan_run_id || scanId,
+    scan_name: row.scan_run?.scanner_name || row.scan_run?.scanner_type || null,
+    scan_type: row.scan_run?.scanner_type || row.scan_run?.scanner_name || null,
+    scan_date: scanDate,
+    scan_target: scanTargetLabel,
+    scan_target_id: row.scan_target_id || scanTarget?.id || null,
+    scan_status: row.scan_run?.status || null,
     client_id: 0,
     asset_id: 0,
     cve_id: null,
@@ -149,6 +210,7 @@ function mapScanRun(row: ScanRunRow & { result_summary?: unknown }): Scan {
     scan_results_id: row.id,
     scan_type: row.scanner_name || "scan",
     target: row.target_value || row.target_name || "",
+    target_type: row.target_type,
     status: row.status,
     severity_summary: sev,
     vulnerabilities_found: totalFindings,

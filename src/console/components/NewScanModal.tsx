@@ -5,6 +5,7 @@ import { X, Loader2 } from "lucide-react";
 import { apiJson } from "../lib/apiFetch";
 import { useTenant } from "../contexts/TenantContext";
 import { triggerExternalIntelligenceScan } from "../services/externalIntelligenceService";
+import { getScanTypeRoute, type ScanTypeValue } from "@/lib/scanTypeRouting";
 
 interface NewScanModalProps {
   isOpen: boolean;
@@ -16,7 +17,7 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
   const { selectedTenantId } = useTenant();
   const [targetName, setTargetName] = useState("");
   const [targetType, setTargetType] = useState("url");
-  const [workflowType, setWorkflowType] = useState<"standard" | "external">("external");
+  const [workflowType, setWorkflowType] = useState<ScanTypeValue>("external");
   const [targetValue, setTargetValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,12 +34,14 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
     }
 
     try {
-      if (workflowType === "external") {
+      const scanRoute = getScanTypeRoute(workflowType);
+      if (scanRoute.scanType !== "standard") {
         await triggerExternalIntelligenceScan({
           tenantId: selectedTenantId,
+          scanType: scanRoute.scanType,
           targetValue: targetValue.trim(),
-          runAgent1: true,
-          runAgent2: true,
+          runAgent1: scanRoute.runAgent1,
+          runAgent2: scanRoute.runAgent2,
         });
         onScanCreated();
         onClose();
@@ -48,6 +51,15 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
         setWorkflowType("external");
         return;
       }
+
+      console.info("[scanner-ui] launching scan", {
+        scan_id: null,
+        scan_type: scanRoute.scanType,
+        target: targetValue.trim(),
+        client_id: null,
+        tenant_id: selectedTenantId,
+        backend_route_called: scanRoute.backendRoute,
+      });
 
       const createRes = await apiJson<{ ok: boolean; scanTarget?: { id: string }; error?: string }>(
         "/api/scan-targets",
@@ -77,6 +89,16 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
       if (!requestRes.ok) {
         throw new Error(requestRes.error || "Failed to request scan");
       }
+
+      console.info("[scanner-ui] scan launch completed", {
+        scan_id: createRes.scanTarget.id,
+        scan_type: scanRoute.scanType,
+        target: targetValue.trim(),
+        client_id: null,
+        tenant_id: selectedTenantId,
+        backend_route_called: scanRoute.backendRoute,
+        response_status: "accepted",
+      });
 
       onScanCreated();
       onClose();
@@ -123,10 +145,12 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
               <select
                 id="scan-workflow-type"
                 value={workflowType}
-                onChange={(e) => setWorkflowType(e.target.value as "standard" | "external")}
+                onChange={(e) => setWorkflowType(e.target.value as ScanTypeValue)}
                 className="w-full px-3 py-2 bg-[var(--sw-surface-elevated)] border border-[var(--sw-border)] rounded-lg text-[var(--sw-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--sw-focus-ring)]"
               >
                 <option value="external">External intelligence (Agent 1 + Agent 2)</option>
+                <option value="agent1">Agent 1 - External attack surface</option>
+                <option value="agent2">Agent 2 - Vulnerability analysis / CVE prioritization</option>
                 <option value="standard">Standard scan target workflow</option>
               </select>
             </div>
@@ -139,7 +163,7 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
                 onChange={(e) => setTargetName(e.target.value)}
                 placeholder="Primary Web App"
                 className="w-full px-3 py-2 bg-[var(--sw-surface-elevated)] border border-[var(--sw-border)] rounded-lg text-[var(--sw-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--sw-focus-ring)]"
-                required
+                required={workflowType === "standard"}
               />
             </div>
 
@@ -166,7 +190,7 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
                 type="text"
                 value={targetValue}
                 onChange={(e) => setTargetValue(e.target.value)}
-                placeholder={workflowType === "external" ? "example.com, https://example.com, or 1.2.3.4" : "https://app.example.com"}
+                placeholder={workflowType === "standard" ? "https://app.example.com" : "example.com or https://example.com"}
                 className="w-full px-3 py-2 bg-[var(--sw-surface-elevated)] border border-[var(--sw-border)] rounded-lg text-[var(--sw-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--sw-focus-ring)]"
                 required
               />
@@ -197,7 +221,13 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
                     Starting…
                   </>
                 ) : (
-                  workflowType === "external" ? "Launch external scan (Agent 1 + 2)" : "Create target & request scan"
+                  workflowType === "agent1"
+                    ? "Launch Agent 1 scan"
+                    : workflowType === "agent2"
+                      ? "Launch Agent 2 scan"
+                      : workflowType === "external"
+                        ? "Launch external scan (Agent 1 + 2)"
+                        : "Create target & request scan"
                 )}
               </button>
             </div>

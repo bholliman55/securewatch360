@@ -303,6 +303,7 @@ export const scanTenantRequested = inngest.createFunction(
         return normalizeFindings({
           tenantId: payload.tenantId,
           scanRunId: scanRunId as string,
+          scanTargetId: target.id,
           source: scanResult.scanner,
           assetType: target.target_type,
           exposure,

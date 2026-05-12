@@ -7,6 +7,7 @@ import { awarenessSignalsRefresh } from "./awareness-signals-refresh";
 import { compliancePostureDaily } from "./compliance-posture-daily";
 import { notificationDigest } from "./notification-digest";
 import { runExternalDiscovery } from "./runExternalDiscovery";
+import { runAgent2VulnerabilityScan } from "./runAgent2VulnerabilityScan";
 import { runOsintCollectionFunction } from "./runOsintCollection";
 import { runComplianceStatusFunction } from "./runComplianceStatus";
 import { runRiskQueryFunction } from "./runRiskQuery";
@@ -29,6 +30,7 @@ export const inngestFunctions = [
   compliancePostureDaily,
   notificationDigest,
   runExternalDiscovery,
+  runAgent2VulnerabilityScan,
   runOsintCollectionFunction,
   runComplianceStatusFunction,
   runRiskQueryFunction,
