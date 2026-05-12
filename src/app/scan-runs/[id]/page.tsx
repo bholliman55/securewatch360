@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { getSupabaseAdminClient } from "@/lib/supabase";
 
 type PageProps = {
@@ -160,9 +161,9 @@ export default async function ScanRunDetailPage({ params }: PageProps) {
 
       <h2>Findings ({findings.length})</h2>
       <p>
-        <a href={`/findings?tenantId=${run.tenant_id}&scanRunId=${run.id}`}>
-          Open filtered findings for this scan
-        </a>
+        <Link href={`/findings?tenantId=${run.tenant_id}&scanId=${run.id}`} className="sw-link">
+          Open vulnerability findings filtered to this scan
+        </Link>
       </p>
       {findings.length === 0 ? (
         <p>No findings for this run.</p>

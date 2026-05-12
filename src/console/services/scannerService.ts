@@ -111,6 +111,16 @@ type FindingRow = {
   } | null;
   created_at: string;
   updated_at: string | null;
+  scan?: {
+    id: string;
+    name: string;
+    type: string;
+    status: string;
+    date: string;
+    target_name: string | null;
+    target_type: string | null;
+    target_value: string | null;
+  } | null;
 };
 
 type ScanRunRow = {
@@ -148,9 +158,11 @@ function mapFindingToVulnerability(row: FindingRow): Vulnerability {
   const scanTarget = Array.isArray(row.scan_run?.scan_target)
     ? row.scan_run?.scan_target[0]
     : row.scan_run?.scan_target;
-  const scanId = row.scan_id || row.scan_run_id || row.scan_run?.id || null;
-  const scanDate = row.scan_run?.started_at || row.scan_run?.created_at || null;
+  const scanId = row.scan_id || row.scan_run_id || row.scan?.id || row.scan_run?.id || null;
+  const scanDate = row.scan?.date || row.scan_run?.started_at || row.scan_run?.created_at || null;
   const scanTargetLabel =
+    row.scan?.target_value ||
+    row.scan?.target_name ||
     scanTarget?.target_value ||
     scanTarget?.target_name ||
     row.asset_type ||
@@ -162,12 +174,12 @@ function mapFindingToVulnerability(row: FindingRow): Vulnerability {
     scan_id: scanId,
     scan_result_id: row.scan_result_id || scanId,
     scan_run_id: row.scan_run_id || scanId,
-    scan_name: row.scan_run?.scanner_name || row.scan_run?.scanner_type || null,
-    scan_type: row.scan_run?.scanner_type || row.scan_run?.scanner_name || null,
+    scan_name: row.scan?.name || row.scan_run?.scanner_name || row.scan_run?.scanner_type || null,
+    scan_type: row.scan?.type || row.scan_run?.scanner_type || row.scan_run?.scanner_name || null,
     scan_date: scanDate,
     scan_target: scanTargetLabel,
     scan_target_id: row.scan_target_id || scanTarget?.id || null,
-    scan_status: row.scan_run?.status || null,
+    scan_status: row.scan?.status || row.scan_run?.status || null,
     client_id: 0,
     asset_id: 0,
     cve_id: null,
@@ -208,7 +220,7 @@ function mapScanRun(row: ScanRunRow & { result_summary?: unknown }): Scan {
     sev.critical + sev.high + sev.medium + sev.low + (sev.info ?? 0);
   return {
     scan_results_id: row.id,
-    scan_type: row.scanner_name || "scan",
+    scan_type: row.scanner_name || row.scanner_type || "scan",
     target: row.target_value || row.target_name || "",
     target_type: row.target_type,
     status: row.status,

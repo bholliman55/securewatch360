@@ -1,4 +1,5 @@
 import { serverApiFetch } from "@/lib/serverApi";
+import Link from "next/link";
 
 type ScanRun = {
   id: string;
@@ -98,6 +99,7 @@ export default async function ScanRunsPage({ searchParams }: PageProps) {
               <th>Started At</th>
               <th>Completed At</th>
               <th>Error Message</th>
+              <th>Links</th>
             </tr>
           </thead>
           <tbody>
@@ -110,6 +112,15 @@ export default async function ScanRunsPage({ searchParams }: PageProps) {
                 <td>{formatDate(run.started_at)}</td>
                 <td>{formatDate(run.completed_at)}</td>
                 <td>{run.error_message ?? "-"}</td>
+                <td>
+                  <Link href={`/scan-runs/${run.id}`} className="sw-link">
+                    Details
+                  </Link>{" "}
+                  |{" "}
+                  <Link href={`/findings?tenantId=${tenantId}&scanId=${run.id}`} className="sw-link">
+                    Findings
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>

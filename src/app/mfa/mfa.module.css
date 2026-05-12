@@ -1,0 +1,166 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  gap: 1.5rem;
+  padding: 2rem;
+  background: #f8fafc;
+}
+
+.brand {
+  text-align: center;
+}
+
+.brandEyebrow {
+  margin: 0 0 0.25rem;
+  color: #2563eb;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.brandName {
+  margin: 0;
+  color: #0f172a;
+  font-size: 2rem;
+}
+
+.card {
+  width: min(100%, 34rem);
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #ffffff;
+  box-shadow: 0 20px 45px rgb(15 23 42 / 0.08);
+  padding: 2rem;
+}
+
+.cardTitle {
+  margin: 0 0 0.5rem;
+  color: #0f172a;
+  font-size: 1.5rem;
+}
+
+.cardSubtitle {
+  margin: 0 0 1.5rem;
+  color: #475569;
+}
+
+.qrWrap {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.qrBox {
+  padding: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #ffffff;
+}
+
+.qrLoading {
+  color: #64748b;
+  text-align: center;
+}
+
+.secretBlock {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: #f1f5f9;
+}
+
+.secretLabel {
+  margin: 0 0 0.25rem;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.secretValue {
+  margin: 0;
+  color: #0f172a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.steps {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  color: #334155;
+}
+
+.stepNum {
+  display: grid;
+  flex: 0 0 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.codeField {
+  display: grid;
+  gap: 0.4rem;
+  margin: 1rem 0;
+}
+
+.codeLabel {
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.codeInput {
+  border: 1px solid #cbd5e1;
+  border-radius: 0.625rem;
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+}
+
+.error {
+  color: #b91c1c;
+  font-size: 0.9rem;
+}
+
+.submitBtn,
+.skipBtn {
+  width: 100%;
+  border: 0;
+  border-radius: 0.625rem;
+  padding: 0.85rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.submitBtn {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.skipBtn {
+  margin-top: 0.75rem;
+  background: #e2e8f0;
+  color: #0f172a;
+}

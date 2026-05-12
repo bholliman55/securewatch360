@@ -50,7 +50,7 @@ export async function runValidationPlan(args: {
     let ok = true;
     let message = "";
     let evidence_ids: string[] = [];
-    let simulated = ctx.dry_run || ctx.simulation_mode;
+    const simulated = ctx.dry_run || ctx.simulation_mode;
 
     try {
       const r = await handler({ step, context: ctx });

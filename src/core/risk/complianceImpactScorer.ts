@@ -12,7 +12,7 @@ export function scoreComplianceImpact(compliance: ComplianceSignals): Compliance
   const factors: RiskScoringFactor[] = [];
   const frameworkWeight = Math.min(1, compliance.frameworks_in_scope.length / 4);
   const gapNorm = Math.min(1, compliance.control_gap_count / 12);
-  let drift = compliance.policy_drift_detected ? 0.35 : 0;
+  const drift = compliance.policy_drift_detected ? 0.35 : 0;
 
   if (compliance.frameworks_in_scope.length > 0) {
     factors.push({

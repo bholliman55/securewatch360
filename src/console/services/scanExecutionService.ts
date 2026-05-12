@@ -58,7 +58,7 @@ class ScanExecutionService {
           table: 'scans',
           filter: `id=eq.${scanId}`
         },
-        (payload: RealtimePostgresChangesPayload<{ [key: string]: unknown }>) => {
+        (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
           callback(payload.new);
         }
       )
@@ -76,7 +76,7 @@ class ScanExecutionService {
           table: 'vulnerabilities',
           filter: `scan_id=eq.${scanId}`
         },
-        (payload: RealtimePostgresChangesPayload<{ [key: string]: unknown }>) => {
+        (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
           callback(payload.new);
         }
       )

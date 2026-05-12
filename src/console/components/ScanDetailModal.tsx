@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Loader2, AlertTriangle, Clock, Server, Shield, ExternalLink } from 'lucide-react';
 import { Scan, Vulnerability } from '../services/scannerService';
 import { scannerService } from '../services/scannerService';
-import { formatDistanceToNow } from '../utils/formatters';
 import { useTenant } from '../contexts/TenantContext';
+import { formatDistanceToNow } from '../utils/formatters';
 
 interface ScanDetailModalProps {
   scan: Scan | null;
@@ -18,14 +18,7 @@ export default function ScanDetailModal({ scan, isOpen, onClose }: ScanDetailMod
   const [vulnerabilities, setVulnerabilities] = useState<Vulnerability[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (scan && isOpen && selectedTenantId) {
-      loadVulnerabilities();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scan, isOpen, selectedTenantId]);
-
-  const loadVulnerabilities = async () => {
+  const loadVulnerabilities = useCallback(async () => {
     if (!scan || !selectedTenantId) return;
 
     setLoading(true);
@@ -37,9 +30,18 @@ export default function ScanDetailModal({ scan, isOpen, onClose }: ScanDetailMod
     } finally {
       setLoading(false);
     }
-  };
+  }, [scan, selectedTenantId]);
+
+  useEffect(() => {
+    if (scan && isOpen && selectedTenantId) {
+      loadVulnerabilities();
+    }
+  }, [scan, isOpen, selectedTenantId, loadVulnerabilities]);
 
   if (!isOpen || !scan) return null;
+  const scanFindingsUrl = selectedTenantId
+    ? `/findings?tenantId=${encodeURIComponent(selectedTenantId)}&scanId=${encodeURIComponent(scan.scan_results_id)}`
+    : `/scan-runs/${encodeURIComponent(scan.scan_results_id)}`;
 
   const getSeverityColor = (severity: string) => {
     switch (severity.toLowerCase()) {
@@ -219,6 +221,12 @@ export default function ScanDetailModal({ scan, isOpen, onClose }: ScanDetailMod
           </div>
 
           <div className="flex gap-3 p-6 border-t border-slate-200 dark:border-slate-700">
+            <a
+              href={scanFindingsUrl}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-center"
+            >
+              Open Scan Findings
+            </a>
             <button
               onClick={onClose}
               className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"

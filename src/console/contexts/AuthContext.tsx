@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
+import { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { supabase } from "../services/supabaseClient";
 import { apiJson } from "../lib/apiFetch";
 import type { TenantOption } from "./TenantContext";

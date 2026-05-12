@@ -112,11 +112,36 @@ export async function GET(request: Request) {
       throw new Error(error.message);
     }
 
+    const findings = (data ?? []).map((row) => {
+      const scanRun = Array.isArray(row.scan_run) ? row.scan_run[0] : row.scan_run;
+      const scanTarget = Array.isArray(scanRun?.scan_target)
+        ? scanRun?.scan_target[0]
+        : scanRun?.scan_target;
+
+      return {
+        ...row,
+        scan: scanRun
+          ? {
+              id: scanRun.id,
+              name: scanRun.scanner_name ?? scanRun.scanner_type ?? "Scan",
+              type: scanRun.scanner_type ?? scanRun.scanner_name ?? "scan",
+              status: scanRun.status,
+              date: scanRun.started_at ?? scanRun.created_at,
+              completed_at: scanRun.completed_at,
+              target_id: scanTarget?.id ?? row.scan_target_id ?? null,
+              target_name: scanTarget?.target_name ?? null,
+              target_type: scanTarget?.target_type ?? null,
+              target_value: scanTarget?.target_value ?? null,
+            }
+          : null,
+      };
+    });
+
     return NextResponse.json(
       {
         ok: true,
-        findings: data ?? [],
-        count: data?.length ?? 0,
+        findings,
+        count: findings.length,
         pagination: {
           limit: pagination.limit,
           offset: pagination.offset,

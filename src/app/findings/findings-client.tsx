@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 
 type FindingRow = {
   id: string;
@@ -18,6 +19,18 @@ type FindingRow = {
   scan_id?: string | null;
   scan_run_id?: string | null;
   scan_result_id?: string | null;
+  scan: {
+    id: string;
+    name: string;
+    type: string;
+    status: string;
+    date: string;
+    completed_at: string | null;
+    target_id: string | null;
+    target_name: string | null;
+    target_type: string | null;
+    target_value: string | null;
+  } | null;
 };
 
 type FindingsResponse = {
@@ -28,6 +41,7 @@ type FindingsResponse = {
 
 type Filters = {
   tenantId: string;
+  scanId: string;
   severity: string;
   status: string;
   scanRunId: string;
@@ -35,6 +49,7 @@ type Filters = {
 
 const initialFilters: Filters = {
   tenantId: "",
+  scanId: "",
   severity: "",
   status: "",
   scanRunId: "",
@@ -57,8 +72,15 @@ function getSeverityClass(severity: string): string {
   return "sw-sev-info";
 }
 
-export function FindingsClient() {
-  const [filters, setFilters] = useState<Filters>(initialFilters);
+type FindingsClientProps = {
+  initialFilters?: Partial<Filters>;
+};
+
+export function FindingsClient({ initialFilters: initialFilterOverrides }: FindingsClientProps) {
+  const [filters, setFilters] = useState<Filters>({
+    ...initialFilters,
+    ...initialFilterOverrides,
+  });
   const [findings, setFindings] = useState<FindingRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +112,7 @@ export function FindingsClient() {
     try {
       const params = new URLSearchParams();
       if (nextFilters.tenantId.trim()) params.set("tenantId", nextFilters.tenantId.trim());
+      if (nextFilters.scanId.trim()) params.set("scanId", nextFilters.scanId.trim());
       if (nextFilters.severity.trim()) params.set("severity", nextFilters.severity.trim());
       if (nextFilters.status.trim()) params.set("status", nextFilters.status.trim());
       if (nextFilters.scanRunId.trim()) params.set("scanRunId", nextFilters.scanRunId.trim());
@@ -125,13 +148,14 @@ export function FindingsClient() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const nextFilters = {
+    const nextFilters: Filters = {
       tenantId: params.get("tenantId") ?? "",
+      scanId: params.get("scanId") ?? params.get("scanRunId") ?? params.get("scanResultId") ?? "",
       severity: params.get("severity") ?? "",
       status: params.get("status") ?? "",
-      scanRunId: params.get("scanRunId") ?? params.get("scanId") ?? "",
+      scanRunId: "",
     };
-    if (nextFilters.tenantId || nextFilters.scanRunId) {
+    if (nextFilters.tenantId || nextFilters.scanId) {
       setFilters(nextFilters);
       if (nextFilters.tenantId) {
         void loadFindings(nextFilters);
@@ -234,11 +258,11 @@ export function FindingsClient() {
         </label>
 
         <label className="sw-field">
-          Scan Run ID
+          Scan ID
           <input
-            value={filters.scanRunId}
-            onChange={(e) => setFilters((prev) => ({ ...prev, scanRunId: e.target.value }))}
-            placeholder="uuid (optional)"
+            value={filters.scanId}
+            onChange={(e) => setFilters((prev) => ({ ...prev, scanId: e.target.value }))}
+            placeholder="scan/run uuid (optional)"
             className="sw-input"
           />
         </label>
@@ -288,7 +312,7 @@ export function FindingsClient() {
       {loading ? <p>Loading findings...</p> : null}
       {!loading && !error && findings.length === 0 && filters.tenantId.trim() ? <p>No findings found.</p> : null}
 
-      {!loading && !error && findings.length > 0 ? (
+      {!loading && !error && filters.tenantId.trim() ? (
         <table className="sw-table">
           <thead>
             <tr>
@@ -298,7 +322,10 @@ export function FindingsClient() {
               <th>Exposure</th>
               <th>Category</th>
               <th>Title</th>
-              <th>Scan</th>
+              <th>Scan Source</th>
+              <th>Scan Date</th>
+              <th>Scan Target</th>
+              <th>Scan Status</th>
               <th>Status</th>
               <th>Assigned To</th>
               <th>Notes</th>
@@ -308,7 +335,11 @@ export function FindingsClient() {
             </tr>
           </thead>
           <tbody>
-            {findings.map((finding) => (
+            {findings.length === 0 ? (
+              <tr>
+                <td colSpan={16}>No findings match the current filters.</td>
+              </tr>
+            ) : findings.map((finding) => (
               <tr key={finding.id}>
                 <td>{finding.priority_score}</td>
                 <td>
@@ -321,14 +352,23 @@ export function FindingsClient() {
                 <td>{finding.category ?? "-"}</td>
                 <td>{finding.title}</td>
                 <td>
-                  {finding.scan_id || finding.scan_run_id || finding.scan_result_id ? (
-                    <a href={`/scan-runs/${finding.scan_id ?? finding.scan_run_id ?? finding.scan_result_id}`}>
-                      {(finding.scan_id ?? finding.scan_run_id ?? finding.scan_result_id)?.slice(0, 8)}
-                    </a>
+                  {finding.scan ? (
+                    <Link href={`/scan-runs/${finding.scan.id}`} className="sw-link">
+                      {finding.scan.name || finding.scan.type}
+                    </Link>
                   ) : (
                     "-"
                   )}
                 </td>
+                <td>{finding.scan?.date ? new Date(finding.scan.date).toLocaleString() : "-"}</td>
+                <td>
+                  {finding.scan
+                    ? finding.scan.target_name
+                      ? `${finding.scan.target_name} (${finding.scan.target_value ?? "unknown"})`
+                      : finding.scan.target_value ?? "-"
+                    : "-"}
+                </td>
+                <td>{finding.scan?.status ?? "-"}</td>
                 <td>
                   <select
                     className="sw-input"
