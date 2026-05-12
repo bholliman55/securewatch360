@@ -130,19 +130,13 @@ export async function GET(request: Request) {
     }
 
     const supabase = getSupabaseAdminClient();
+    // Single string literal so Supabase can infer the return type at compile time.
+    const SELECT_FINDINGS =
+      "id, tenant_id, scan_run_id, scan_id, scan_result_id, scan_target_id, agent_type, asset_id, severity, category, title, description, status, asset_type, exposure, priority_score, assigned_to_user_id, notes, created_at, updated_at, scan_run:scan_runs!findings_scan_run_id_fkey(id, scanner_name, scanner_type, status, created_at, started_at, completed_at, scan_target:scan_targets(id, target_name, target_type, target_value)), asset:asset_inventory!findings_asset_id_fkey(id, asset_identifier, asset_type, display_name)" as const;
+
     let query = supabase
       .from("findings")
-      .select(
-        [
-          "id, tenant_id, scan_run_id, scan_id, scan_result_id, scan_target_id",
-          "agent_type, asset_id",
-          "severity, category, title, description, status",
-          "asset_type, exposure, priority_score",
-          "assigned_to_user_id, notes, created_at, updated_at",
-          "scan_run:scan_runs!findings_scan_run_id_fkey(id, scanner_name, scanner_type, status, created_at, started_at, completed_at, scan_target:scan_targets(id, target_name, target_type, target_value))",
-          "asset:asset_inventory!findings_asset_id_fkey(id, asset_identifier, asset_type, display_name)",
-        ].join(", ")
-      )
+      .select(SELECT_FINDINGS)
       .order("priority_score", { ascending: false })
       .order("created_at", { ascending: false })
       .range(pagination.offset, pagination.offset + pagination.limit - 1);
