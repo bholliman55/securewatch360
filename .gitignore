@@ -40,7 +40,8 @@ tmp-*.yml
 
 # IDE / editor tooling (not application source)
 .claude/settings.local.json
-.cursor/
+.cursor/*
+!.cursor/skills
 
 # Simulation run artifacts (local; regenerate with npm run sim:run / sim:report / demo:stack)
 .simulation-results/

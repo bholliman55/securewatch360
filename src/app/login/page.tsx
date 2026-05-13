@@ -91,6 +91,7 @@ export default function LoginPage() {
               alt="SecureWatch360"
               width={64}
               height={64}
+              unoptimized
               style={{
                 borderRadius: 12,
                 border: "1px solid rgba(41,182,246,0.3)",
