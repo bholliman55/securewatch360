@@ -38,6 +38,7 @@ export async function GET(
 
   if (error || !asset) return NextResponse.json({ error: "Asset not found" }, { status: 404 });
 
+  // Fetch linked scan target
   let scanTarget = null;
   if (asset.source_scan_target_id) {
     const { data } = await supabase
@@ -48,6 +49,7 @@ export async function GET(
     scanTarget = data;
   }
 
+  // Fetch recent findings (up to 50)
   const { data: findings } = await supabase
     .from("findings")
     .select("id, severity, category, title, status, agent_type, created_at, scan_run_id")
@@ -56,6 +58,7 @@ export async function GET(
     .order("created_at", { ascending: false })
     .limit(50);
 
+  // Fetch recent scan runs that touched this asset (via scan target)
   let scanRuns = null;
   if (asset.source_scan_target_id) {
     const { data } = await supabase

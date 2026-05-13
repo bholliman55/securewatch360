@@ -24,6 +24,7 @@ interface Asset {
   high_count: number;
   last_seen_at: string;
   source: string | null;
+  source_scan_target_id: string | null;
   notes: string | null;
   created_at: string;
 }
@@ -44,6 +45,7 @@ interface Finding {
   status: string;
   agent_type: string | null;
   created_at: string;
+  scan_run_id: string | null;
 }
 
 interface ScanRun {
@@ -62,7 +64,7 @@ interface AssetDetailResponse {
   scanRuns: ScanRun[];
 }
 
-function sevClass(s: string) {
+function severityClass(s: string) {
   if (s === "critical") return "bg-red-100 text-red-700";
   if (s === "high") return "bg-orange-100 text-orange-700";
   if (s === "medium") return "bg-yellow-100 text-yellow-700";
@@ -70,7 +72,7 @@ function sevClass(s: string) {
   return "bg-gray-100 text-gray-600";
 }
 
-function critClass(c: string | null) {
+function criticalityClass(c: string | null) {
   if (c === "critical") return "bg-red-100 text-red-700";
   if (c === "high") return "bg-orange-100 text-orange-700";
   if (c === "medium") return "bg-yellow-100 text-yellow-700";
@@ -145,6 +147,17 @@ export function AssetDetailClient({ assetId }: { assetId: string }) {
           <h1 className="text-2xl font-bold text-gray-900">{label}</h1>
           <p className="mt-0.5 font-mono text-sm text-gray-400">{asset.asset_identifier}</p>
         </div>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+            {asset.asset_type}
+          </span>
+          <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusClass(asset.status)}`}>
+            {asset.status}
+          </span>
+          {asset.criticality && (
+            <span className={`rounded-full px-3 py-1 text-xs font-medium ${criticalityClass(asset.criticality)}`}>
+              {asset.criticality}
+            </span>
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">{asset.asset_type}</span>
           <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusClass(asset.status)}`}>{asset.status}</span>

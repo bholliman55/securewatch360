@@ -7,10 +7,18 @@ import { API_TENANT_ROLES } from "@/lib/apiRoleMatrix";
 const VALID_ENVIRONMENTS = ["production", "staging", "development", "testing", "other"] as const;
 const VALID_CRITICALITIES = ["critical", "high", "medium", "low"] as const;
 
+// Map scan target types to asset_inventory asset_type values for non-asset target types
 const TARGET_TO_ASSET_TYPE: Record<string, string> = {
-  ip: "ip", hostname: "hostname", domain: "domain", cloud_account: "cloud_account",
-  url: "webapp", webapp: "webapp", cidr: "network", repo: "repository",
-  container_image: "container", package_manifest: "package",
+  ip: "ip",
+  hostname: "hostname",
+  domain: "domain",
+  cloud_account: "cloud_account",
+  url: "webapp",
+  webapp: "webapp",
+  cidr: "network",
+  repo: "repository",
+  container_image: "container",
+  package_manifest: "package",
 };
 
 export async function POST(req: NextRequest) {
@@ -46,9 +54,17 @@ export async function POST(req: NextRequest) {
   if (!target) return NextResponse.json({ error: "Scan target not found" }, { status: 404 });
 
   const assetType = TARGET_TO_ASSET_TYPE[target.target_type as string] ?? target.target_type;
+  const assetName = typeof body.assetName === "string" && body.assetName.trim() ? body.assetName.trim() : null;
+  const owner = typeof body.owner === "string" && body.owner.trim() ? body.owner.trim() : null;
   const rawEnv = typeof body.environment === "string" ? body.environment.trim() : null;
   const rawCrit = typeof body.criticality === "string" ? body.criticality.trim() : null;
+  const environment = VALID_ENVIRONMENTS.includes(rawEnv as never) ? rawEnv : null;
+  const criticality = VALID_CRITICALITIES.includes(rawCrit as never) ? rawCrit : null;
+
+  // Auto-populate network fields from the scan target value
   const targetType = target.target_type as string;
+  const hostname = ["hostname", "domain"].includes(targetType) ? (target.target_value as string) : null;
+  const ip_address = targetType === "ip" ? (target.target_value as string) : null;
 
   const { data: asset, error } = await supabase
     .from("asset_inventory")
