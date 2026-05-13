@@ -147,11 +147,17 @@ export function AssetDetailClient({ assetId }: { assetId: string }) {
           <h1 className="text-2xl font-bold text-gray-900">{label}</h1>
           <p className="mt-0.5 font-mono text-sm text-gray-400">{asset.asset_identifier}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">{asset.asset_type}</span>
-          <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusClass(asset.status)}`}>{asset.status}</span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+            {asset.asset_type}
+          </span>
+          <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusClass(asset.status)}`}>
+            {asset.status}
+          </span>
           {asset.criticality && (
-            <span className={`rounded-full px-3 py-1 text-xs font-medium ${criticalityClass(asset.criticality)}`}>{asset.criticality}</span>
+            <span className={`rounded-full px-3 py-1 text-xs font-medium ${criticalityClass(asset.criticality)}`}>
+              {asset.criticality}
+            </span>
           )}
           {asset.internet_facing && (
             <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-600">internet-facing</span>
