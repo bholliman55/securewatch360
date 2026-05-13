@@ -6,6 +6,7 @@ import { apiJson } from "../lib/apiFetch";
 import { useTenant } from "../contexts/TenantContext";
 import { triggerExternalIntelligenceScan } from "../services/externalIntelligenceService";
 import { getScanTypeRoute, type ScanTypeValue } from "@/lib/scanTypeRouting";
+import { COMPLIANCE_SCAN_FRAMEWORKS, type ComplianceScanFramework } from "@/lib/complianceScan";
 
 interface NewScanModalProps {
   isOpen: boolean;
@@ -19,6 +20,9 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
   const [targetType, setTargetType] = useState("url");
   const [workflowType, setWorkflowType] = useState<ScanTypeValue>("external");
   const [targetValue, setTargetValue] = useState("");
+  const [complianceFramework, setComplianceFramework] = useState<ComplianceScanFramework>("cmmc_l1");
+  const [complianceScope, setComplianceScope] = useState("tenant");
+  const [complianceTargetIds, setComplianceTargetIds] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +39,48 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
 
     try {
       const scanRoute = getScanTypeRoute(workflowType);
+      if (scanRoute.scanType === "compliance") {
+        const targetIds = complianceTargetIds
+          .split(/[\s,]+/)
+          .map((value) => value.trim())
+          .filter(Boolean);
+        const response = await apiJson<{
+          ok: boolean;
+          scanRunId?: string;
+          summary?: { readinessPercentage: number };
+          error?: string;
+          message?: string;
+        }>(scanRoute.backendRoute, {
+          method: "POST",
+          body: JSON.stringify({
+            tenantId: selectedTenantId,
+            framework: complianceFramework,
+            scope: complianceScope,
+            scanTargetIds: targetIds,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(response.error || response.message || "Failed to run compliance scan");
+        }
+
+        console.info("[scanner-ui] compliance scan completed", {
+          scan_id: response.scanRunId,
+          scan_type: "compliance",
+          target: targetIds.join(",") || complianceScope,
+          client_id: null,
+          tenant_id: selectedTenantId,
+          backend_route_called: scanRoute.backendRoute,
+          response_status: "completed",
+        });
+
+        onScanCreated();
+        onClose();
+        setComplianceScope("tenant");
+        setComplianceTargetIds("");
+        return;
+      }
+
       if (scanRoute.scanType !== "standard") {
         await triggerExternalIntelligenceScan({
           tenantId: selectedTenantId,
@@ -134,7 +180,7 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
 
           <p className="text-sm text-[var(--sw-text-muted)] mb-4">
             Use external intelligence for domain/URL/IP recon with Agent 1 + Agent 2, or run the standard scan target
-            workflow.
+            workflow. Compliance scans assess current tenant evidence against framework controls.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -152,9 +198,63 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
                 <option value="agent1">Agent 1 - External attack surface</option>
                 <option value="agent2">Agent 2 - Vulnerability analysis / CVE prioritization</option>
                 <option value="standard">Standard scan target workflow</option>
+                <option value="compliance">Compliance scan</option>
               </select>
             </div>
 
+            {workflowType === "compliance" ? (
+              <>
+                <div>
+                  <label htmlFor="compliance-framework" className="block text-sm font-medium text-[var(--sw-text-primary)] mb-2">
+                    Target framework
+                  </label>
+                  <select
+                    id="compliance-framework"
+                    value={complianceFramework}
+                    onChange={(e) => setComplianceFramework(e.target.value as ComplianceScanFramework)}
+                    className="w-full px-3 py-2 bg-[var(--sw-surface-elevated)] border border-[var(--sw-border)] rounded-lg text-[var(--sw-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--sw-focus-ring)]"
+                  >
+                    {COMPLIANCE_SCAN_FRAMEWORKS.map((framework) => (
+                      <option key={framework.value} value={framework.value}>
+                        {framework.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="compliance-scope" className="block text-sm font-medium text-[var(--sw-text-primary)] mb-2">
+                    Scope
+                  </label>
+                  <select
+                    id="compliance-scope"
+                    value={complianceScope}
+                    onChange={(e) => setComplianceScope(e.target.value)}
+                    className="w-full px-3 py-2 bg-[var(--sw-surface-elevated)] border border-[var(--sw-border)] rounded-lg text-[var(--sw-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--sw-focus-ring)]"
+                  >
+                    <option value="tenant">Entire client / tenant</option>
+                    <option value="external">External assets</option>
+                    <option value="internal">Internal assets</option>
+                    <option value="selected_targets">Selected scan targets</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="compliance-targets" className="block text-sm font-medium text-[var(--sw-text-primary)] mb-2">
+                    Assets or scan targets
+                  </label>
+                  <textarea
+                    id="compliance-targets"
+                    value={complianceTargetIds}
+                    onChange={(e) => setComplianceTargetIds(e.target.value)}
+                    placeholder="Optional scan target UUIDs, separated by commas or spaces"
+                    className="w-full px-3 py-2 bg-[var(--sw-surface-elevated)] border border-[var(--sw-border)] rounded-lg text-[var(--sw-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--sw-focus-ring)]"
+                    rows={3}
+                  />
+                </div>
+              </>
+            ) : (
+            <>
             <div>
               <label className="block text-sm font-medium text-[var(--sw-text-primary)] mb-2">Target name</label>
               <input
@@ -195,6 +295,8 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
                 required
               />
             </div>
+            </>
+            )}
 
             {error && (
               <div className="bg-[color:color-mix(in_srgb,var(--sw-danger)_12%,transparent)] border border-[color:color-mix(in_srgb,var(--sw-danger)_40%,transparent)] rounded-lg p-3">
@@ -221,7 +323,9 @@ export default function NewScanModal({ isOpen, onClose, onScanCreated }: NewScan
                     Starting…
                   </>
                 ) : (
-                  workflowType === "agent1"
+                  workflowType === "compliance"
+                    ? "Run Compliance Scan"
+                    : workflowType === "agent1"
                     ? "Launch Agent 1 scan"
                     : workflowType === "agent2"
                       ? "Launch Agent 2 scan"
