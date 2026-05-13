@@ -47,6 +47,10 @@ const CRITICAL_PRODUCTION_SECRETS: { key: string; description: string }[] = [
   { key: "INNGEST_EVENT_KEY", description: "Inngest event emission key" },
 ];
 
+function readSupabaseUrl(env: NodeJS.ProcessEnv): string | undefined {
+  return read(env, "NEXT_PUBLIC_SUPABASE_URL") ?? read(env, "NEXT_SUPABASE_URL");
+}
+
 /**
  * Validates environment variables, demo/prod separation, and deployment profile consistency.
  * Does not exit the process — callers decide how to fail (throw, log, or block startup).
@@ -69,7 +73,7 @@ export function validateEnvironmentConfig(env: NodeJS.ProcessEnv = process.env):
 
   if (isProductionLikeDeployment(env)) {
     for (const { key, description } of CRITICAL_PRODUCTION_SECRETS) {
-      if (!read(env, key)) {
+      if (key === "NEXT_PUBLIC_SUPABASE_URL" ? !readSupabaseUrl(env) : !read(env, key)) {
         errors.push(`Missing required production secret ${key} (${description}).`);
       }
     }
@@ -88,7 +92,7 @@ export function validateEnvironmentConfig(env: NodeJS.ProcessEnv = process.env):
       }
     }
   } else {
-    if (!read(env, "NEXT_PUBLIC_SUPABASE_URL")) {
+    if (!readSupabaseUrl(env)) {
       warnings.push("NEXT_PUBLIC_SUPABASE_URL is unset — local UI and APIs may fail.");
     }
   }

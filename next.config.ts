@@ -1,12 +1,21 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 
-const nextConfig: NextConfig = {
-  reactStrictMode: true,
-  // Standalone output bundles only what's needed — used by Docker image.
-  output: process.env.DOCKER_BUILD === "1" ? "standalone" : undefined,
-  // Pin tracing to this package when other lockfiles exist on the machine.
-  outputFileTracingRoot: path.join(process.cwd()),
-};
+type WebpackConfig = Parameters<NonNullable<NextConfig["webpack"]>>[0];
 
+const nextConfig: NextConfig = {
+  outputFileTracingRoot: path.join(__dirname),
+  experimental: {
+    optimizePackageImports: ['some-large-package'],
+  },
+  webpack: (config: WebpackConfig, { isServer }: { isServer: boolean }) => {
+    if (!isServer) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        maxSize: 24 * 1024 * 1024, // 24 MiB max per chunk
+      };
+    }
+    return config;
+  },
+};
 export default nextConfig;

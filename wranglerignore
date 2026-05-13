@@ -10,8 +10,6 @@
 
 # build / next
 /.next/
-/.open-next/
-/.wrangler-dry-run/
 /out/
 /build
 # env
@@ -55,4 +53,22 @@ iac/securewatch360-policy-pack/policy-evidence-out/
 
 # Claude Code ephemeral worktrees (not application source)
 .claude/worktrees/
+.git
+.github
+.next
 .next/cache
+.open-next/cache
+node_modules
+docs
+iac
+simulator
+simulation-results
+.simulation-results
+.playwright-mcp
+.wrangler
+*.tsbuildinfo
+*.log
+.env
+.env.local
+.env.*.local
+docs/reports
