@@ -30,10 +30,8 @@ export function useTraining() {
     }
 
     try {
-      const [modulesData, metricsData] = await Promise.all([
-        trainingService.getModules(selectedTenantId),
-        trainingService.getMetrics(selectedTenantId),
-      ]);
+      const { modules: modulesData, metrics: metricsData } =
+        await trainingService.getTrainingData(selectedTenantId);
       setModules(modulesData);
       setMetrics(metricsData);
       initialLoadDone.current = true;
