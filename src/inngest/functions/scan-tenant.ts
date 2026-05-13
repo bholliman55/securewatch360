@@ -13,6 +13,7 @@ import { calculatePriorityScore, inferExposure } from "@/lib/prioritization";
 import { buildApprovalSlaFields } from "@/lib/sla";
 import { normalizeFindings } from "@/scanner/analyzer";
 import { runScanForTarget } from "@/scanner";
+import type { ComplianceFindingEvidence } from "@/scanner/adapters/compliance";
 import type { DecisionInput, DecisionOutput, DecisionResult } from "@/types/policy";
 import type { InngestEventMap } from "@/types";
 import { inngest } from "../client";
@@ -328,6 +329,47 @@ export const scanTenantRequested = inngest.createFunction(
       });
 
       const insertedCount = insertedFindings.length;
+
+      currentStep = "write-compliance-results";
+      const complianceResultsWritten = await step.run("write-compliance-results", async () => {
+        if (scanResult.scannerType !== "compliance" || insertedFindings.length === 0) {
+          return { written: 0 };
+        }
+
+        const rows = insertedFindings
+          .filter((f) => {
+            const ev = f.evidence as Partial<ComplianceFindingEvidence>;
+            return typeof ev?.controlId === "string" && typeof ev?.framework === "string";
+          })
+          .map((f) => {
+            const ev = f.evidence as ComplianceFindingEvidence;
+            return {
+              tenant_id: payload.tenantId,
+              scan_run_id: scanRunId as string,
+              framework: ev.framework,
+              control_id: ev.controlId,
+              control_name: ev.controlName,
+              status: ev.complianceStatus,
+              evidence: ev,
+              gap: ev.gap ?? null,
+              recommended_action: ev.recommendedAction ?? null,
+              severity: f.severity,
+              related_finding_id: f.id,
+            };
+          });
+
+        if (rows.length === 0) return { written: 0 };
+
+        const { error } = await supabase.from("compliance_scan_results").insert(rows);
+        if (error) {
+          console.warn("[scan-workflow] could not write compliance_scan_results", {
+            scanRunId,
+            error: error.message,
+          });
+          return { written: 0 };
+        }
+        return { written: rows.length };
+      });
 
       // Assets are owned technology inventory items (servers, workstations,
       // domains, cloud resources).  URLs and webapp scan targets are scanner
@@ -878,6 +920,7 @@ export const scanTenantRequested = inngest.createFunction(
         const resultSummary = {
           findingsDetected: scanResult.findings.length,
           findingsInserted: insertedCount,
+          complianceResultsWritten: complianceResultsWritten.written,
           linkedAssetId,
           linkedCves: cveSummary.linkedCves,
           prioritizedFindings: prioritySummary.prioritizedCount,
