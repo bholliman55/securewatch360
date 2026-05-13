@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 
 const NAV_LINKS: { href: string; label: string }[] = [
   { href: "/analyst", label: "Analyst home" },
@@ -25,7 +25,15 @@ const NAV_LINKS: { href: string; label: string }[] = [
 export function AnalystNav() {
   const pathname = usePathname() ?? "";
   const search = useSearchParams();
+  const router = useRouter();
   const tenantId = search.get("tenantId")?.trim() ?? "";
+
+  async function handleSignOut() {
+    try {
+      await fetch("/api/auth/signout", { method: "POST", redirect: "manual" });
+    } catch { /* ignore */ }
+    router.push("/login");
+  }
   const q = tenantId ? `?tenantId=${encodeURIComponent(tenantId)}` : "";
 
   return (
@@ -55,6 +63,13 @@ export function AnalystNav() {
           Tenant: <code>{tenantId}</code>
         </p>
       ) : null}
+      <button
+        onClick={() => void handleSignOut()}
+        className="sw-side-nav__signout"
+        title="Sign out"
+      >
+        Sign out
+      </button>
     </nav>
   );
 }
