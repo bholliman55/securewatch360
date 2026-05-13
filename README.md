@@ -264,6 +264,35 @@ These are code modules, not LLM runtime dependencies.
 
 ## Local setup
 
+## Cloudflare investor demo deploy
+
+Use Cloudflare Workers/OpenNext for this Next.js app. Do **not** set the
+Cloudflare output directory to `.next`; that uploads webpack cache files and can
+hit Cloudflare's 25 MiB per-file limit. Use:
+
+```bash
+npm run deploy
+```
+
+For Cloudflare Builds, set:
+
+- Build command: `npm run preview` to verify, or `npm run deploy` for deploy jobs
+- Deploy command: `npx wrangler deploy`
+- Output directory: leave blank for Workers deploy, or do not point it at `.next`
+
+Required Cloudflare build variables/secrets:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=<your Supabase project URL>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your Supabase anon key>
+SUPABASE_SERVICE_ROLE_KEY=<server-only service role key>
+INNGEST_EVENT_KEY=<event key or demo placeholder>
+INNGEST_SIGNING_KEY=<signing key or demo placeholder>
+```
+
+If Cloudflare already has `NEXT_SUPABASE_URL`, keep it for now; the app accepts
+it as a fallback, but `NEXT_PUBLIC_SUPABASE_URL` is the canonical variable name.
+
 1. Install dependencies
 
 ```bash

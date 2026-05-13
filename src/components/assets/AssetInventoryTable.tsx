@@ -31,6 +31,18 @@ interface AssetsResponse {
   typeCounts: Record<string, number>;
 }
 
+interface ScanTarget {
+  id: string;
+  target_name: string;
+  target_type: string;
+  target_value: string;
+}
+
+interface ScanTargetsResponse {
+  ok: boolean;
+  scanTargets?: ScanTarget[];
+}
+
 interface Filters {
   type: string;
   criticality: string;
@@ -44,8 +56,8 @@ const EMPTY_FILTERS: Filters = {
   type: "", criticality: "", environment: "", status: "", internetFacing: "", search: "",
 };
 
-const CRITICALITIES = ["critical", "high", "medium", "low"];
-const ENVIRONMENTS = ["production", "staging", "development", "testing", "other"];
+const CRITICALITIES = ["critical", "high", "medium", "low"] as const;
+const ENVIRONMENTS = ["production", "staging", "development", "testing", "other"] as const;
 const STATUSES = ["active", "inactive", "decommissioned"];
 
 function criticalityBadge(c: string | null) {
@@ -76,9 +88,6 @@ function buildParams(filters: Filters): string {
   if (filters.search) p.set("search", filters.search);
   return p.toString() ? `?${p.toString()}` : "";
 }
-
-const ENVIRONMENTS = ["production", "staging", "development", "testing", "other"] as const;
-const CRITICALITIES = ["critical", "high", "medium", "low"] as const;
 
 interface PromoteForm {
   scanTargetId: string;
@@ -296,16 +305,6 @@ export function AssetInventoryTable() {
     await fetch("/api/assets/rebuild", { method: "POST" });
     load(filters);
     setRebuilding(false);
-  };
-
-  const handleTypeFilter = (type: string) => {
-    setActiveType(type);
-    load(type === "all" ? undefined : type);
-  };
-
-  const handlePromoteDone = () => {
-    setShowPromote(false);
-    load(activeType);
   };
 
   const hasActiveFilter = Object.values(filters).some(Boolean);

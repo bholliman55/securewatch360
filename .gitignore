@@ -10,6 +10,8 @@
 
 # build / next
 /.next/
+/.open-next/
+/.wrangler-dry-run/
 /out/
 /build
 # env
