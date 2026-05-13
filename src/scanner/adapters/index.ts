@@ -3,8 +3,8 @@ import type { TenantId } from "@/types";
 /**
  * Shared adapter contracts for mock + future real scanners.
  */
-export type ScannerAdapterId = "mock" | "nmap" | "zap" | "trivy" | "osv";
-export type ScannerType = "mock" | "network" | "web" | "vulnerability";
+export type ScannerAdapterId = "mock" | "nmap" | "zap" | "trivy" | "osv" | "compliance";
+export type ScannerType = "mock" | "network" | "web" | "vulnerability" | "compliance";
 export type TargetType =
   | "url"
   | "domain"
@@ -16,7 +16,8 @@ export type TargetType =
   | "cloud_account"
   | "container_image"
   | "package_manifest"
-  | "dependency_manifest";
+  | "dependency_manifest"
+  | "compliance_scope";
 
 export type ScanContext = {
   tenantId: TenantId;

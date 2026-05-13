@@ -10,7 +10,8 @@ export type ScanTargetType =
   | "repo"
   | "container_image"
   | "package_manifest"
-  | "cloud_account";
+  | "cloud_account"
+  | "compliance_scope";
 
 type RuleMap = Record<ScanTargetType, ScannerAdapterId[]>;
 
@@ -34,6 +35,8 @@ const scannerRules: RuleMap = {
   package_manifest: ["osv", "trivy"],
   // Cloud accounts often start with posture + vuln-style scanning.
   cloud_account: ["trivy"],
+  // Compliance scope targets are evaluated by the compliance scanner.
+  compliance_scope: ["compliance"],
 };
 
 /**
