@@ -8,6 +8,7 @@ const NAV_LINKS: { href: string; label: string }[] = [
   { href: "/command-center", label: "Command center" },
   { href: "/posture-roadmap", label: "Posture Roadmap" },
   { href: "/findings", label: "Findings" },
+  { href: "/assets", label: "Assets" },
   { href: "/incidents", label: "Incidents" },
   { href: "/cves", label: "CVEs" },
   { href: "/scan-runs", label: "Scan runs" },

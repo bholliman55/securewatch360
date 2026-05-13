@@ -29,9 +29,6 @@ let browserClient: ReturnType<typeof createBrowserClient> | undefined;
  */
 export function getSupabaseBrowserClient(): ReturnType<typeof createBrowserClient> {
   if (typeof window === "undefined") {
-    // Server-side / build-time: return a typed placeholder. Client
-    // components that call this must only use it inside effects or
-    // event handlers that run in the browser.
     return null as unknown as ReturnType<typeof createBrowserClient>;
   }
   if (!browserClient) {
