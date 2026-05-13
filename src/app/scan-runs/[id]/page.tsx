@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getSupabaseAdminClient } from "@/lib/supabase";
+import ComplianceScanResults, {
+  type ComplianceScanResultRow,
+  type ComplianceScanResultsSummary,
+} from "@/console/components/ComplianceScanResults";
 
 type PageProps = {
   params: Promise<{
@@ -40,6 +44,10 @@ type FindingRow = {
   evidence: Record<string, unknown> | null;
 };
 
+type ComplianceResultRow = ComplianceScanResultRow & {
+  id: string;
+};
+
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value
@@ -63,7 +71,11 @@ async function loadScanRun(runId: string) {
     .single();
 
   if (runError || !run) {
-    return { run: null as ScanRunRow | null, findings: [] as FindingRow[] };
+    return {
+      run: null as ScanRunRow | null,
+      findings: [] as FindingRow[],
+      complianceResults: [] as ComplianceResultRow[],
+    };
   }
 
   const { data: findings, error: findingsError } = await supabase
@@ -76,9 +88,20 @@ async function loadScanRun(runId: string) {
     throw new Error(findingsError.message);
   }
 
+  const { data: complianceResults, error: complianceError } = await supabase
+    .from("compliance_scan_results")
+    .select("id, control_id, control_name, status, evidence_status, gap, recommended_action, severity")
+    .eq("scan_run_id", runId)
+    .order("control_id", { ascending: true });
+
+  if (complianceError) {
+    throw new Error(complianceError.message);
+  }
+
   return {
     run: run as ScanRunRow,
     findings: (findings ?? []) as FindingRow[],
+    complianceResults: (complianceResults ?? []) as ComplianceResultRow[],
   };
 }
 
@@ -88,7 +111,7 @@ export default async function ScanRunDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const { run, findings } = await loadScanRun(id);
+  const { run, findings, complianceResults } = await loadScanRun(id);
   if (!run) {
     notFound();
   }
@@ -157,6 +180,13 @@ export default async function ScanRunDetailPage({ params }: PageProps) {
           <h2>Result Summary</h2>
           <pre>{JSON.stringify(run.result_summary, null, 2)}</pre>
         </>
+      ) : null}
+
+      {complianceResults.length > 0 && run.result_summary?.compliance ? (
+        <ComplianceScanResults
+          summary={run.result_summary.compliance as ComplianceScanResultsSummary}
+          results={complianceResults}
+        />
       ) : null}
 
       <h2>Findings ({findings.length})</h2>
