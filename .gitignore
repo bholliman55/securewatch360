@@ -54,3 +54,13 @@ iac/securewatch360-policy-pack/policy-evidence-out/
 # Claude Code ephemeral worktrees (not application source)
 .claude/worktrees/
 .next/cache
+
+# OpenNext
+.open-next
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+
+!.env.example

@@ -7,6 +7,7 @@ describe("scan type routing", () => {
     expect(normalizeScanType("external")).toBe("external");
     expect(normalizeScanType("agent1")).toBe("agent1");
     expect(normalizeScanType("agent2")).toBe("agent2");
+    expect(normalizeScanType("compliance")).toBe("compliance");
   });
 
   it("normalizes aliases used by backend and voice/NL flows", () => {
@@ -14,6 +15,7 @@ describe("scan type routing", () => {
     expect(normalizeScanType("vulnerability_analysis")).toBe("agent2");
     expect(normalizeScanType("cve-prioritization")).toBe("agent2");
     expect(normalizeScanType("standard_scan")).toBe("standard");
+    expect(normalizeScanType("compliance_scan")).toBe("compliance");
   });
 
   it("routes standard scans to the existing standard backend", () => {
@@ -40,6 +42,15 @@ describe("scan type routing", () => {
       runAgent1: false,
       runAgent2: true,
       agent2Mode: "vulnerability_analysis",
+    });
+  });
+
+  it("routes compliance scans to the compliance backend", () => {
+    expect(getScanTypeRoute("compliance")).toMatchObject({
+      backendRoute: "/api/scans/compliance",
+      runAgent1: false,
+      runAgent2: false,
+      agent2Mode: "none",
     });
   });
 });

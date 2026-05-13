@@ -1,3 +1,5 @@
+import { getSupabaseAdminClient } from "@/lib/supabase";
+
 type FindingSignal = {
   severity: "info" | "low" | "medium" | "high" | "critical";
   category: string | null;
@@ -29,6 +31,185 @@ export type AwarenessTrainingPlan = {
   companySignals: string[];
   recommendations: AwarenessTrainingRecommendation[];
 };
+
+export type AwarenessCampaign = {
+  id: string;
+  tenant_id: string;
+  client_id: string | null;
+  name: string;
+  campaign_type: string;
+  status: string;
+  start_date: string | null;
+  end_date: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type AwarenessAssignment = {
+  id: string;
+  campaign_id: string | null;
+  tenant_id: string;
+  client_id: string | null;
+  user_email: string;
+  user_name: string | null;
+  status: string;
+  assigned_at: string | null;
+  completed_at: string | null;
+  score: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type PhishingSimulation = {
+  id: string;
+  tenant_id: string;
+  client_id: string | null;
+  campaign_id: string | null;
+  name: string;
+  status: string;
+  sent_count: number | null;
+  opened_count: number | null;
+  clicked_count: number | null;
+  reported_count: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type AwarenessMetrics = {
+  activeCampaigns: number;
+  completionRate: number;
+  overdueTraining: number;
+  phishingClickRate: number;
+};
+
+type SupabaseErrorLike = {
+  message?: string;
+};
+
+const CAMPAIGN_COLUMNS =
+  "id, tenant_id, client_id, name, campaign_type, status, start_date, end_date, created_at, updated_at";
+const ASSIGNMENT_COLUMNS =
+  "id, campaign_id, tenant_id, client_id, user_email, user_name, status, assigned_at, completed_at, score, created_at, updated_at";
+const PHISHING_COLUMNS =
+  "id, tenant_id, client_id, campaign_id, name, status, sent_count, opened_count, clicked_count, reported_count, created_at, updated_at";
+
+function optionalClientFilter<T extends { eq: (column: string, value: string) => T }>(
+  query: T,
+  clientId?: string | null
+): T {
+  return clientId ? query.eq("client_id", clientId) : query;
+}
+
+function throwAwarenessDataError(operation: string, error: SupabaseErrorLike): never {
+  throw new Error(`${operation} failed: ${error.message ?? "Supabase returned an error"}`);
+}
+
+function isCompletedAssignment(assignment: AwarenessAssignment): boolean {
+  const status = assignment.status.trim().toLowerCase();
+  return status === "completed" || Boolean(assignment.completed_at);
+}
+
+function isAssignedIncomplete(assignment: AwarenessAssignment): boolean {
+  const status = assignment.status.trim().toLowerCase();
+  return status === "assigned" || (!isCompletedAssignment(assignment) && status !== "cancelled");
+}
+
+function isPastDate(date: string | null, now = new Date()): boolean {
+  if (!date) return false;
+  const parsed = new Date(`${date}T23:59:59.999Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.getTime() < now.getTime();
+}
+
+export async function getAwarenessCampaigns(
+  tenantId: string,
+  clientId?: string | null
+): Promise<AwarenessCampaign[]> {
+  const supabase = getSupabaseAdminClient();
+  let query = supabase
+    .from("awareness_campaigns")
+    .select(CAMPAIGN_COLUMNS)
+    .eq("tenant_id", tenantId)
+    .order("created_at", { ascending: false });
+
+  query = optionalClientFilter(query, clientId);
+
+  const { data, error } = await query;
+  if (error) throwAwarenessDataError("Loading awareness campaigns", error);
+
+  return (data ?? []) as AwarenessCampaign[];
+}
+
+export async function getAwarenessAssignments(
+  tenantId: string,
+  clientId?: string | null,
+  campaignId?: string | null
+): Promise<AwarenessAssignment[]> {
+  const supabase = getSupabaseAdminClient();
+  let query = supabase
+    .from("awareness_assignments")
+    .select(ASSIGNMENT_COLUMNS)
+    .eq("tenant_id", tenantId)
+    .order("assigned_at", { ascending: false });
+
+  query = optionalClientFilter(query, clientId);
+  if (campaignId) {
+    query = query.eq("campaign_id", campaignId);
+  }
+
+  const { data, error } = await query;
+  if (error) throwAwarenessDataError("Loading awareness assignments", error);
+
+  return (data ?? []) as AwarenessAssignment[];
+}
+
+export async function getPhishingSimulations(
+  tenantId: string,
+  clientId?: string | null
+): Promise<PhishingSimulation[]> {
+  const supabase = getSupabaseAdminClient();
+  let query = supabase
+    .from("phishing_simulations")
+    .select(PHISHING_COLUMNS)
+    .eq("tenant_id", tenantId)
+    .order("created_at", { ascending: false });
+
+  query = optionalClientFilter(query, clientId);
+
+  const { data, error } = await query;
+  if (error) throwAwarenessDataError("Loading phishing simulations", error);
+
+  return (data ?? []) as PhishingSimulation[];
+}
+
+export function calculateAwarenessMetrics(
+  campaigns: AwarenessCampaign[],
+  assignments: AwarenessAssignment[],
+  phishingSimulations: PhishingSimulation[]
+): AwarenessMetrics {
+  const campaignEndDates = new Map(campaigns.map((campaign) => [campaign.id, campaign.end_date]));
+  const completedAssignments = assignments.filter(isCompletedAssignment).length;
+  const totalAssignments = assignments.length;
+  const sentCount = phishingSimulations.reduce(
+    (sum, simulation) => sum + (Number(simulation.sent_count) || 0),
+    0
+  );
+  const clickedCount = phishingSimulations.reduce(
+    (sum, simulation) => sum + (Number(simulation.clicked_count) || 0),
+    0
+  );
+
+  return {
+    activeCampaigns: campaigns.filter(
+      (campaign) => campaign.status.trim().toLowerCase() === "active"
+    ).length,
+    completionRate: totalAssignments > 0 ? completedAssignments / totalAssignments : 0,
+    overdueTraining: assignments.filter((assignment) => {
+      if (!assignment.campaign_id || !isAssignedIncomplete(assignment)) return false;
+      return isPastDate(campaignEndDates.get(assignment.campaign_id) ?? null);
+    }).length,
+    phishingClickRate: sentCount > 0 ? clickedCount / sentCount : 0,
+  };
+}
 
 function parseSignalList(raw: string | undefined): string[] {
   return (raw ?? "")
