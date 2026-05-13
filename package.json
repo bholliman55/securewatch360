@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "build": "next build",
     "dev": "next dev",
     "dev:all": "concurrently --names \"next,inngest\" --prefix-colors \"cyan,yellow\" \"npm run dev\" \"npm run inngest:dev\"",
     "inngest:dev": "node scripts/inngest-dev.mjs",
-    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
@@ -59,10 +59,15 @@
     "security:dast:local": "scripts\\zap-baseline.cmd -t http://host.docker.internal:3000 -m 2",
     "security:baseline": "npm run security:audit && npm run security:sast && npm run security:infra",
     "dev:proton-pass": "pwsh ./scripts/dev-with-proton-pass.ps1",
-    "reset:posture-roadmap-demo": "node scripts/reset-posture-roadmap-demo.mjs"
+    "reset:posture-roadmap-demo": "node scripts/reset-posture-roadmap-demo.mjs",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
+    "@opennextjs/cloudflare": "^1.19.9",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.49.1",
     "inngest": "^3.54.0",
@@ -93,7 +98,8 @@
     "tailwindcss": "^4.3.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.5",
+    "wrangler": "^4.90.1"
   },
   "overrides": {
     "protobufjs": ">=7.2.5",
