@@ -17,4 +17,9 @@ const nextConfig: NextConfig = {
 
 export default nextConfig;
 
-import('@opennextjs/cloudflare').then(m => m.initOpenNextCloudflareForDev());
+// Only activate the Cloudflare dev adapter when explicitly opted in (e.g.
+// CF_DEV=1 npm run dev).  The adapter proxies every request through a
+// Workers-like runtime and causes the browser to hang in plain Next.js dev.
+if (process.env.CF_DEV === "1") {
+  import('@opennextjs/cloudflare').then(m => m.initOpenNextCloudflareForDev());
+}

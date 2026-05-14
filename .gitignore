@@ -14,6 +14,7 @@
 /.wrangler-dry-run/
 /out/
 /build
+
 # env
 .env
 .env.local
@@ -25,10 +26,22 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
 
 # misc
 .DS_Store
 *.tsbuildinfo
+next-env.d.ts
+
+# temp / scratch files
+tmp-*.json
+tmp-*.yaml
+tmp-*.yml
+
+# IDE / editor tooling (not application source)
+.claude/settings.local.json
+.cursor/*
+!.cursor/skills
 
 # Simulation run artifacts (local; regenerate with npm run sim:run / sim:report / demo:stack)
 .simulation-results/

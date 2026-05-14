@@ -24,18 +24,18 @@ function isUuid(value: string): boolean {
 
 function buildMetrics(modules: TrainingModuleRow[]) {
   const totalModules = modules.length;
-  const activeModules = modules.filter((module) => module.status === "active").length;
-  const totalEnrolled = modules.reduce((sum, module) => sum + (Number(module.total_enrolled) || 0), 0);
-  const totalCompleted = modules.reduce((sum, module) => sum + (Number(module.total_completed) || 0), 0);
+  const activeModules = modules.filter((mod) => mod.status === "active").length;
+  const totalEnrolled = modules.reduce((sum, mod) => sum + (Number(mod.total_enrolled) || 0), 0);
+  const totalCompleted = modules.reduce((sum, mod) => sum + (Number(mod.total_completed) || 0), 0);
   const avgCompletionRate =
     totalEnrolled > 0 ? Math.round((totalCompleted / totalEnrolled) * 100) : 0;
   const categoryMap = new Map<string, { enrolled: number; completed: number }>();
 
-  for (const module of modules) {
-    const current = categoryMap.get(module.category) ?? { enrolled: 0, completed: 0 };
-    current.enrolled += Number(module.total_enrolled) || 0;
-    current.completed += Number(module.total_completed) || 0;
-    categoryMap.set(module.category, current);
+  for (const mod of modules) {
+    const current = categoryMap.get(mod.category) ?? { enrolled: 0, completed: 0 };
+    current.enrolled += Number(mod.total_enrolled) || 0;
+    current.completed += Number(mod.total_completed) || 0;
+    categoryMap.set(mod.category, current);
   }
 
   const categoryStats = Array.from(categoryMap.entries()).map(([name, stats]) => ({

@@ -90,6 +90,6 @@ export const config = {
      * - Static assets at the root (favicon.ico, logo.png, *.svg, *.webp, *.png)
      * - /api routes (they authenticate themselves via requireTenantAccess)
      */
-    "/((?!_next/static|_next/image|favicon\\.ico|logo\\.png|.*\\.(?:svg|png|jpg|jpeg|webp|ico)|api/).*)",
+    "/((?!_next/|favicon\\.ico|logo\\.png|.*\\.(?:svg|png|jpg|jpeg|webp|ico)|api/).*)",
   ],
 };

@@ -156,10 +156,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Hit the server-side route first so it can clear HttpOnly session cookies,
+    // then clear client-side state and redirect.
+    try {
+      await fetch("/api/auth/signout", { method: "POST", redirect: "manual" });
+    } catch {
+      // ignore network errors — we still clear client state below
+    }
     await supabase.auth.signOut();
-    // Navigate to the Next.js login page immediately — this unmounts the Vite
-    // SPA before the auth-state-change event fires, avoiding the race where
-    // tenants=[]/user=set briefly shows the "No tenant access" screen.
     window.location.href = "/login";
   };
 
