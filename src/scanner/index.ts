@@ -8,6 +8,7 @@ import { nmapScannerAdapter } from "./adapters/nmap";
 import { osvScannerAdapter } from "./adapters/osv";
 import { trivyScannerAdapter } from "./adapters/trivy";
 import { zapScannerAdapter } from "./adapters/zap";
+import { complianceScannerAdapter } from "./adapters/compliance";
 import { mockScannerAdapter } from "./mockScanner";
 import { getRecommendedScannersForTargetType } from "./selectionRules";
 
@@ -17,6 +18,7 @@ const scannerRegistry: Record<ScannerAdapterId, ScannerAdapter> = {
   zap: zapScannerAdapter,
   trivy: trivyScannerAdapter,
   osv: osvScannerAdapter,
+  compliance: complianceScannerAdapter,
 };
 
 type RunScanInput = ScanContext & {

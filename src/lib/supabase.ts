@@ -4,7 +4,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 // --- shared env (fail fast in dev when misconfigured) -----------------------------------------
 
 function getPublicUrl(): string {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_SUPABASE_URL;
   if (!url) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
   return url;
 }
@@ -21,8 +21,16 @@ let browserClient: ReturnType<typeof createBrowserClient> | undefined;
 
 /**
  * For Client Components in the browser. Never use the service role here.
+ *
+ * During Next.js build-time prerendering the browser env vars are not set.
+ * We return `null` on the server rather than throwing so that client
+ * component modules can be safely imported during the build.  The actual
+ * Supabase client is only constructed (and used) inside the browser.
  */
 export function getSupabaseBrowserClient(): ReturnType<typeof createBrowserClient> {
+  if (typeof window === "undefined") {
+    return null as unknown as ReturnType<typeof createBrowserClient>;
+  }
   if (!browserClient) {
     browserClient = createBrowserClient(getPublicUrl(), getAnonKey());
   }

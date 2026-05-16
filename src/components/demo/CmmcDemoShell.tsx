@@ -403,23 +403,49 @@ export function CmmcDemoShell(): React.JSX.Element {
         >
           {/* Brand + title */}
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-            <span
+            <img
+              src="/images/securewatch360-logo.png"
+              alt="SecureWatch360"
               style={{
-                fontFamily: "'Rajdhani', sans-serif",
-                fontWeight: 700,
-                fontSize: "1.25rem",
-                letterSpacing: "0.04em",
-                color: "#29b6f6",
+                height: 40,
+                width: "auto",
+                borderRadius: 8,
+                border: "1px solid rgba(41,182,246,0.3)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                flexShrink: 0,
               }}
-            >
-              SecureWatch<span style={{ color: "#00e5ff" }}>360</span>
-            </span>
+            />
+            <div>
+              <div
+                style={{
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 700,
+                  fontSize: "1.25rem",
+                  letterSpacing: "0.04em",
+                  color: "#29b6f6",
+                  lineHeight: 1.1,
+                }}
+              >
+                SecureWatch<span style={{ color: "#00e5ff" }}>360</span>
+              </div>
+              <div
+                style={{
+                  fontSize: "0.62rem",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "#4a6fa5",
+                }}
+              >
+                One Platform. Total Protection.
+              </div>
+            </div>
             <span
               style={{
                 width: 1,
-                height: 20,
+                height: 28,
                 background: "rgba(41,182,246,0.35)",
                 display: "inline-block",
+                flexShrink: 0,
               }}
             />
             <h1

@@ -148,10 +148,19 @@ type ScanTargetRow = {
 };
 
 function requireTenant(tenantId: string | null | undefined): string {
-  if (!tenantId || tenantId.trim() === "") {
+  const trimmed = tenantId?.trim() ?? "";
+  const isUuid =
+    /^[0-9a-f-]{36}$/i.test(trimmed) &&
+    trimmed[8] === "-" &&
+    trimmed[13] === "-" &&
+    trimmed[18] === "-" &&
+    trimmed[23] === "-" &&
+    "12345".includes(trimmed[14]?.toLowerCase() ?? "") &&
+    "89ab".includes(trimmed[19]?.toLowerCase() ?? "");
+  if (!isUuid) {
     throw new Error("Select a tenant to load scanner data.");
   }
-  return tenantId;
+  return trimmed;
 }
 
 function mapFindingToVulnerability(row: FindingRow): Vulnerability {

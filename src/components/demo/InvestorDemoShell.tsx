@@ -284,32 +284,54 @@ export function InvestorDemoShell({
         }}
       >
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 px-6 py-4">
-          <div className="flex items-baseline gap-4">
-            <span
+          <div className="flex items-center gap-3">
+            <img
+              src="/images/securewatch360-logo.png"
+              alt="SecureWatch360"
               style={{
-                fontFamily: "'Rajdhani', sans-serif",
-                fontWeight: 700,
-                fontSize: "1.2rem",
-                letterSpacing: "0.04em",
-                color: "#29b6f6",
+                height: 40,
+                width: "auto",
+                borderRadius: 8,
+                border: "1px solid rgba(41,182,246,0.3)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
               }}
-            >
-              SecureWatch<span style={{ color: "#00e5ff" }}>360</span>
-            </span>
-            <h1
-              id="investor-demo-title"
+            />
+            <div>
+              <div
+                style={{
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 700,
+                  fontSize: "1.2rem",
+                  letterSpacing: "0.04em",
+                  color: "#29b6f6",
+                  lineHeight: 1.1,
+                }}
+              >
+                SecureWatch<span style={{ color: "#00e5ff" }}>360</span>
+              </div>
+              <h1
+                id="investor-demo-title"
+                style={{
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 600,
+                  fontSize: "0.62rem",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "#4a6fa5",
+                  margin: 0,
+                }}
+              >
+                Investor Demo Mode
+              </h1>
+            </div>
+            <div
               style={{
-                fontFamily: "'Rajdhani', sans-serif",
-                fontWeight: 600,
-                fontSize: "0.82rem",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "#8ab4d4",
-                margin: 0,
+                width: 1,
+                height: 28,
+                background: "rgba(41,182,246,0.25)",
+                margin: "0 0.25rem",
               }}
-            >
-              Investor Demo Mode
-            </h1>
+            />
             <ScenarioStatusBadge status={scenarioStatus} />
           </div>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">

@@ -19,7 +19,11 @@ interface TenantContextType {
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
 const STORAGE_KEY = "sw360.selectedTenantId";
-const DEFAULT_TEST_TENANT_ID = "8c2b980c-9fc8-4b71-9b5f-2e90a5c3a001";
+
+function isUuid(value: string | null | undefined): value is string {
+  return typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
 
 function roleRank(role: string): number {
   switch (role) {
@@ -37,17 +41,14 @@ function roleRank(role: string): number {
 }
 
 export function getPreferredTenantId(tenants: TenantOption[]): string | null {
-  if (tenants.length === 0) return null;
-  const preferred = [...tenants].sort((a, b) => {
+  const validTenants = tenants.filter((tenant) => isUuid(tenant.id));
+  if (validTenants.length === 0) return null;
+  const preferred = [...validTenants].sort((a, b) => {
     const rankDiff = roleRank(b.role) - roleRank(a.role);
     if (rankDiff !== 0) return rankDiff;
     return a.name.localeCompare(b.name);
   })[0];
   return preferred?.id ?? null;
-}
-
-function getFallbackTenantId(): string {
-  return process.env.NEXT_PUBLIC_TEST_TENANT_ID || DEFAULT_TEST_TENANT_ID;
 }
 
 export function TenantProvider({
@@ -65,17 +66,21 @@ export function TenantProvider({
     if (loading) {
       return;
     }
-    if (tenants.length === 0) {
-      setSelectedTenantIdState(getFallbackTenantId());
+    const validTenants = tenants.filter((tenant) => isUuid(tenant.id));
+    if (validTenants.length === 0) {
+      setSelectedTenantIdState(null);
+      if (typeof localStorage !== "undefined") {
+        localStorage.removeItem(STORAGE_KEY);
+      }
       return;
     }
     const stored = typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
-    const storedValid = stored && tenants.some((t) => t.id === stored);
+    const storedValid = isUuid(stored) && validTenants.some((t) => t.id === stored);
     if (storedValid) {
       setSelectedTenantIdState(stored);
       return;
     }
-    const preferredTenantId = getPreferredTenantId(tenants);
+    const preferredTenantId = getPreferredTenantId(validTenants);
     setSelectedTenantIdState(preferredTenantId);
     if (preferredTenantId && typeof localStorage !== "undefined") {
       localStorage.setItem(STORAGE_KEY, preferredTenantId);
@@ -83,9 +88,10 @@ export function TenantProvider({
   }, [loading, tenants]);
 
   const setSelectedTenantId = (id: string | null) => {
-    setSelectedTenantIdState(id);
-    if (id && typeof localStorage !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, id);
+    const nextId = isUuid(id) ? id : null;
+    setSelectedTenantIdState(nextId);
+    if (nextId && typeof localStorage !== "undefined") {
+      localStorage.setItem(STORAGE_KEY, nextId);
     }
   };
 

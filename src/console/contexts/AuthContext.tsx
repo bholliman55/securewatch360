@@ -28,6 +28,11 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const DEFAULT_DEMO_TENANT_ID = "8c2b980c-9fc8-4b71-9b5f-2e90a5c3a001";
 
+function isUuid(value: string | null | undefined): value is string {
+  return typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 function buildDemoUser(): User {
   return {
     id: "local-demo-user",
@@ -44,7 +49,8 @@ function buildDemoUser(): User {
 }
 
 function buildDemoTenant(): TenantOption {
-  const tenantId = process.env.NEXT_PUBLIC_TEST_TENANT_ID || DEFAULT_DEMO_TENANT_ID;
+  const configured = process.env.NEXT_PUBLIC_TEST_TENANT_ID;
+  const tenantId = isUuid(configured) ? configured : DEFAULT_DEMO_TENANT_ID;
   return {
     id: tenantId,
     name: "Demo Tenant",
@@ -88,6 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session: s } }: { data: { session: Session | null } }) => {
+      setSession(s);
+      setUser(s?.user ?? null);
       if (s?.user) {
         setSession(s);
         setUser(s.user);
@@ -156,10 +164,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Hit the server-side route first so it can clear HttpOnly session cookies,
+    // then clear client-side state and redirect.
+    try {
+      await fetch("/api/auth/signout", { method: "POST", redirect: "manual" });
+    } catch {
+      // ignore network errors — we still clear client state below
+    }
     await supabase.auth.signOut();
-    // Navigate to the Next.js login page immediately — this unmounts the Vite
-    // SPA before the auth-state-change event fires, avoiding the race where
-    // tenants=[]/user=set briefly shows the "No tenant access" screen.
     window.location.href = "/login";
   };
 

@@ -3,6 +3,7 @@ export const SCAN_TYPE_VALUES = [
   "external",
   "agent1",
   "agent2",
+  "compliance",
 ] as const;
 
 export type ScanTypeValue = (typeof SCAN_TYPE_VALUES)[number];
@@ -10,7 +11,7 @@ export type ScanTypeValue = (typeof SCAN_TYPE_VALUES)[number];
 export type NormalizedScanTypeRoute = {
   scanType: ScanTypeValue;
   label: string;
-  backendRoute: "/api/scans/request" | "/api/security/external-intelligence/run";
+  backendRoute: "/api/scans/request" | "/api/security/external-intelligence/run" | "/api/scans/compliance";
   runAgent1: boolean;
   runAgent2: boolean;
   agent2Mode: "none" | "vulnerability_analysis";
@@ -42,6 +43,9 @@ const SCAN_TYPE_ALIASES: Record<string, ScanTypeValue> = {
   cve: "agent2",
   "cve-prioritization": "agent2",
   "cve_prioritization": "agent2",
+  compliance: "compliance",
+  "compliance-scan": "compliance",
+  "compliance_scan": "compliance",
 };
 
 export function normalizeScanType(raw: unknown): ScanTypeValue {
@@ -84,6 +88,17 @@ export function getScanTypeRoute(raw: unknown): NormalizedScanTypeRoute {
       runAgent1: false,
       runAgent2: true,
       agent2Mode: "vulnerability_analysis",
+    };
+  }
+
+  if (scanType === "compliance") {
+    return {
+      scanType,
+      label: "Compliance Scan",
+      backendRoute: "/api/scans/compliance",
+      runAgent1: false,
+      runAgent2: false,
+      agent2Mode: "none",
     };
   }
 
