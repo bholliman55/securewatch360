@@ -66,6 +66,10 @@ iac/**/crash.log
 # local Ansible policy-evidence output (GV.PO-01 role; see policy pack readme)
 iac/securewatch360-policy-pack/policy-evidence-out/
 
+# local site collector reports (generated on developer machines)
+collectors/site-collector/node_modules/
+collectors/site-collector/output/
+
 # Claude Code ephemeral worktrees (not application source)
 .claude/worktrees/
 .claude/
