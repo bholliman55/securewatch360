@@ -32,6 +32,11 @@ const DEFAULT_METRICS: DashboardMetrics = {
   lastUpdated: new Date().toISOString(),
 };
 
+function isUuid(value: string | null | undefined): value is string {
+  return typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 export function useDashboardData(autoRefreshInterval: number = 30000): UseDashboardDataReturn {
   const { selectedTenantId } = useTenant();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
@@ -52,7 +57,7 @@ export function useDashboardData(autoRefreshInterval: number = 30000): UseDashbo
     }
     setError(null);
 
-    if (!selectedTenantId) {
+    if (!isUuid(selectedTenantId)) {
       setMetrics(DEFAULT_METRICS);
       setAlerts([]);
       setTimeline([]);
