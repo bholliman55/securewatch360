@@ -68,6 +68,9 @@ iac/securewatch360-policy-pack/policy-evidence-out/
 
 # Claude Code ephemeral worktrees (not application source)
 .claude/worktrees/
+.claude/
+.codex-logs/
+.playwright-mcp/
 .next/cache
 
 # OpenNext
