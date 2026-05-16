@@ -20,7 +20,7 @@ export default function TopNav({
 }) {
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
-  const { selectedTenantId, tenants, selectedTenantName } = useTenant();
+  const { selectedTenantId, setSelectedTenantId, tenants, selectedTenantName } = useTenant();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -46,6 +46,11 @@ export default function TopNav({
   };
 
   const roleLabel = tenants.find((t) => t.id === selectedTenantId)?.role ?? "member";
+  const selectedTenant = tenants.find((t) => t.id === selectedTenantId);
+
+  const handleTenantChange = (tenantId: string) => {
+    setSelectedTenantId(tenantId || null);
+  };
 
   return (
     <nav className="bg-[var(--sw-surface)]/96 border-b border-[var(--sw-border)] px-6 py-4 transition-colors duration-200 backdrop-blur supports-[backdrop-filter]:bg-[var(--sw-surface)]/82 shadow-[0_8px_28px_-22px_rgba(17,45,78,0.45)]">
@@ -65,13 +70,44 @@ export default function TopNav({
         </div>
 
         <div className="flex items-center space-x-4">
-          {selectedTenantName ? (
-            <div className="flex items-center gap-2 px-3 py-2 bg-[color:color-mix(in_srgb,var(--sw-accent)_10%,transparent)] border border-[color:color-mix(in_srgb,var(--sw-accent)_35%,transparent)] rounded-lg">
-              <Building2 className="w-4 h-4 text-[var(--sw-accent)] shrink-0" />
-              <span className="text-sm font-semibold text-[var(--sw-accent)]">{selectedTenantName}</span>
-              <ShieldCheck className="w-4 h-4 text-[var(--sw-pulse)] shrink-0" />
+          <div className="flex min-w-[260px] max-w-[360px] items-center gap-3 rounded-lg border border-[color:color-mix(in_srgb,var(--sw-accent)_38%,transparent)] bg-[color:color-mix(in_srgb,var(--sw-accent)_9%,transparent)] px-3 py-2 shadow-[0_10px_24px_-22px_rgba(30,136,229,0.9)]">
+            <Building2 className="h-5 w-5 shrink-0 text-[var(--sw-accent)]" />
+            <div className="min-w-0 flex-1">
+              <label
+                htmlFor="tenant-selector"
+                className="block text-[10px] font-bold uppercase leading-none tracking-[0.14em] text-[var(--sw-text-muted)]"
+              >
+                Active tenant
+              </label>
+              <select
+                id="tenant-selector"
+                value={selectedTenantId ?? ""}
+                onChange={(event) => handleTenantChange(event.target.value)}
+                disabled={tenants.length === 0}
+                title={selectedTenantName ? `Switch active tenant from ${selectedTenantName}` : "Select active tenant"}
+                className="mt-1 w-full min-w-0 cursor-pointer truncate rounded-md border border-transparent bg-[var(--sw-surface-elevated)] px-2 py-1 text-sm font-bold text-[var(--sw-text-primary)] outline-none focus:border-[var(--sw-accent)] focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--sw-accent)_32%,transparent)] disabled:cursor-not-allowed disabled:opacity-60"
+                style={{ colorScheme: theme === "dark" ? "dark" : "light" }}
+              >
+                {tenants.length === 0 ? (
+                  <option value="" style={{ backgroundColor: "#10243a", color: "#eaf6ff" }}>
+                    No tenants available
+                  </option>
+                ) : (
+                  tenants.map((tenant) => (
+                    <option key={tenant.id} value={tenant.id} style={{ backgroundColor: "#10243a", color: "#eaf6ff" }}>
+                      {tenant.name} ({tenant.role})
+                    </option>
+                  ))
+                )}
+              </select>
+              {selectedTenant ? (
+                <div className="mt-1 truncate text-[10px] font-medium text-[var(--sw-text-muted)]">
+                  {selectedTenant.id.slice(0, 8)}...{selectedTenant.id.slice(-4)}
+                </div>
+              ) : null}
             </div>
-          ) : null}
+            <ShieldCheck className="hidden h-4 w-4 shrink-0 text-[var(--sw-pulse)] sm:block" />
+          </div>
 
           <div className="hidden md:flex flex-col items-end">
             <div className="text-sm font-semibold text-[var(--sw-text-primary)] tabular-nums">{formatTime(currentTime)}</div>

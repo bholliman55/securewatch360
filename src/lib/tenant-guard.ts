@@ -25,15 +25,25 @@ type TenantGuardResult =
       error: string;
     };
 
-function isDemoTenantBypassEnabled(tenantId: string): boolean {
-  // Bypass is only permitted in explicit local-dev mode. Never in production,
-  // staging, or CI — NODE_ENV alone is insufficient because staging often
-  // runs with NODE_ENV=production. Require all three guards simultaneously.
-  if (process.env.NODE_ENV === "production") return false;
-  if (process.env.INNGEST_DEV !== "1") return false;
-  if (process.env.ALLOW_DEMO_TENANT_BYPASS !== "1") return false;
+function isTruthyFlag(value: string | undefined): boolean {
+  return value === "1" || value?.toLowerCase() === "true";
+}
+
+export function getLocalDemoTenantId(): string | null {
+  if (process.env.NODE_ENV === "production") return null;
+  if (!isTruthyFlag(process.env.INNGEST_DEV)) return null;
+
   const demoTenantId = process.env.TEST_TENANT_ID?.trim();
-  return Boolean(demoTenantId && tenantId === demoTenantId);
+  if (!demoTenantId) return null;
+
+  return demoTenantId;
+}
+
+function isDemoTenantBypassEnabled(tenantId: string): boolean {
+  // Bypass is only permitted for the explicitly configured local demo tenant.
+  // NODE_ENV alone is insufficient because staging often runs with production
+  // semantics; INNGEST_DEV must also be set by the local environment.
+  return getLocalDemoTenantId() === tenantId;
 }
 
 /**
