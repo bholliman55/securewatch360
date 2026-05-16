@@ -1,9 +1,11 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "securewatch360",
+  "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
+  "name": "securewatch360",
   "compatibility_date": "2026-05-13",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"

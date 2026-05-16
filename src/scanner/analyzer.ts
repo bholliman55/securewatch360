@@ -8,6 +8,8 @@ type NormalizeInput = {
   tenantId: string;
   scanRunId: string;
   scanTargetId?: string | null;
+  /** Scanner adapter family (e.g. "web", "network", "vulnerability"). Maps to findings.agent_type. */
+  agentType?: string | null;
   source: string;
   assetType: string;
   exposure: string;
@@ -20,6 +22,7 @@ export type NormalizedFindingInsert = {
   scan_id: string;
   scan_result_id: string;
   scan_target_id: string | null;
+  agent_type: string | null;
   severity: FindingSeverity;
   category: string;
   title: string;
@@ -61,6 +64,7 @@ export function normalizeFindings(input: NormalizeInput): NormalizedFindingInser
       scan_id: input.scanRunId,
       scan_result_id: input.scanRunId,
       scan_target_id: input.scanTargetId ?? null,
+      agent_type: input.agentType ?? null,
       category: item.category,
       title: item.title,
       description: item.description,
